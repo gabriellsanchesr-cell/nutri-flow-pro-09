@@ -47,7 +47,7 @@ export function CalculoEnergetico({ paciente }: Props) {
     const adjustments: Record<string, number> = { deficit: -500, manutencao: 0, superavit: 300 };
     const meta = get + (adjustments[objetivo] || 0);
 
-    const protPerKg = objetivo === "ganho_de_massa" || objetivo === "superavit" ? 2.0 : 1.8;
+    const protPerKg = objetivo === "superavit" ? 2.0 : 1.8;
     const protG = p * protPerKg;
     const protKcal = protG * 4;
     const fatKcal = meta * 0.25;
