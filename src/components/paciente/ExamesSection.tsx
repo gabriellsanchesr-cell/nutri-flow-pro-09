@@ -190,6 +190,35 @@ export function ExamesSection({ paciente }: Props) {
           </DialogFooter>
         </DialogContent>
       </Dialog>
+
+      {/* Inline Viewer Dialog */}
+      <Dialog open={!!viewingExame} onOpenChange={() => setViewingExame(null)}>
+        <DialogContent className="max-w-4xl h-[85vh] flex flex-col">
+          <DialogHeader>
+            <DialogTitle>{viewingExame?.nome_exame}</DialogTitle>
+            <DialogDescription>
+              {viewingExame && format(new Date(viewingExame.data_coleta + "T12:00:00"), "dd/MM/yyyy")}
+            </DialogDescription>
+          </DialogHeader>
+          <div className="flex-1 min-h-0 rounded-md overflow-hidden border bg-muted">
+            {viewingExame && (
+              isImage(viewingExame.arquivo_path) ? (
+                <img
+                  src={getPublicUrl(viewingExame.arquivo_path)}
+                  alt={viewingExame.nome_exame}
+                  className="w-full h-full object-contain"
+                />
+              ) : (
+                <iframe
+                  src={getPublicUrl(viewingExame.arquivo_path)}
+                  className="w-full h-full"
+                  title={viewingExame.nome_exame}
+                />
+              )
+            )}
+          </div>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }
