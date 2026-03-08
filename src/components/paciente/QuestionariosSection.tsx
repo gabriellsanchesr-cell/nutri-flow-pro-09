@@ -61,8 +61,8 @@ export function QuestionariosSection({ paciente }: Props) {
       const { data, error } = await supabase.from("questionarios").insert({
         paciente_id: paciente.id,
         user_id: session.user.id,
-        tipo: sendTipo,
-        status: "enviado",
+        tipo: sendTipo as any,
+        status: "enviado" as any,
         data_envio: new Date().toISOString(),
       }).select("token").single();
       if (error) throw error;
