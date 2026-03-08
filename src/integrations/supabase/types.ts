@@ -615,45 +615,81 @@ export type Database = {
           },
         ]
       }
-      configuracoes_pdf: {
+      configuracoes_clinica: {
         Row: {
           cor_primaria: string | null
+          cor_secundaria: string | null
           created_at: string | null
           crn: string | null
+          endereco: string | null
+          facebook: string | null
           id: string
           incluir_capa: boolean | null
+          instagram: string | null
           logo_url: string | null
           marca_dagua: boolean | null
+          mensagem_boas_vindas: string | null
+          nome_clinica: string | null
           site: string | null
+          smtp_ativo: boolean | null
+          smtp_host: string | null
+          smtp_password: string | null
+          smtp_port: number | null
+          smtp_user: string | null
           telefone: string | null
           updated_at: string | null
           user_id: string
+          whatsapp: string | null
         }
         Insert: {
           cor_primaria?: string | null
+          cor_secundaria?: string | null
           created_at?: string | null
           crn?: string | null
+          endereco?: string | null
+          facebook?: string | null
           id?: string
           incluir_capa?: boolean | null
+          instagram?: string | null
           logo_url?: string | null
           marca_dagua?: boolean | null
+          mensagem_boas_vindas?: string | null
+          nome_clinica?: string | null
           site?: string | null
+          smtp_ativo?: boolean | null
+          smtp_host?: string | null
+          smtp_password?: string | null
+          smtp_port?: number | null
+          smtp_user?: string | null
           telefone?: string | null
           updated_at?: string | null
           user_id: string
+          whatsapp?: string | null
         }
         Update: {
           cor_primaria?: string | null
+          cor_secundaria?: string | null
           created_at?: string | null
           crn?: string | null
+          endereco?: string | null
+          facebook?: string | null
           id?: string
           incluir_capa?: boolean | null
+          instagram?: string | null
           logo_url?: string | null
           marca_dagua?: boolean | null
+          mensagem_boas_vindas?: string | null
+          nome_clinica?: string | null
           site?: string | null
+          smtp_ativo?: boolean | null
+          smtp_host?: string | null
+          smtp_password?: string | null
+          smtp_port?: number | null
+          smtp_user?: string | null
           telefone?: string | null
           updated_at?: string | null
           user_id?: string
+          whatsapp?: string | null
         }
         Relationships: []
       }
