@@ -1,3 +1,4 @@
+import { useEffect, useState } from "react";
 import {
   LayoutDashboard,
   Users,
@@ -7,10 +8,13 @@ import {
   BookOpen,
   FileText,
   LogOut,
+  MessageSquare,
 } from "lucide-react";
 import { NavLink } from "@/components/NavLink";
 import { useLocation } from "react-router-dom";
 import { useAuth } from "@/hooks/useAuth";
+import { supabase } from "@/integrations/supabase/client";
+import { Badge } from "@/components/ui/badge";
 import {
   Sidebar,
   SidebarContent,
@@ -27,6 +31,7 @@ import {
 const menuItems = [
   { title: "Dashboard", url: "/", icon: LayoutDashboard },
   { title: "Pacientes", url: "/pacientes", icon: Users },
+  { title: "Chat", url: "/chat", icon: MessageSquare },
   { title: "Planos Alimentares", url: "/planos", icon: Utensils },
   { title: "Acompanhamento", url: "/acompanhamento", icon: Activity },
   { title: "Agenda", url: "/agenda", icon: Calendar },
