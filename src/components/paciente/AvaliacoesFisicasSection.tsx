@@ -14,8 +14,9 @@ import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from "@/
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import {
   Plus, ArrowLeft, Save, Trash2, TrendingUp, TrendingDown, Minus,
-  Scale, Ruler, Activity, BarChart3, ChevronRight, Calendar, Eye,
+  Scale, Ruler, Activity, BarChart3, ChevronRight, Calendar, Eye, FileDown,
 } from "lucide-react";
+import { ExportPdfModal } from "@/components/pdf/ExportPdfModal";
 import { format } from "date-fns";
 import { ptBR } from "date-fns/locale";
 import {
