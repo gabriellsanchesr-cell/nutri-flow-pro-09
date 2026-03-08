@@ -124,9 +124,14 @@ export function AcompanhamentoSection({ paciente }: Props) {
             </Button>
           ))}
         </div>
-        <Button size="sm" onClick={() => setModalOpen(true)}>
-          <Plus className="h-3.5 w-3.5 mr-1" /> Registrar semana
-        </Button>
+        <div className="flex gap-2">
+          <Button size="sm" variant="outline" onClick={() => setShowRelatorio(true)}>
+            <FileDown className="h-3.5 w-3.5 mr-1" /> Relatório Mensal
+          </Button>
+          <Button size="sm" onClick={() => setModalOpen(true)}>
+            <Plus className="h-3.5 w-3.5 mr-1" /> Registrar semana
+          </Button>
+        </div>
       </div>
 
       {chartData.length > 1 && (
