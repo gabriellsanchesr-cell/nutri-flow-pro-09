@@ -231,6 +231,42 @@ export type Database = {
           },
         ]
       }
+      audit_logs: {
+        Row: {
+          acao: string
+          created_at: string
+          detalhes: string | null
+          id: string
+          ip_address: string | null
+          referencia_id: string | null
+          tipo: string
+          user_id: string | null
+          user_name: string | null
+        }
+        Insert: {
+          acao: string
+          created_at?: string
+          detalhes?: string | null
+          id?: string
+          ip_address?: string | null
+          referencia_id?: string | null
+          tipo?: string
+          user_id?: string | null
+          user_name?: string | null
+        }
+        Update: {
+          acao?: string
+          created_at?: string
+          detalhes?: string | null
+          id?: string
+          ip_address?: string | null
+          referencia_id?: string | null
+          tipo?: string
+          user_id?: string | null
+          user_name?: string | null
+        }
+        Relationships: []
+      }
       avaliacoes_fisicas: {
         Row: {
           altura: number | null
@@ -621,6 +657,54 @@ export type Database = {
         }
         Relationships: []
       }
+      configuracoes_usuarios: {
+        Row: {
+          created_at: string
+          enviar_email_boas_vindas: boolean
+          equipe_pode_criar_acessos: boolean
+          equipe_pode_criar_pacientes: boolean
+          expiracao_sessao_admin: number
+          expiracao_sessao_equipe: number
+          expiracao_sessao_paciente: number
+          forcar_troca_senha: boolean
+          id: string
+          tempo_bloqueio: number
+          tentativas_login: number
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          enviar_email_boas_vindas?: boolean
+          equipe_pode_criar_acessos?: boolean
+          equipe_pode_criar_pacientes?: boolean
+          expiracao_sessao_admin?: number
+          expiracao_sessao_equipe?: number
+          expiracao_sessao_paciente?: number
+          forcar_troca_senha?: boolean
+          id?: string
+          tempo_bloqueio?: number
+          tentativas_login?: number
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          enviar_email_boas_vindas?: boolean
+          equipe_pode_criar_acessos?: boolean
+          equipe_pode_criar_pacientes?: boolean
+          expiracao_sessao_admin?: number
+          expiracao_sessao_equipe?: number
+          expiracao_sessao_paciente?: number
+          forcar_troca_senha?: boolean
+          id?: string
+          tempo_bloqueio?: number
+          tentativas_login?: number
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
       consultas: {
         Row: {
           anotacoes: string | null
@@ -853,6 +937,66 @@ export type Database = {
           },
         ]
       }
+      equipe_membros: {
+        Row: {
+          acesso_todos_pacientes: boolean
+          ativo: boolean
+          auth_user_id: string
+          avatar_url: string | null
+          created_at: string
+          created_by: string
+          deve_trocar_senha: boolean
+          email: string
+          funcao: string
+          funcao_personalizada: string | null
+          id: string
+          nome_completo: string
+          pacientes_atribuidos: string[] | null
+          permissoes: Json
+          telefone: string | null
+          ultimo_acesso: string | null
+          updated_at: string
+        }
+        Insert: {
+          acesso_todos_pacientes?: boolean
+          ativo?: boolean
+          auth_user_id: string
+          avatar_url?: string | null
+          created_at?: string
+          created_by: string
+          deve_trocar_senha?: boolean
+          email: string
+          funcao?: string
+          funcao_personalizada?: string | null
+          id?: string
+          nome_completo: string
+          pacientes_atribuidos?: string[] | null
+          permissoes?: Json
+          telefone?: string | null
+          ultimo_acesso?: string | null
+          updated_at?: string
+        }
+        Update: {
+          acesso_todos_pacientes?: boolean
+          ativo?: boolean
+          auth_user_id?: string
+          avatar_url?: string | null
+          created_at?: string
+          created_by?: string
+          deve_trocar_senha?: boolean
+          email?: string
+          funcao?: string
+          funcao_personalizada?: string | null
+          id?: string
+          nome_completo?: string
+          pacientes_atribuidos?: string[] | null
+          permissoes?: Json
+          telefone?: string | null
+          ultimo_acesso?: string | null
+          updated_at?: string
+        }
+        Relationships: []
+      }
       evolucao_fotos: {
         Row: {
           angulo: string
@@ -1068,6 +1212,62 @@ export type Database = {
           },
         ]
       }
+      paciente_portal_permissoes: {
+        Row: {
+          avaliacoes_fisicas: boolean
+          chat: boolean
+          checkin_semanal: boolean
+          created_at: string
+          diario_alimentar: boolean
+          evolucao_fotografica: boolean
+          id: string
+          materiais: boolean
+          metas: boolean
+          paciente_id: string
+          plano_alimentar: boolean
+          receituario: boolean
+          updated_at: string
+        }
+        Insert: {
+          avaliacoes_fisicas?: boolean
+          chat?: boolean
+          checkin_semanal?: boolean
+          created_at?: string
+          diario_alimentar?: boolean
+          evolucao_fotografica?: boolean
+          id?: string
+          materiais?: boolean
+          metas?: boolean
+          paciente_id: string
+          plano_alimentar?: boolean
+          receituario?: boolean
+          updated_at?: string
+        }
+        Update: {
+          avaliacoes_fisicas?: boolean
+          chat?: boolean
+          checkin_semanal?: boolean
+          created_at?: string
+          diario_alimentar?: boolean
+          evolucao_fotografica?: boolean
+          id?: string
+          materiais?: boolean
+          metas?: boolean
+          paciente_id?: string
+          plano_alimentar?: boolean
+          receituario?: boolean
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "paciente_portal_permissoes_paciente_id_fkey"
+            columns: ["paciente_id"]
+            isOneToOne: true
+            referencedRelation: "pacientes"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       pacientes: {
         Row: {
           account_status: string | null
@@ -1077,6 +1277,7 @@ export type Database = {
           auth_user_id: string | null
           created_at: string
           data_nascimento: string | null
+          deve_trocar_senha: boolean
           email: string | null
           fase_real: Database["public"]["Enums"]["fase_real"] | null
           historico_patologias: string | null
@@ -1103,6 +1304,7 @@ export type Database = {
           auth_user_id?: string | null
           created_at?: string
           data_nascimento?: string | null
+          deve_trocar_senha?: boolean
           email?: string | null
           fase_real?: Database["public"]["Enums"]["fase_real"] | null
           historico_patologias?: string | null
@@ -1131,6 +1333,7 @@ export type Database = {
           auth_user_id?: string | null
           created_at?: string
           data_nascimento?: string | null
+          deve_trocar_senha?: boolean
           email?: string | null
           fase_real?: Database["public"]["Enums"]["fase_real"] | null
           historico_patologias?: string | null
@@ -1534,7 +1737,7 @@ export type Database = {
       }
     }
     Enums: {
-      app_role: "nutri" | "paciente"
+      app_role: "nutri" | "paciente" | "equipe"
       categoria_orientacao:
         | "alimentacao"
         | "hidratacao"
@@ -1713,7 +1916,7 @@ export type CompositeTypes<
 export const Constants = {
   public: {
     Enums: {
-      app_role: ["nutri", "paciente"],
+      app_role: ["nutri", "paciente", "equipe"],
       categoria_orientacao: [
         "alimentacao",
         "hidratacao",
