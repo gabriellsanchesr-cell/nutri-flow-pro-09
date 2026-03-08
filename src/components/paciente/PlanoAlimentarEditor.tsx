@@ -64,10 +64,11 @@ interface Props {
   paciente?: any;
 }
 
-export function PlanoAlimentarEditor({ pacienteId, planoId, onBack }: Props) {
+export function PlanoAlimentarEditor({ pacienteId, planoId, onBack, paciente }: Props) {
   const { user } = useAuth();
   const { toast } = useToast();
   const [saving, setSaving] = useState(false);
+  const [showExport, setShowExport] = useState(false);
   const [plano, setPlano] = useState<PlanoData>({
     nome: "Plano Alimentar", observacoes: "", status: "rascunho",
     data_inicio: "", data_fim: "", objetivo_template: "",
