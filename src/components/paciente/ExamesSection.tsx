@@ -14,7 +14,7 @@ import {
 import {
   Table, TableBody, TableCell, TableHead, TableHeader, TableRow,
 } from "@/components/ui/table";
-import { Plus, Download, Trash2, FileText, Search, Upload } from "lucide-react";
+import { Plus, Download, Trash2, FileText, Search, Upload, Eye, X } from "lucide-react";
 import { format } from "date-fns";
 import { ptBR } from "date-fns/locale";
 
@@ -32,6 +32,7 @@ export function ExamesSection({ paciente }: Props) {
   const [search, setSearch] = useState("");
   const [form, setForm] = useState({ nome_exame: "", data_coleta: new Date().toISOString().split("T")[0], observacoes: "" });
   const [file, setFile] = useState<File | null>(null);
+  const [viewingExame, setViewingExame] = useState<any | null>(null);
 
   useEffect(() => { loadExames(); }, [paciente.id]);
 
@@ -85,10 +86,16 @@ export function ExamesSection({ paciente }: Props) {
     loadExames();
   };
 
-  const handleDownload = (exame: any) => {
-    const { data } = supabase.storage.from("exames-laboratoriais").getPublicUrl(exame.arquivo_path);
-    window.open(data.publicUrl, "_blank");
+  const getPublicUrl = (path: string) => {
+    const { data } = supabase.storage.from("exames-laboratoriais").getPublicUrl(path);
+    return data.publicUrl;
   };
+
+  const handleDownload = (exame: any) => {
+    window.open(getPublicUrl(exame.arquivo_path), "_blank");
+  };
+
+  const isImage = (path: string) => /\.(jpg|jpeg|png|webp)$/i.test(path);
 
   const filtered = exames.filter(e => e.nome_exame.toLowerCase().includes(search.toLowerCase()));
 
@@ -135,6 +142,9 @@ export function ExamesSection({ paciente }: Props) {
                   <TableCell className="text-muted-foreground text-sm max-w-[200px] truncate">{exame.observacoes || "—"}</TableCell>
                   <TableCell>
                     <div className="flex gap-1">
+                      <Button variant="ghost" size="icon" onClick={() => setViewingExame(exame)} title="Visualizar">
+                        <Eye className="h-4 w-4" />
+                      </Button>
                       <Button variant="ghost" size="icon" onClick={() => handleDownload(exame)} title="Download">
                         <Download className="h-4 w-4" />
                       </Button>
@@ -178,6 +188,35 @@ export function ExamesSection({ paciente }: Props) {
             <Button variant="outline" onClick={() => setDialogOpen(false)}>Cancelar</Button>
             <Button onClick={handleSubmit} disabled={saving}>{saving ? "Salvando..." : "Salvar"}</Button>
           </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      {/* Inline Viewer Dialog */}
+      <Dialog open={!!viewingExame} onOpenChange={() => setViewingExame(null)}>
+        <DialogContent className="max-w-4xl h-[85vh] flex flex-col">
+          <DialogHeader>
+            <DialogTitle>{viewingExame?.nome_exame}</DialogTitle>
+            <DialogDescription>
+              {viewingExame && format(new Date(viewingExame.data_coleta + "T12:00:00"), "dd/MM/yyyy")}
+            </DialogDescription>
+          </DialogHeader>
+          <div className="flex-1 min-h-0 rounded-md overflow-hidden border bg-muted">
+            {viewingExame && (
+              isImage(viewingExame.arquivo_path) ? (
+                <img
+                  src={getPublicUrl(viewingExame.arquivo_path)}
+                  alt={viewingExame.nome_exame}
+                  className="w-full h-full object-contain"
+                />
+              ) : (
+                <iframe
+                  src={getPublicUrl(viewingExame.arquivo_path)}
+                  className="w-full h-full"
+                  title={viewingExame.nome_exame}
+                />
+              )
+            )}
+          </div>
         </DialogContent>
       </Dialog>
     </div>
