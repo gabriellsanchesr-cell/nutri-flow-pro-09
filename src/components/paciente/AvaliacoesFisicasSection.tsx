@@ -693,6 +693,17 @@ export function AvaliacoesFisicasSection({ paciente }: Props) {
           </div>
         </div>
       </div>
+
+      {showExportPdf && editId && (
+        <ExportPdfModal
+          open={showExportPdf}
+          onOpenChange={setShowExportPdf}
+          type="avaliacao"
+          paciente={paciente}
+          avaliacaoData={form}
+          avaliacaoAnterior={previousAv}
+        />
+      )}
     </div>
   );
 }
