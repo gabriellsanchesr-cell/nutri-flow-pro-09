@@ -100,7 +100,12 @@ export function AppSidebar() {
                       activeClassName="bg-sidebar-accent text-sidebar-primary font-semibold"
                     >
                       <item.icon className="h-5 w-5 shrink-0" />
-                      {!collapsed && <span>{item.title}</span>}
+                      {!collapsed && <span className="flex-1">{item.title}</span>}
+                      {!collapsed && item.url === "/chat" && unreadChat > 0 && (
+                        <Badge className="h-4 min-w-[16px] text-[9px] px-1 bg-destructive text-destructive-foreground">
+                          {unreadChat > 99 ? "99+" : unreadChat}
+                        </Badge>
+                      )}
                     </NavLink>
                   </SidebarMenuButton>
                 </SidebarMenuItem>
