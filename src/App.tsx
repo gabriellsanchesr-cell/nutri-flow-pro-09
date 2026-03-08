@@ -35,7 +35,7 @@ function ProtectedRoute({ children }: { children: React.ReactNode }) {
 function PublicRoute({ children }: { children: React.ReactNode }) {
   const { session, loading, role } = useAuth();
   if (loading) return <div className="min-h-screen flex items-center justify-center text-muted-foreground">Carregando...</div>;
-  if (session && role === "paciente") return <Navigate to="/meu-painel" replace />;
+  if (session && role === "paciente") return <Navigate to="/portal" replace />;
   if (session) return <Navigate to="/" replace />;
   return <>{children}</>;
 }
