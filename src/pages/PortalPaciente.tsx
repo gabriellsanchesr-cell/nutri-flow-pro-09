@@ -447,8 +447,9 @@ export default function PortalPaciente() {
         </div>
       );
       case "receitas": return <PortalReceitas paciente={paciente} />;
+      case "mensagens": return <PortalChat paciente={paciente} />;
       default: return renderPlaceholder(
-        moreTab === "materiais" ? "Materiais" : "Mensagens",
+        "Materiais",
         "Este recurso estará disponível em breve."
       );
     }

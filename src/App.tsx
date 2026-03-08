@@ -77,6 +77,7 @@ const App = () => (
               <Route path="pacientes" element={<Pacientes />} />
               <Route path="pacientes/novo" element={<PacienteForm />} />
               <Route path="pacientes/:id" element={<PacienteDetalhe />} />
+              <Route path="chat" element={<Chat />} />
               <Route path="planos" element={<Planos />} />
               <Route path="acompanhamento" element={<Acompanhamento />} />
               <Route path="agenda" element={<Agenda />} />
