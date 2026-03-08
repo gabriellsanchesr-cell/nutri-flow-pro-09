@@ -227,6 +227,16 @@ export function AcompanhamentoSection({ paciente }: Props) {
           </DialogFooter>
         </DialogContent>
       </Dialog>
+
+      <ExportPdfModal
+        open={showRelatorio}
+        onOpenChange={setShowRelatorio}
+        type="relatorio_mensal"
+        paciente={paciente}
+        acompanhamentos={records}
+        consultas={consultas}
+        planoAtivo={planoAtivo}
+      />
     </div>
   );
 }
