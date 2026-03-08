@@ -21,6 +21,7 @@ import Biblioteca from "./pages/Biblioteca";
 import Templates from "./pages/Templates";
 import MeuPainel from "./pages/MeuPainel";
 import PortalPaciente from "./pages/PortalPaciente";
+import Chat from "./pages/Chat";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
