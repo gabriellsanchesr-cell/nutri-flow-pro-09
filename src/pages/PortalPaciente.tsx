@@ -112,7 +112,7 @@ export default function PortalPaciente() {
     switch (activeTab) {
       case "inicio": return renderInicio();
       case "plano": return renderPlano();
-      case "diario": return renderPlaceholder("Diário Alimentar", "Em breve você poderá registrar suas refeições aqui.");
+      case "diario": return <PortalDiario paciente={paciente} />;
       case "metas": return renderPlaceholder("Metas", "Suas metas aparecerão aqui quando o nutricionista configurá-las.");
       default: return null;
     }
