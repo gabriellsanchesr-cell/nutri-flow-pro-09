@@ -146,9 +146,8 @@ export function EquipeTab() {
       {permMembro && <PermissoesModal open={!!permMembro} onOpenChange={(o) => !o && setPermMembro(null)} membro={permMembro} onSuccess={load} />}
       <DeleteConfirmModal
         open={!!deleteTarget}
-        onOpenChange={(o) => !o && setDeleteTarget(null)}
-        title="Excluir membro da equipe"
-        description={`Tem certeza que deseja excluir ${deleteTarget?.nome_completo}? Esta ação é irreversível.`}
+        onOpenChange={(o) => { if (!o) setDeleteTarget(null); }}
+        pacienteNome={deleteTarget?.nome_completo || ""}
         onConfirm={handleDelete}
       />
     </div>

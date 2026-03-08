@@ -205,9 +205,8 @@ export function PacientesTab() {
       )}
       <DeleteConfirmModal
         open={!!deleteTarget}
-        onOpenChange={(o) => !o && setDeleteTarget(null)}
-        title="Excluir paciente"
-        description={`Tem certeza que deseja excluir ${deleteTarget?.nome_completo}? Todos os dados serão perdidos permanentemente.`}
+        onOpenChange={(o) => { if (!o) setDeleteTarget(null); }}
+        pacienteNome={deleteTarget?.nome_completo || ""}
         onConfirm={handleDelete}
       />
     </div>
