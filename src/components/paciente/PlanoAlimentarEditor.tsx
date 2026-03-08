@@ -10,8 +10,9 @@ import { Textarea } from "@/components/ui/textarea";
 import { Badge } from "@/components/ui/badge";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import {
-  Save, ArrowLeft, Plus, Trash2, Search, Clock, ChevronDown, ChevronUp,
+  Save, ArrowLeft, Plus, Trash2, Search, Clock, ChevronDown, ChevronUp, FileDown,
 } from "lucide-react";
+import { ExportPdfModal } from "@/components/pdf/ExportPdfModal";
 
 const REFEICAO_TIPOS = [
   { value: "cafe_da_manha", label: "Café da Manhã", ordem: 1 },
