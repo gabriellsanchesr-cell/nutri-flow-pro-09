@@ -542,6 +542,8 @@ export type Database = {
       planos_alimentares: {
         Row: {
           created_at: string
+          data_fim: string | null
+          data_inicio: string | null
           id: string
           is_template: boolean | null
           nome: string
@@ -550,11 +552,14 @@ export type Database = {
             | null
           observacoes: string | null
           paciente_id: string | null
+          status: string
           updated_at: string
           user_id: string
         }
         Insert: {
           created_at?: string
+          data_fim?: string | null
+          data_inicio?: string | null
           id?: string
           is_template?: boolean | null
           nome?: string
@@ -563,11 +568,14 @@ export type Database = {
             | null
           observacoes?: string | null
           paciente_id?: string | null
+          status?: string
           updated_at?: string
           user_id: string
         }
         Update: {
           created_at?: string
+          data_fim?: string | null
+          data_inicio?: string | null
           id?: string
           is_template?: boolean | null
           nome?: string
@@ -576,6 +584,7 @@ export type Database = {
             | null
           observacoes?: string | null
           paciente_id?: string | null
+          status?: string
           updated_at?: string
           user_id?: string
         }
@@ -672,6 +681,7 @@ export type Database = {
       refeicoes: {
         Row: {
           created_at: string
+          horario_sugerido: string | null
           id: string
           observacoes: string | null
           ordem: number | null
@@ -681,6 +691,7 @@ export type Database = {
         }
         Insert: {
           created_at?: string
+          horario_sugerido?: string | null
           id?: string
           observacoes?: string | null
           ordem?: number | null
@@ -690,6 +701,7 @@ export type Database = {
         }
         Update: {
           created_at?: string
+          horario_sugerido?: string | null
           id?: string
           observacoes?: string | null
           ordem?: number | null
