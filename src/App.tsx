@@ -22,6 +22,8 @@ import Templates from "./pages/Templates";
 import MeuPainel from "./pages/MeuPainel";
 import PortalPaciente from "./pages/PortalPaciente";
 import Chat from "./pages/Chat";
+import GestaoUsuarios from "./pages/GestaoUsuarios";
+import TrocarSenha from "./pages/TrocarSenha";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
@@ -37,15 +39,18 @@ function PublicRoute({ children }: { children: React.ReactNode }) {
   const { session, loading, role } = useAuth();
   if (loading) return <div className="min-h-screen flex items-center justify-center text-muted-foreground">Carregando...</div>;
   if (session && role === "paciente") return <Navigate to="/portal" replace />;
+  if (session && role === "equipe") return <Navigate to="/" replace />;
   if (session) return <Navigate to="/" replace />;
   return <>{children}</>;
 }
 
-function NutriRoute({ children }: { children: React.ReactNode }) {
-  const { session, loading, role } = useAuth();
+function AdminRoute({ children }: { children: React.ReactNode }) {
+  const { session, loading, role, equipeMembro } = useAuth();
   if (loading) return <div className="min-h-screen flex items-center justify-center text-muted-foreground">Carregando...</div>;
   if (!session) return <Navigate to="/login" replace />;
-  if (role === "nutri") return <Navigate to="/" replace />;
+  if (role === "paciente") return <Navigate to="/portal" replace />;
+  // Force password change for equipe
+  if (role === "equipe" && equipeMembro?.deve_trocar_senha) return <Navigate to="/trocar-senha" replace />;
   return <>{children}</>;
 }
 
@@ -53,7 +58,7 @@ function PacienteRoute({ children }: { children: React.ReactNode }) {
   const { session, loading, role } = useAuth();
   if (loading) return <div className="min-h-screen flex items-center justify-center text-muted-foreground">Carregando...</div>;
   if (!session) return <Navigate to="/login" replace />;
-  if (role === "nutri") return <Navigate to="/" replace />;
+  if (role === "nutri" || role === "equipe") return <Navigate to="/" replace />;
   return <>{children}</>;
 }
 
@@ -70,9 +75,10 @@ const App = () => (
             <Route path="/anamnese/:token" element={<AnamnesePublica />} />
             <Route path="/questionario/:token" element={<QuestionarioPublico />} />
             <Route path="/reset-password" element={<ResetPassword />} />
+            <Route path="/trocar-senha" element={<ProtectedRoute><TrocarSenha /></ProtectedRoute>} />
             <Route path="/meu-painel" element={<PacienteRoute><MeuPainel /></PacienteRoute>} />
             <Route path="/portal" element={<PacienteRoute><PortalPaciente /></PacienteRoute>} />
-            <Route path="/" element={<NutriRoute><AppLayout /></NutriRoute>}>
+            <Route path="/" element={<AdminRoute><AppLayout /></AdminRoute>}>
               <Route index element={<Dashboard />} />
               <Route path="pacientes" element={<Pacientes />} />
               <Route path="pacientes/novo" element={<PacienteForm />} />
@@ -83,6 +89,7 @@ const App = () => (
               <Route path="agenda" element={<Agenda />} />
               <Route path="biblioteca" element={<Biblioteca />} />
               <Route path="templates" element={<Templates />} />
+              <Route path="configuracoes/usuarios" element={<GestaoUsuarios />} />
             </Route>
             <Route path="*" element={<NotFound />} />
           </Routes>
