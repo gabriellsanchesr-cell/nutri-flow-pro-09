@@ -366,6 +366,94 @@ export type Database = {
           },
         ]
       }
+      exames_laboratoriais: {
+        Row: {
+          arquivo_path: string
+          created_at: string
+          data_coleta: string
+          id: string
+          nome_exame: string
+          observacoes: string | null
+          paciente_id: string
+          user_id: string
+        }
+        Insert: {
+          arquivo_path: string
+          created_at?: string
+          data_coleta?: string
+          id?: string
+          nome_exame: string
+          observacoes?: string | null
+          paciente_id: string
+          user_id: string
+        }
+        Update: {
+          arquivo_path?: string
+          created_at?: string
+          data_coleta?: string
+          id?: string
+          nome_exame?: string
+          observacoes?: string | null
+          paciente_id?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "exames_laboratoriais_paciente_id_fkey"
+            columns: ["paciente_id"]
+            isOneToOne: false
+            referencedRelation: "pacientes"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      orientacoes: {
+        Row: {
+          categoria: Database["public"]["Enums"]["categoria_orientacao"]
+          conteudo: string
+          created_at: string
+          data_envio: string | null
+          enviada: boolean
+          id: string
+          paciente_id: string
+          titulo: string
+          user_id: string
+          visualizada: boolean
+        }
+        Insert: {
+          categoria?: Database["public"]["Enums"]["categoria_orientacao"]
+          conteudo?: string
+          created_at?: string
+          data_envio?: string | null
+          enviada?: boolean
+          id?: string
+          paciente_id: string
+          titulo: string
+          user_id: string
+          visualizada?: boolean
+        }
+        Update: {
+          categoria?: Database["public"]["Enums"]["categoria_orientacao"]
+          conteudo?: string
+          created_at?: string
+          data_envio?: string | null
+          enviada?: boolean
+          id?: string
+          paciente_id?: string
+          titulo?: string
+          user_id?: string
+          visualizada?: boolean
+        }
+        Relationships: [
+          {
+            foreignKeyName: "orientacoes_paciente_id_fkey"
+            columns: ["paciente_id"]
+            isOneToOne: false
+            referencedRelation: "pacientes"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       pacientes: {
         Row: {
           account_status: string | null
@@ -689,6 +777,14 @@ export type Database = {
     }
     Enums: {
       app_role: "nutri" | "paciente"
+      categoria_orientacao:
+        | "alimentacao"
+        | "hidratacao"
+        | "sono"
+        | "treino"
+        | "intestino"
+        | "comportamento"
+        | "outro"
       fase_real: "rotina" | "estrategia" | "autonomia" | "liberdade"
       grupo_alimentar:
         | "cereais"
@@ -860,6 +956,15 @@ export const Constants = {
   public: {
     Enums: {
       app_role: ["nutri", "paciente"],
+      categoria_orientacao: [
+        "alimentacao",
+        "hidratacao",
+        "sono",
+        "treino",
+        "intestino",
+        "comportamento",
+        "outro",
+      ],
       fase_real: ["rotina", "estrategia", "autonomia", "liberdade"],
       grupo_alimentar: [
         "cereais",
