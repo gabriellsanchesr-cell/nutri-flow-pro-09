@@ -65,6 +65,8 @@ const App = () => (
           <Routes>
             <Route path="/login" element={<PublicRoute><Login /></PublicRoute>} />
             <Route path="/esqueci-senha" element={<PublicRoute><ForgotPassword /></PublicRoute>} />
+            <Route path="/anamnese/:token" element={<AnamnesePublica />} />
+            <Route path="/questionario/:token" element={<QuestionarioPublico />} />
             <Route path="/reset-password" element={<ResetPassword />} />
             <Route path="/meu-painel" element={<PacienteRoute><MeuPainel /></PacienteRoute>} />
             <Route path="/" element={<NutriRoute><AppLayout /></NutriRoute>}>
