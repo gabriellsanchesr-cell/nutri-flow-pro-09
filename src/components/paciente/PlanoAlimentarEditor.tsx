@@ -224,21 +224,6 @@ export function PlanoAlimentarEditor({ pacienteId, planoId, onBack, paciente }: 
     ));
   };
 
-  const reCalcAlimento = (refIdx: number, aliIdx: number, newQty: number) => {
-    setRefeicoes(prev => prev.map((r, i) => {
-      if (i !== refIdx) return r;
-      return {
-        ...r, alimentos: r.alimentos.map((a, j) => {
-          if (j !== aliIdx || !a.alimento_taco_id) return a;
-          const ratio = newQty / 100;
-          // We need original per-100g values; store them differently later.
-          // For now, simple recalc from base:
-          return { ...a, quantidade: newQty };
-        })
-      };
-    }));
-  };
-
   const macroTotal = (ref: Refeicao) => {
     let kcal = 0, p = 0, c = 0, l = 0;
     ref.alimentos.forEach(a => { kcal += a.energia_kcal; p += a.proteina_g; c += a.carboidrato_g; l += a.lipidio_g; });
