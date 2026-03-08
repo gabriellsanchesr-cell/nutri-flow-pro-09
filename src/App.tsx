@@ -12,6 +12,8 @@ import Dashboard from "./pages/Dashboard";
 import Pacientes from "./pages/Pacientes";
 import PacienteForm from "./pages/PacienteForm";
 import PacienteDetalhe from "./pages/PacienteDetalhe";
+import AnamnesePublica from "./pages/AnamnesePublica";
+import QuestionarioPublico from "./pages/QuestionarioPublico";
 import Planos from "./pages/Planos";
 import Acompanhamento from "./pages/Acompanhamento";
 import Agenda from "./pages/Agenda";
