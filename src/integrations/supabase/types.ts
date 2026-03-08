@@ -234,30 +234,54 @@ export type Database = {
       avaliacoes_fisicas: {
         Row: {
           altura: number | null
+          altura_joelho: number | null
+          altura_sentado: number | null
           bio_agua_corporal: number | null
+          bio_gordura_visceral: number | null
           bio_idade_metabolica: number | null
           bio_massa_gorda: number | null
+          bio_massa_livre_gordura: number | null
           bio_massa_muscular: number | null
           bio_metabolismo_basal: number | null
           bio_percentual_gordura: number | null
+          bio_percentual_ideal: number | null
+          bio_percentual_massa_muscular: number | null
+          bio_peso_osseo: number | null
+          circ_abdomen: number | null
+          circ_antebraco: number | null
+          circ_braco_contraido: number | null
           circ_braco_dir: number | null
           circ_braco_esq: number | null
           circ_cintura: number | null
           circ_coxa_dir: number | null
+          circ_coxa_distal: number | null
           circ_coxa_esq: number | null
+          circ_coxa_medial: number | null
+          circ_coxa_proximal: number | null
+          circ_ombro: number | null
           circ_panturrilha: number | null
+          circ_pescoco: number | null
           circ_quadril: number | null
           circ_torax: number | null
           classificacao_imc: string | null
           created_at: string
           data_avaliacao: string
+          diam_biacromial: number | null
+          diam_bicrista: number | null
+          diam_femur: number | null
+          diam_punho: number | null
           dobra_abdominal: number | null
+          dobra_axilar_media: number | null
           dobra_biceps: number | null
           dobra_coxa: number | null
+          dobra_panturrilha: number | null
           dobra_peitoral: number | null
           dobra_subescapular: number | null
+          dobra_supraespinhal: number | null
           dobra_suprailiaca: number | null
+          dobra_toracica: number | null
           dobra_triceps: number | null
+          envergadura: number | null
           id: string
           imc: number | null
           massa_gorda_kg: number | null
@@ -273,30 +297,54 @@ export type Database = {
         }
         Insert: {
           altura?: number | null
+          altura_joelho?: number | null
+          altura_sentado?: number | null
           bio_agua_corporal?: number | null
+          bio_gordura_visceral?: number | null
           bio_idade_metabolica?: number | null
           bio_massa_gorda?: number | null
+          bio_massa_livre_gordura?: number | null
           bio_massa_muscular?: number | null
           bio_metabolismo_basal?: number | null
           bio_percentual_gordura?: number | null
+          bio_percentual_ideal?: number | null
+          bio_percentual_massa_muscular?: number | null
+          bio_peso_osseo?: number | null
+          circ_abdomen?: number | null
+          circ_antebraco?: number | null
+          circ_braco_contraido?: number | null
           circ_braco_dir?: number | null
           circ_braco_esq?: number | null
           circ_cintura?: number | null
           circ_coxa_dir?: number | null
+          circ_coxa_distal?: number | null
           circ_coxa_esq?: number | null
+          circ_coxa_medial?: number | null
+          circ_coxa_proximal?: number | null
+          circ_ombro?: number | null
           circ_panturrilha?: number | null
+          circ_pescoco?: number | null
           circ_quadril?: number | null
           circ_torax?: number | null
           classificacao_imc?: string | null
           created_at?: string
           data_avaliacao?: string
+          diam_biacromial?: number | null
+          diam_bicrista?: number | null
+          diam_femur?: number | null
+          diam_punho?: number | null
           dobra_abdominal?: number | null
+          dobra_axilar_media?: number | null
           dobra_biceps?: number | null
           dobra_coxa?: number | null
+          dobra_panturrilha?: number | null
           dobra_peitoral?: number | null
           dobra_subescapular?: number | null
+          dobra_supraespinhal?: number | null
           dobra_suprailiaca?: number | null
+          dobra_toracica?: number | null
           dobra_triceps?: number | null
+          envergadura?: number | null
           id?: string
           imc?: number | null
           massa_gorda_kg?: number | null
@@ -312,30 +360,54 @@ export type Database = {
         }
         Update: {
           altura?: number | null
+          altura_joelho?: number | null
+          altura_sentado?: number | null
           bio_agua_corporal?: number | null
+          bio_gordura_visceral?: number | null
           bio_idade_metabolica?: number | null
           bio_massa_gorda?: number | null
+          bio_massa_livre_gordura?: number | null
           bio_massa_muscular?: number | null
           bio_metabolismo_basal?: number | null
           bio_percentual_gordura?: number | null
+          bio_percentual_ideal?: number | null
+          bio_percentual_massa_muscular?: number | null
+          bio_peso_osseo?: number | null
+          circ_abdomen?: number | null
+          circ_antebraco?: number | null
+          circ_braco_contraido?: number | null
           circ_braco_dir?: number | null
           circ_braco_esq?: number | null
           circ_cintura?: number | null
           circ_coxa_dir?: number | null
+          circ_coxa_distal?: number | null
           circ_coxa_esq?: number | null
+          circ_coxa_medial?: number | null
+          circ_coxa_proximal?: number | null
+          circ_ombro?: number | null
           circ_panturrilha?: number | null
+          circ_pescoco?: number | null
           circ_quadril?: number | null
           circ_torax?: number | null
           classificacao_imc?: string | null
           created_at?: string
           data_avaliacao?: string
+          diam_biacromial?: number | null
+          diam_bicrista?: number | null
+          diam_femur?: number | null
+          diam_punho?: number | null
           dobra_abdominal?: number | null
+          dobra_axilar_media?: number | null
           dobra_biceps?: number | null
           dobra_coxa?: number | null
+          dobra_panturrilha?: number | null
           dobra_peitoral?: number | null
           dobra_subescapular?: number | null
+          dobra_supraespinhal?: number | null
           dobra_suprailiaca?: number | null
+          dobra_toracica?: number | null
           dobra_triceps?: number | null
+          envergadura?: number | null
           id?: string
           imc?: number | null
           massa_gorda_kg?: number | null
@@ -352,6 +424,104 @@ export type Database = {
         Relationships: [
           {
             foreignKeyName: "avaliacoes_fisicas_paciente_id_fkey"
+            columns: ["paciente_id"]
+            isOneToOne: false
+            referencedRelation: "pacientes"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      calculos_energeticos: {
+        Row: {
+          adicional_gestante: boolean | null
+          adicional_met: number | null
+          altura: number | null
+          carboidrato_g: number | null
+          carboidrato_pct: number | null
+          created_at: string
+          distribuicao_refeicoes: Json | null
+          fator_atividade: number | null
+          fator_injuria: number | null
+          formula: string | null
+          get: number | null
+          gordura_g: number | null
+          gordura_pct: number | null
+          id: string
+          idade: number | null
+          massa_magra: number | null
+          meta_calorica: number | null
+          objetivo: string | null
+          paciente_id: string
+          percentual_ajuste: number | null
+          peso: number | null
+          proteina_g: number | null
+          proteina_pct: number | null
+          sexo: string | null
+          tmb: number | null
+          trimestre_gestante: number | null
+          user_id: string
+        }
+        Insert: {
+          adicional_gestante?: boolean | null
+          adicional_met?: number | null
+          altura?: number | null
+          carboidrato_g?: number | null
+          carboidrato_pct?: number | null
+          created_at?: string
+          distribuicao_refeicoes?: Json | null
+          fator_atividade?: number | null
+          fator_injuria?: number | null
+          formula?: string | null
+          get?: number | null
+          gordura_g?: number | null
+          gordura_pct?: number | null
+          id?: string
+          idade?: number | null
+          massa_magra?: number | null
+          meta_calorica?: number | null
+          objetivo?: string | null
+          paciente_id: string
+          percentual_ajuste?: number | null
+          peso?: number | null
+          proteina_g?: number | null
+          proteina_pct?: number | null
+          sexo?: string | null
+          tmb?: number | null
+          trimestre_gestante?: number | null
+          user_id: string
+        }
+        Update: {
+          adicional_gestante?: boolean | null
+          adicional_met?: number | null
+          altura?: number | null
+          carboidrato_g?: number | null
+          carboidrato_pct?: number | null
+          created_at?: string
+          distribuicao_refeicoes?: Json | null
+          fator_atividade?: number | null
+          fator_injuria?: number | null
+          formula?: string | null
+          get?: number | null
+          gordura_g?: number | null
+          gordura_pct?: number | null
+          id?: string
+          idade?: number | null
+          massa_magra?: number | null
+          meta_calorica?: number | null
+          objetivo?: string | null
+          paciente_id?: string
+          percentual_ajuste?: number | null
+          peso?: number | null
+          proteina_g?: number | null
+          proteina_pct?: number | null
+          sexo?: string | null
+          tmb?: number | null
+          trimestre_gestante?: number | null
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "calculos_energeticos_paciente_id_fkey"
             columns: ["paciente_id"]
             isOneToOne: false
             referencedRelation: "pacientes"
