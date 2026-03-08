@@ -492,6 +492,12 @@ function AlimentoSearch({ onSelect }: { onSelect: (a: Alimento) => void }) {
       lipidio_g: item.lipidio_g || 0,
       fibra_g: item.fibra_g || 0,
       alimento_taco_id: item.id,
+      // Armazenar valores base para recálculo automático
+      base_energia_kcal: item.energia_kcal || 0,
+      base_proteina_g: item.proteina_g || 0,
+      base_carboidrato_g: item.carboidrato_g || 0,
+      base_lipidio_g: item.lipidio_g || 0,
+      base_fibra_g: item.fibra_g || 0,
     });
     setQuery("");
     setResults([]);
