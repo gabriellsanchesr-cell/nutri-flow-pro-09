@@ -445,8 +445,8 @@ export default function PortalPaciente() {
           </Button>
         </div>
       );
+      case "receitas": return <PortalReceitas paciente={paciente} />;
       default: return renderPlaceholder(
-        moreTab === "receitas" ? "Receitas" :
         moreTab === "materiais" ? "Materiais" : "Mensagens",
         "Este recurso estará disponível em breve."
       );
