@@ -15,6 +15,7 @@ import {
   Table, TableBody, TableCell, TableHead, TableHeader, TableRow,
 } from "@/components/ui/table";
 import { Plus, Download, Trash2, FileText, Search, Upload, Eye, X } from "lucide-react";
+import { PdfViewer } from "./PdfViewer";
 import { format } from "date-fns";
 import { ptBR } from "date-fns/locale";
 
