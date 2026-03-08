@@ -17,6 +17,7 @@ import Acompanhamento from "./pages/Acompanhamento";
 import Agenda from "./pages/Agenda";
 import Biblioteca from "./pages/Biblioteca";
 import Templates from "./pages/Templates";
+import MeuPainel from "./pages/MeuPainel";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
@@ -29,9 +30,26 @@ function ProtectedRoute({ children }: { children: React.ReactNode }) {
 }
 
 function PublicRoute({ children }: { children: React.ReactNode }) {
-  const { session, loading } = useAuth();
+  const { session, loading, role } = useAuth();
   if (loading) return <div className="min-h-screen flex items-center justify-center text-muted-foreground">Carregando...</div>;
+  if (session && role === "paciente") return <Navigate to="/meu-painel" replace />;
   if (session) return <Navigate to="/" replace />;
+  return <>{children}</>;
+}
+
+function NutriRoute({ children }: { children: React.ReactNode }) {
+  const { session, loading, role } = useAuth();
+  if (loading) return <div className="min-h-screen flex items-center justify-center text-muted-foreground">Carregando...</div>;
+  if (!session) return <Navigate to="/login" replace />;
+  if (role === "paciente") return <Navigate to="/meu-painel" replace />;
+  return <>{children}</>;
+}
+
+function PacienteRoute({ children }: { children: React.ReactNode }) {
+  const { session, loading, role } = useAuth();
+  if (loading) return <div className="min-h-screen flex items-center justify-center text-muted-foreground">Carregando...</div>;
+  if (!session) return <Navigate to="/login" replace />;
+  if (role === "nutri") return <Navigate to="/" replace />;
   return <>{children}</>;
 }
 
@@ -46,7 +64,8 @@ const App = () => (
             <Route path="/login" element={<PublicRoute><Login /></PublicRoute>} />
             <Route path="/esqueci-senha" element={<PublicRoute><ForgotPassword /></PublicRoute>} />
             <Route path="/reset-password" element={<ResetPassword />} />
-            <Route path="/" element={<ProtectedRoute><AppLayout /></ProtectedRoute>}>
+            <Route path="/meu-painel" element={<PacienteRoute><MeuPainel /></PacienteRoute>} />
+            <Route path="/" element={<NutriRoute><AppLayout /></NutriRoute>}>
               <Route index element={<Dashboard />} />
               <Route path="pacientes" element={<Pacientes />} />
               <Route path="pacientes/novo" element={<PacienteForm />} />

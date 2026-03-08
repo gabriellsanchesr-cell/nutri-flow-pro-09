@@ -19,19 +19,24 @@ export default function Login() {
 
     const { error } = await supabase.auth.signInWithPassword({ email, password });
     if (error) {
-      toast({ title: "Erro", description: error.message, variant: "destructive" });
+      let message = "E-mail ou senha incorretos.";
+      if (error.message?.toLowerCase().includes("banned") || error.message?.toLowerCase().includes("ban")) {
+        message = "Seu acesso está temporariamente suspenso. Entre em contato com seu nutricionista.";
+      }
+      toast({ title: "Erro", description: message, variant: "destructive" });
     }
-    // Redirection handled by useAuth + App.tsx based on role
     setLoading(false);
   };
 
   return (
     <div className="min-h-screen flex items-center justify-center bg-background p-4">
-      <Card className="w-full max-w-md">
-        <CardHeader className="text-center space-y-4">
-          <img src="/logo.png" alt="NutriGabriel" className="h-20 mx-auto" />
-          <CardTitle className="text-2xl font-bold text-foreground">Entrar</CardTitle>
-          <CardDescription>Acesse o sistema de gestão nutricional</CardDescription>
+      <Card className="w-full max-w-md shadow-lg border-0">
+        <CardHeader className="text-center space-y-4 pb-2">
+          <img src="/logo.png" alt="Gabriel Sanches" className="h-20 mx-auto" />
+          <div>
+            <CardTitle className="text-2xl font-bold text-foreground">Entrar</CardTitle>
+            <CardDescription className="mt-1">Nutrição Individualizada</CardDescription>
+          </div>
         </CardHeader>
         <CardContent>
           <form onSubmit={handleSubmit} className="space-y-4">

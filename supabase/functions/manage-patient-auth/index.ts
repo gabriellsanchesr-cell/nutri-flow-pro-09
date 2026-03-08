@@ -6,6 +6,12 @@ const corsHeaders = {
     "authorization, x-client-info, apikey, content-type, x-supabase-client-platform, x-supabase-client-platform-version, x-supabase-client-runtime, x-supabase-client-runtime-version",
 };
 
+const json = (data: unknown, status = 200) =>
+  new Response(JSON.stringify(data), {
+    status,
+    headers: { ...corsHeaders, "Content-Type": "application/json" },
+  });
+
 Deno.serve(async (req) => {
   if (req.method === "OPTIONS") {
     return new Response(null, { headers: corsHeaders });
@@ -14,17 +20,13 @@ Deno.serve(async (req) => {
   try {
     const authHeader = req.headers.get("Authorization");
     if (!authHeader?.startsWith("Bearer ")) {
-      return new Response(JSON.stringify({ error: "Não autorizado" }), {
-        status: 401,
-        headers: { ...corsHeaders, "Content-Type": "application/json" },
-      });
+      return json({ error: "Não autorizado" }, 401);
     }
 
     const supabaseUrl = Deno.env.get("SUPABASE_URL")!;
     const supabaseServiceKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
     const anonKey = Deno.env.get("SUPABASE_ANON_KEY")!;
 
-    // Verify the caller is a nutri
     const callerClient = createClient(supabaseUrl, anonKey, {
       global: { headers: { Authorization: authHeader } },
     });
@@ -32,15 +34,10 @@ Deno.serve(async (req) => {
     const token = authHeader.replace("Bearer ", "");
     const { data: claimsData, error: claimsError } = await callerClient.auth.getClaims(token);
     if (claimsError || !claimsData?.claims) {
-      return new Response(JSON.stringify({ error: "Token inválido" }), {
-        status: 401,
-        headers: { ...corsHeaders, "Content-Type": "application/json" },
-      });
+      return json({ error: "Token inválido" }, 401);
     }
 
     const callerId = claimsData.claims.sub;
-
-    // Use service role to check role (bypasses RLS)
     const adminClient = createClient(supabaseUrl, supabaseServiceKey);
 
     const { data: roleData } = await adminClient
@@ -51,10 +48,7 @@ Deno.serve(async (req) => {
       .single();
 
     if (!roleData) {
-      return new Response(JSON.stringify({ error: "Apenas nutricionistas podem gerenciar contas" }), {
-        status: 403,
-        headers: { ...corsHeaders, "Content-Type": "application/json" },
-      });
+      return json({ error: "Apenas nutricionistas podem gerenciar contas" }, 403);
     }
 
     const body = await req.json();
@@ -63,13 +57,9 @@ Deno.serve(async (req) => {
     switch (action) {
       case "create": {
         if (!email || !password || !paciente_id) {
-          return new Response(JSON.stringify({ error: "Email, senha e paciente_id são obrigatórios" }), {
-            status: 400,
-            headers: { ...corsHeaders, "Content-Type": "application/json" },
-          });
+          return json({ error: "Email, senha e paciente_id são obrigatórios" }, 400);
         }
 
-        // Create auth user
         const { data: newUser, error: createError } = await adminClient.auth.admin.createUser({
           email,
           password,
@@ -77,37 +67,52 @@ Deno.serve(async (req) => {
           user_metadata: { nome_completo: nome_completo || "" },
         });
 
-        if (createError) {
-          return new Response(JSON.stringify({ error: createError.message }), {
-            status: 400,
-            headers: { ...corsHeaders, "Content-Type": "application/json" },
-          });
-        }
+        if (createError) return json({ error: createError.message }, 400);
 
-        // Assign paciente role
-        await adminClient.from("user_roles").insert({
-          user_id: newUser.user.id,
-          role: "paciente",
-        });
+        await adminClient.from("user_roles").insert({ user_id: newUser.user.id, role: "paciente" });
 
-        // Link to paciente record
         await adminClient
           .from("pacientes")
-          .update({ auth_user_id: newUser.user.id, account_status: "ativo" })
+          .update({ auth_user_id: newUser.user.id, account_status: "ativo", email })
           .eq("id", paciente_id);
 
-        return new Response(JSON.stringify({ success: true, user_id: newUser.user.id }), {
-          headers: { ...corsHeaders, "Content-Type": "application/json" },
-        });
+        return json({ success: true, user_id: newUser.user.id });
+      }
+
+      case "update": {
+        if (!paciente_id) return json({ error: "paciente_id é obrigatório" }, 400);
+
+        const { data: paciente } = await adminClient
+          .from("pacientes")
+          .select("auth_user_id")
+          .eq("id", paciente_id)
+          .single();
+
+        if (!paciente?.auth_user_id) {
+          return json({ error: "Paciente não tem conta vinculada" }, 400);
+        }
+
+        const updates: Record<string, unknown> = {};
+        if (email) updates.email = email;
+        if (password) updates.password = password;
+
+        if (Object.keys(updates).length > 0) {
+          const { error: updateError } = await adminClient.auth.admin.updateUserById(
+            paciente.auth_user_id,
+            updates
+          );
+          if (updateError) return json({ error: updateError.message }, 400);
+        }
+
+        if (email) {
+          await adminClient.from("pacientes").update({ email }).eq("id", paciente_id);
+        }
+
+        return json({ success: true });
       }
 
       case "deactivate": {
-        if (!paciente_id) {
-          return new Response(JSON.stringify({ error: "paciente_id é obrigatório" }), {
-            status: 400,
-            headers: { ...corsHeaders, "Content-Type": "application/json" },
-          });
-        }
+        if (!paciente_id) return json({ error: "paciente_id é obrigatório" }, 400);
 
         const { data: paciente } = await adminClient
           .from("pacientes")
@@ -116,33 +121,19 @@ Deno.serve(async (req) => {
           .single();
 
         if (!paciente?.auth_user_id) {
-          return new Response(JSON.stringify({ error: "Paciente não tem conta vinculada" }), {
-            status: 400,
-            headers: { ...corsHeaders, "Content-Type": "application/json" },
-          });
+          return json({ error: "Paciente não tem conta vinculada" }, 400);
         }
 
         await adminClient.auth.admin.updateUserById(paciente.auth_user_id, {
-          ban_duration: "876600h", // ~100 years
+          ban_duration: "876600h",
         });
 
-        await adminClient
-          .from("pacientes")
-          .update({ account_status: "desativado" })
-          .eq("id", paciente_id);
-
-        return new Response(JSON.stringify({ success: true }), {
-          headers: { ...corsHeaders, "Content-Type": "application/json" },
-        });
+        await adminClient.from("pacientes").update({ account_status: "desativado" }).eq("id", paciente_id);
+        return json({ success: true });
       }
 
       case "reactivate": {
-        if (!paciente_id) {
-          return new Response(JSON.stringify({ error: "paciente_id é obrigatório" }), {
-            status: 400,
-            headers: { ...corsHeaders, "Content-Type": "application/json" },
-          });
-        }
+        if (!paciente_id) return json({ error: "paciente_id é obrigatório" }, 400);
 
         const { data: paciente } = await adminClient
           .from("pacientes")
@@ -151,33 +142,19 @@ Deno.serve(async (req) => {
           .single();
 
         if (!paciente?.auth_user_id) {
-          return new Response(JSON.stringify({ error: "Paciente não tem conta vinculada" }), {
-            status: 400,
-            headers: { ...corsHeaders, "Content-Type": "application/json" },
-          });
+          return json({ error: "Paciente não tem conta vinculada" }, 400);
         }
 
         await adminClient.auth.admin.updateUserById(paciente.auth_user_id, {
           ban_duration: "none",
         });
 
-        await adminClient
-          .from("pacientes")
-          .update({ account_status: "ativo" })
-          .eq("id", paciente_id);
-
-        return new Response(JSON.stringify({ success: true }), {
-          headers: { ...corsHeaders, "Content-Type": "application/json" },
-        });
+        await adminClient.from("pacientes").update({ account_status: "ativo" }).eq("id", paciente_id);
+        return json({ success: true });
       }
 
       case "delete": {
-        if (!paciente_id) {
-          return new Response(JSON.stringify({ error: "paciente_id é obrigatório" }), {
-            status: 400,
-            headers: { ...corsHeaders, "Content-Type": "application/json" },
-          });
-        }
+        if (!paciente_id) return json({ error: "paciente_id é obrigatório" }, 400);
 
         const { data: paciente } = await adminClient
           .from("pacientes")
@@ -185,29 +162,18 @@ Deno.serve(async (req) => {
           .eq("id", paciente_id)
           .single();
 
-        // Delete auth user if exists
         if (paciente?.auth_user_id) {
           await adminClient.auth.admin.deleteUser(paciente.auth_user_id);
         }
 
-        // Hard delete the paciente record
         await adminClient.from("pacientes").delete().eq("id", paciente_id);
-
-        return new Response(JSON.stringify({ success: true }), {
-          headers: { ...corsHeaders, "Content-Type": "application/json" },
-        });
+        return json({ success: true });
       }
 
       default:
-        return new Response(JSON.stringify({ error: "Ação inválida" }), {
-          status: 400,
-          headers: { ...corsHeaders, "Content-Type": "application/json" },
-        });
+        return json({ error: "Ação inválida" }, 400);
     }
   } catch (error) {
-    return new Response(JSON.stringify({ error: error.message }), {
-      status: 500,
-      headers: { ...corsHeaders, "Content-Type": "application/json" },
-    });
+    return json({ error: error.message }, 500);
   }
 });
