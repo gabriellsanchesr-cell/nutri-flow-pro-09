@@ -11,6 +11,9 @@ import { PlanoAlimentarSection } from "@/components/paciente/PlanoAlimentarSecti
 import { ConsultasSection } from "@/components/paciente/ConsultasSection";
 import { CalculoEnergetico } from "@/components/paciente/CalculoEnergetico";
 import { AcessoPaciente } from "@/components/paciente/AcessoPaciente";
+import { AnamneseSection } from "@/components/paciente/AnamneseSection";
+import { EvolucaoFotograficaSection } from "@/components/paciente/EvolucaoFotograficaSection";
+import { QuestionariosSection } from "@/components/paciente/QuestionariosSection";
 import { PlaceholderSection } from "@/components/paciente/PlaceholderSection";
 import { PacienteAccessModal } from "@/components/PacienteAccessModal";
 import { DeleteConfirmModal } from "@/components/DeleteConfirmModal";
