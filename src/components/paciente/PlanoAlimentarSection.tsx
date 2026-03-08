@@ -6,9 +6,10 @@ import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { useToast } from "@/hooks/use-toast";
 import {
-  Plus, Utensils, ChevronDown, ChevronUp, Pencil, Copy, Power, Trash2, Send,
+  Plus, Utensils, ChevronDown, ChevronUp, Pencil, Copy, Power, Trash2, Send, FileDown,
 } from "lucide-react";
 import { PlanoAlimentarEditor } from "./PlanoAlimentarEditor";
+import { ExportPdfModal } from "@/components/pdf/ExportPdfModal";
 import {
   AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent,
   AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle,
