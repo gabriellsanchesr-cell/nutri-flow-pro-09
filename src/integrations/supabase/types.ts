@@ -623,6 +623,53 @@ export type Database = {
           },
         ]
       }
+      conversas: {
+        Row: {
+          arquivada: boolean
+          created_at: string
+          id: string
+          nao_lidas_nutri: number
+          nao_lidas_paciente: number
+          nutri_id: string
+          paciente_id: string
+          ultima_mensagem_em: string | null
+          ultima_mensagem_texto: string | null
+          updated_at: string
+        }
+        Insert: {
+          arquivada?: boolean
+          created_at?: string
+          id?: string
+          nao_lidas_nutri?: number
+          nao_lidas_paciente?: number
+          nutri_id: string
+          paciente_id: string
+          ultima_mensagem_em?: string | null
+          ultima_mensagem_texto?: string | null
+          updated_at?: string
+        }
+        Update: {
+          arquivada?: boolean
+          created_at?: string
+          id?: string
+          nao_lidas_nutri?: number
+          nao_lidas_paciente?: number
+          nutri_id?: string
+          paciente_id?: string
+          ultima_mensagem_em?: string | null
+          ultima_mensagem_texto?: string | null
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "conversas_paciente_id_fkey"
+            columns: ["paciente_id"]
+            isOneToOne: false
+            referencedRelation: "pacientes"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       diario_config: {
         Row: {
           ativo: boolean
@@ -804,6 +851,92 @@ export type Database = {
             referencedColumns: ["id"]
           },
         ]
+      }
+      mensagens: {
+        Row: {
+          arquivo_url: string | null
+          conteudo: string
+          conversa_id: string
+          created_at: string
+          id: string
+          lida: boolean
+          lida_em: string | null
+          referencia_id: string | null
+          remetente_id: string
+          tipo: string
+        }
+        Insert: {
+          arquivo_url?: string | null
+          conteudo?: string
+          conversa_id: string
+          created_at?: string
+          id?: string
+          lida?: boolean
+          lida_em?: string | null
+          referencia_id?: string | null
+          remetente_id: string
+          tipo?: string
+        }
+        Update: {
+          arquivo_url?: string | null
+          conteudo?: string
+          conversa_id?: string
+          created_at?: string
+          id?: string
+          lida?: boolean
+          lida_em?: string | null
+          referencia_id?: string | null
+          remetente_id?: string
+          tipo?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "mensagens_conversa_id_fkey"
+            columns: ["conversa_id"]
+            isOneToOne: false
+            referencedRelation: "conversas"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      notificacoes: {
+        Row: {
+          cor: string
+          created_at: string
+          descricao: string
+          id: string
+          lida: boolean
+          link: string | null
+          referencia_id: string | null
+          tipo: string
+          titulo: string
+          user_id: string
+        }
+        Insert: {
+          cor?: string
+          created_at?: string
+          descricao?: string
+          id?: string
+          lida?: boolean
+          link?: string | null
+          referencia_id?: string | null
+          tipo?: string
+          titulo: string
+          user_id: string
+        }
+        Update: {
+          cor?: string
+          created_at?: string
+          descricao?: string
+          id?: string
+          lida?: boolean
+          link?: string | null
+          referencia_id?: string | null
+          tipo?: string
+          titulo?: string
+          user_id?: string
+        }
+        Relationships: []
       }
       orientacoes: {
         Row: {
@@ -1218,6 +1351,36 @@ export type Database = {
             referencedColumns: ["id"]
           },
         ]
+      }
+      respostas_rapidas: {
+        Row: {
+          ativo: boolean
+          categoria: string
+          created_at: string
+          id: string
+          texto: string
+          titulo: string
+          user_id: string
+        }
+        Insert: {
+          ativo?: boolean
+          categoria?: string
+          created_at?: string
+          id?: string
+          texto?: string
+          titulo: string
+          user_id: string
+        }
+        Update: {
+          ativo?: boolean
+          categoria?: string
+          created_at?: string
+          id?: string
+          texto?: string
+          titulo?: string
+          user_id?: string
+        }
+        Relationships: []
       }
       substituicoes: {
         Row: {
