@@ -70,6 +70,7 @@ const App = () => (
             <Route path="/questionario/:token" element={<QuestionarioPublico />} />
             <Route path="/reset-password" element={<ResetPassword />} />
             <Route path="/meu-painel" element={<PacienteRoute><MeuPainel /></PacienteRoute>} />
+            <Route path="/portal" element={<PacienteRoute><PortalPaciente /></PacienteRoute>} />
             <Route path="/" element={<NutriRoute><AppLayout /></NutriRoute>}>
               <Route index element={<Dashboard />} />
               <Route path="pacientes" element={<Pacientes />} />
