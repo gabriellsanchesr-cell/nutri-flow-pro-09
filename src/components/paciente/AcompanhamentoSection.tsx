@@ -27,6 +27,9 @@ export function AcompanhamentoSection({ paciente }: Props) {
   const [filter, setFilter] = useState<FilterPeriod>("3m");
   const { toast } = useToast();
   const { session } = useAuth();
+  const [showRelatorio, setShowRelatorio] = useState(false);
+  const [consultas, setConsultas] = useState<any[]>([]);
+  const [planoAtivo, setPlanoAtivo] = useState<any>(null);
 
   const [form, setForm] = useState({
     data_registro: new Date().toISOString().split("T")[0],
