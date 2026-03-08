@@ -142,6 +142,9 @@ export function ExamesSection({ paciente }: Props) {
                   <TableCell className="text-muted-foreground text-sm max-w-[200px] truncate">{exame.observacoes || "—"}</TableCell>
                   <TableCell>
                     <div className="flex gap-1">
+                      <Button variant="ghost" size="icon" onClick={() => setViewingExame(exame)} title="Visualizar">
+                        <Eye className="h-4 w-4" />
+                      </Button>
                       <Button variant="ghost" size="icon" onClick={() => handleDownload(exame)} title="Download">
                         <Download className="h-4 w-4" />
                       </Button>
