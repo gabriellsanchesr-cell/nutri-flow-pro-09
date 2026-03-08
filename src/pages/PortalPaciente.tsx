@@ -1,5 +1,6 @@
 import { useEffect, useState, useMemo } from "react";
 import { supabase } from "@/integrations/supabase/client";
+import { PortalDiario } from "@/components/portal/PortalDiario";
 import { useAuth } from "@/hooks/useAuth";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -111,7 +112,7 @@ export default function PortalPaciente() {
     switch (activeTab) {
       case "inicio": return renderInicio();
       case "plano": return renderPlano();
-      case "diario": return renderPlaceholder("Diário Alimentar", "Em breve você poderá registrar suas refeições aqui.");
+      case "diario": return <PortalDiario paciente={paciente} />;
       case "metas": return renderPlaceholder("Metas", "Suas metas aparecerão aqui quando o nutricionista configurá-las.");
       default: return null;
     }
