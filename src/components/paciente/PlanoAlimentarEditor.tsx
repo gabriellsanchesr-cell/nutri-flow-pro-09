@@ -244,9 +244,16 @@ export function PlanoAlimentarEditor({ pacienteId, planoId, onBack, paciente }: 
             </Button>
             <h3 className="font-semibold text-foreground">Editor de Plano Alimentar</h3>
           </div>
-          <Button onClick={handleSave} disabled={saving} size="sm">
-            <Save className="h-4 w-4 mr-1" /> {saving ? "Salvando..." : "Salvar Plano"}
-          </Button>
+          <div className="flex items-center gap-2">
+            <Button onClick={handleSave} disabled={saving} size="sm">
+              <Save className="h-4 w-4 mr-1" /> {saving ? "Salvando..." : "Salvar Plano"}
+            </Button>
+            {planoId && (
+              <Button variant="outline" size="sm" onClick={() => setShowExport(true)}>
+                <FileDown className="h-4 w-4 mr-1" /> Exportar PDF
+              </Button>
+            )}
+          </div>
         </div>
         <div className="grid grid-cols-5 gap-3">
           <MacroBox label="Calorias" value={`${totals.kcal}`} unit="kcal" color="bg-primary" />
