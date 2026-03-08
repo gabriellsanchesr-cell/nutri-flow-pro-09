@@ -39,6 +39,8 @@ export function PlanoAlimentarSection({ paciente }: Props) {
   const [refeicoes, setRefeicoes] = useState<Record<string, any[]>>({});
   const [editingPlanoId, setEditingPlanoId] = useState<string | null | "new">(null);
   const [deleteId, setDeleteId] = useState<string | null>(null);
+  const [exportPlano, setExportPlano] = useState<any>(null);
+  const [exportType, setExportType] = useState<"plano_alimentar" | "plano_simplificado">("plano_alimentar");
 
   useEffect(() => { loadPlanos(); }, [paciente.id]);
 
