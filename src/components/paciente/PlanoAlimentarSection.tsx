@@ -128,6 +128,7 @@ export function PlanoAlimentarSection({ paciente }: Props) {
         pacienteId={paciente.id}
         planoId={editingPlanoId === "new" ? undefined : editingPlanoId}
         onBack={() => { setEditingPlanoId(null); loadPlanos(); }}
+        paciente={paciente}
       />
     );
   }
