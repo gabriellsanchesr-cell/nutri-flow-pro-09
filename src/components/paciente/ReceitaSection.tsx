@@ -92,7 +92,7 @@ export function ReceitaSection({ paciente }: { paciente: any }) {
     setSaving(true);
     const payload = {
       ...form,
-      ingredientes: form.ingredientes.filter(i => i.nome.trim()),
+      ingredientes: JSON.parse(JSON.stringify(form.ingredientes.filter(i => i.nome.trim()))),
       user_id: user!.id,
     };
 
