@@ -94,9 +94,9 @@ export default function PacienteDetalhe() {
       case "anamnese": return <AnamneseSection paciente={paciente} />;
       case "fotos": return <EvolucaoFotograficaSection paciente={paciente} />;
       case "questionarios": return <QuestionariosSection paciente={paciente} />;
-      case "exames": return <PlaceholderSection title="Exames Laboratoriais" description="Upload e organização de resultados de exames. Em breve." />;
-      case "orientacoes": return <PlaceholderSection title="Orientações e Materiais" description="Biblioteca de orientações enviadas ao paciente. Em breve." />;
-      case "prontuario": return <PlaceholderSection title="Prontuário" description="Linha do tempo cronológica de todo o acompanhamento. Em breve." />;
+      case "exames": return <ExamesSection paciente={paciente} />;
+      case "orientacoes": return <OrientacoesSection paciente={paciente} />;
+      case "prontuario": return <ProntuarioSection paciente={paciente} />;
       default: return null;
     }
   };
