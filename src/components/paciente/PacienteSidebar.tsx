@@ -2,7 +2,7 @@ import { cn } from "@/lib/utils";
 import {
   LayoutDashboard, User, ClipboardList, TrendingUp, Camera, Utensils,
   Calculator, CalendarDays, FileQuestion, TestTube, BookOpen, FileText, KeyRound,
-  ChevronDown,
+  ChevronDown, Ruler, BookMarked, Target, FolderOpen, UtensilsCrossed,
 } from "lucide-react";
 import { useIsMobile } from "@/hooks/use-mobile";
 import { useState } from "react";
@@ -12,14 +12,19 @@ export const sections = [
   { id: "visao-geral", label: "Visão Geral", icon: LayoutDashboard },
   { id: "dados", label: "Dados do Paciente", icon: User },
   { id: "anamnese", label: "Anamnese", icon: ClipboardList },
-  { id: "acompanhamento", label: "Acompanhamento", icon: TrendingUp },
+  { id: "avaliacoes", label: "Avaliações Físicas", icon: Ruler },
+  { id: "acompanhamento", label: "Acompanhamento Semanal", icon: TrendingUp },
   { id: "fotos", label: "Evolução Fotográfica", icon: Camera },
+  { id: "diario", label: "Diário Alimentar", icon: BookMarked },
   { id: "plano", label: "Plano Alimentar", icon: Utensils },
+  { id: "receituario", label: "Receituário", icon: UtensilsCrossed },
+  { id: "metas", label: "Metas", icon: Target },
+  { id: "materiais", label: "Materiais Extras", icon: FolderOpen },
   { id: "calculo", label: "Cálculo Energético", icon: Calculator },
   { id: "consultas", label: "Consultas", icon: CalendarDays },
   { id: "questionarios", label: "Questionários", icon: FileQuestion },
   { id: "exames", label: "Exames Laboratoriais", icon: TestTube },
-  { id: "orientacoes", label: "Orientações e Materiais", icon: BookOpen },
+  { id: "orientacoes", label: "Orientações", icon: BookOpen },
   { id: "prontuario", label: "Prontuário", icon: FileText },
   { id: "acesso", label: "Acesso do Paciente", icon: KeyRound },
 ] as const;
@@ -48,7 +53,7 @@ export function PacienteSidebar({ active, onSelect }: PacienteSidebarProps) {
           <ChevronDown className={cn("h-4 w-4 transition-transform", mobileOpen && "rotate-180")} />
         </Button>
         {mobileOpen && (
-          <div className="mt-2 space-y-0.5 pb-2">
+          <div className="mt-2 space-y-0.5 pb-2 max-h-[60vh] overflow-y-auto">
             {sections.map((s) => {
               const Icon = s.icon;
               return (

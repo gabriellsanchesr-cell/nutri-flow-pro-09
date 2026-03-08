@@ -20,6 +20,7 @@ import Agenda from "./pages/Agenda";
 import Biblioteca from "./pages/Biblioteca";
 import Templates from "./pages/Templates";
 import MeuPainel from "./pages/MeuPainel";
+import PortalPaciente from "./pages/PortalPaciente";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
@@ -34,7 +35,7 @@ function ProtectedRoute({ children }: { children: React.ReactNode }) {
 function PublicRoute({ children }: { children: React.ReactNode }) {
   const { session, loading, role } = useAuth();
   if (loading) return <div className="min-h-screen flex items-center justify-center text-muted-foreground">Carregando...</div>;
-  if (session && role === "paciente") return <Navigate to="/meu-painel" replace />;
+  if (session && role === "paciente") return <Navigate to="/portal" replace />;
   if (session) return <Navigate to="/" replace />;
   return <>{children}</>;
 }
@@ -43,7 +44,7 @@ function NutriRoute({ children }: { children: React.ReactNode }) {
   const { session, loading, role } = useAuth();
   if (loading) return <div className="min-h-screen flex items-center justify-center text-muted-foreground">Carregando...</div>;
   if (!session) return <Navigate to="/login" replace />;
-  if (role === "paciente") return <Navigate to="/meu-painel" replace />;
+  if (role === "nutri") return <Navigate to="/" replace />;
   return <>{children}</>;
 }
 
@@ -69,6 +70,7 @@ const App = () => (
             <Route path="/questionario/:token" element={<QuestionarioPublico />} />
             <Route path="/reset-password" element={<ResetPassword />} />
             <Route path="/meu-painel" element={<PacienteRoute><MeuPainel /></PacienteRoute>} />
+            <Route path="/portal" element={<PacienteRoute><PortalPaciente /></PacienteRoute>} />
             <Route path="/" element={<NutriRoute><AppLayout /></NutriRoute>}>
               <Route index element={<Dashboard />} />
               <Route path="pacientes" element={<Pacientes />} />
