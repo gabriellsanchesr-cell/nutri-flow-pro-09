@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, lazy, Suspense } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
 import { useToast } from "@/hooks/use-toast";
@@ -15,6 +15,7 @@ import {
   Table, TableBody, TableCell, TableHead, TableHeader, TableRow,
 } from "@/components/ui/table";
 import { Plus, Download, Trash2, FileText, Search, Upload, Eye, X } from "lucide-react";
+import { PdfViewer } from "./PdfViewer";
 import { format } from "date-fns";
 import { ptBR } from "date-fns/locale";
 
@@ -209,11 +210,7 @@ export function ExamesSection({ paciente }: Props) {
                   className="w-full h-full object-contain"
                 />
               ) : (
-                <iframe
-                  src={getPublicUrl(viewingExame.arquivo_path)}
-                  className="w-full h-full"
-                  title={viewingExame.nome_exame}
-                />
+                <PdfViewer url={getPublicUrl(viewingExame.arquivo_path)} />
               )
             )}
           </div>
