@@ -86,10 +86,16 @@ export function ExamesSection({ paciente }: Props) {
     loadExames();
   };
 
-  const handleDownload = (exame: any) => {
-    const { data } = supabase.storage.from("exames-laboratoriais").getPublicUrl(exame.arquivo_path);
-    window.open(data.publicUrl, "_blank");
+  const getPublicUrl = (path: string) => {
+    const { data } = supabase.storage.from("exames-laboratoriais").getPublicUrl(path);
+    return data.publicUrl;
   };
+
+  const handleDownload = (exame: any) => {
+    window.open(getPublicUrl(exame.arquivo_path), "_blank");
+  };
+
+  const isImage = (path: string) => /\.(jpg|jpeg|png|webp)$/i.test(path);
 
   const filtered = exames.filter(e => e.nome_exame.toLowerCase().includes(search.toLowerCase()));
 
