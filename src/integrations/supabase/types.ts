@@ -169,6 +169,68 @@ export type Database = {
         }
         Relationships: []
       }
+      anamneses: {
+        Row: {
+          created_at: string
+          espaco_livre: string | null
+          historico_alimentar: string | null
+          historico_medico: string | null
+          historico_treino: string | null
+          id: string
+          objetivos_motivacoes: string | null
+          paciente_id: string
+          preenchido_por: Database["public"]["Enums"]["preenchido_por"]
+          respondido: boolean
+          saude_intestinal: string | null
+          sono_estresse: string | null
+          token: string
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          espaco_livre?: string | null
+          historico_alimentar?: string | null
+          historico_medico?: string | null
+          historico_treino?: string | null
+          id?: string
+          objetivos_motivacoes?: string | null
+          paciente_id: string
+          preenchido_por?: Database["public"]["Enums"]["preenchido_por"]
+          respondido?: boolean
+          saude_intestinal?: string | null
+          sono_estresse?: string | null
+          token?: string
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          espaco_livre?: string | null
+          historico_alimentar?: string | null
+          historico_medico?: string | null
+          historico_treino?: string | null
+          id?: string
+          objetivos_motivacoes?: string | null
+          paciente_id?: string
+          preenchido_por?: Database["public"]["Enums"]["preenchido_por"]
+          respondido?: boolean
+          saude_intestinal?: string | null
+          sono_estresse?: string | null
+          token?: string
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "anamneses_paciente_id_fkey"
+            columns: ["paciente_id"]
+            isOneToOne: false
+            referencedRelation: "pacientes"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       checklist_respostas: {
         Row: {
           aderencia_plano: number | null
@@ -565,6 +627,7 @@ export type Database = {
         | "controle_ansiedade_alimentar"
         | "performance"
         | "outro"
+      preenchido_por: "nutricionista" | "paciente"
       status_consulta: "agendado" | "realizado" | "cancelado"
       tipo_consulta: "primeira_consulta" | "retorno" | "online" | "presencial"
       tipo_refeicao:
@@ -731,6 +794,7 @@ export const Constants = {
         "performance",
         "outro",
       ],
+      preenchido_por: ["nutricionista", "paciente"],
       status_consulta: ["agendado", "realizado", "cancelado"],
       tipo_consulta: ["primeira_consulta", "retorno", "online", "presencial"],
       tipo_refeicao: [
