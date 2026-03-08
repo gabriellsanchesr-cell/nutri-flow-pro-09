@@ -5,16 +5,29 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Badge } from "@/components/ui/badge";
-import { ArrowLeft } from "lucide-react";
+import { ArrowLeft, KeyRound, UserX, UserCheck, Trash2 } from "lucide-react";
+import { useToast } from "@/hooks/use-toast";
+import { PacienteAccessModal } from "@/components/PacienteAccessModal";
+import { DeleteConfirmModal } from "@/components/DeleteConfirmModal";
 
 const faseLabels: Record<string, string> = {
   rotina: "Rotina", estrategia: "Estratégia", autonomia: "Autonomia", liberdade: "Liberdade",
 };
 
+const statusLabels: Record<string, { label: string; variant: "default" | "destructive" | "outline" }> = {
+  ativo: { label: "Conta Ativa", variant: "default" },
+  desativado: { label: "Conta Inativa", variant: "destructive" },
+  sem_conta: { label: "Sem Conta", variant: "outline" },
+};
+
 export default function PacienteDetalhe() {
   const { id } = useParams();
   const navigate = useNavigate();
+  const { toast } = useToast();
   const [paciente, setPaciente] = useState<any>(null);
+  const [accessModal, setAccessModal] = useState<{ open: boolean; mode: "create" | "edit" }>({ open: false, mode: "create" });
+  const [deleteModal, setDeleteModal] = useState(false);
+  const [actionLoading, setActionLoading] = useState(false);
 
   useEffect(() => {
     if (id) loadPaciente();
@@ -25,7 +38,44 @@ export default function PacienteDetalhe() {
     setPaciente(data);
   };
 
+  const handleAction = async (action: "deactivate" | "reactivate") => {
+    setActionLoading(true);
+    try {
+      const { data, error } = await supabase.functions.invoke("manage-patient-auth", {
+        body: { action, paciente_id: id },
+      });
+      if (error) throw error;
+      if (data?.error) throw new Error(data.error);
+      toast({ title: "Sucesso", description: action === "deactivate" ? "Acesso desativado." : "Acesso reativado." });
+      loadPaciente();
+    } catch (err: any) {
+      toast({ title: "Erro", description: err.message, variant: "destructive" });
+    } finally {
+      setActionLoading(false);
+    }
+  };
+
+  const handleDelete = async () => {
+    setActionLoading(true);
+    try {
+      const { data, error } = await supabase.functions.invoke("manage-patient-auth", {
+        body: { action: "delete", paciente_id: id },
+      });
+      if (error) throw error;
+      if (data?.error) throw new Error(data.error);
+      toast({ title: "Sucesso", description: "Paciente excluído." });
+      navigate("/pacientes");
+    } catch (err: any) {
+      toast({ title: "Erro", description: err.message, variant: "destructive" });
+    } finally {
+      setActionLoading(false);
+    }
+  };
+
   if (!paciente) return <div className="text-center py-8 text-muted-foreground">Carregando...</div>;
+
+  const status = paciente.account_status || "sem_conta";
+  const statusCfg = statusLabels[status] || statusLabels.sem_conta;
 
   return (
     <div className="space-y-6">
@@ -33,9 +83,32 @@ export default function PacienteDetalhe() {
         <Button variant="ghost" size="icon" onClick={() => navigate("/pacientes")}>
           <ArrowLeft className="h-4 w-4" />
         </Button>
-        <div>
+        <div className="flex-1">
           <h1 className="text-2xl font-bold">{paciente.nome_completo}</h1>
-          <Badge variant="secondary">{faseLabels[paciente.fase_real] || paciente.fase_real}</Badge>
+          <div className="flex gap-2 mt-1">
+            <Badge variant="secondary">{faseLabels[paciente.fase_real] || paciente.fase_real}</Badge>
+            <Badge variant={statusCfg.variant}>{statusCfg.label}</Badge>
+          </div>
+        </div>
+        <div className="flex gap-2">
+          {status === "sem_conta" && (
+            <Button size="sm" onClick={() => setAccessModal({ open: true, mode: "create" })}>
+              <KeyRound className="h-4 w-4 mr-1" /> Criar Acesso
+            </Button>
+          )}
+          {status === "ativo" && (
+            <Button size="sm" variant="outline" onClick={() => handleAction("deactivate")} disabled={actionLoading}>
+              <UserX className="h-4 w-4 mr-1" /> Desativar
+            </Button>
+          )}
+          {status === "desativado" && (
+            <Button size="sm" variant="outline" onClick={() => handleAction("reactivate")} disabled={actionLoading}>
+              <UserCheck className="h-4 w-4 mr-1" /> Reativar
+            </Button>
+          )}
+          <Button size="sm" variant="destructive" onClick={() => setDeleteModal(true)}>
+            <Trash2 className="h-4 w-4 mr-1" /> Excluir
+          </Button>
         </div>
       </div>
 
@@ -108,6 +181,24 @@ export default function PacienteDetalhe() {
           </Card>
         </TabsContent>
       </Tabs>
+
+      <PacienteAccessModal
+        open={accessModal.open}
+        onOpenChange={(v) => setAccessModal((s) => ({ ...s, open: v }))}
+        pacienteId={paciente.id}
+        pacienteNome={paciente.nome_completo}
+        pacienteEmail={paciente.email}
+        mode={accessModal.mode}
+        onSuccess={loadPaciente}
+      />
+
+      <DeleteConfirmModal
+        open={deleteModal}
+        onOpenChange={setDeleteModal}
+        pacienteNome={paciente.nome_completo}
+        onConfirm={handleDelete}
+        loading={actionLoading}
+      />
     </div>
   );
 }
