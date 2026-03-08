@@ -296,7 +296,7 @@ export function DiarioAlimentarSection({ paciente }: { paciente: any }) {
                       </div>
                     </CardContent>
                   </Card>
-                )))}
+                ))}
               </div>
             ))
           )}
