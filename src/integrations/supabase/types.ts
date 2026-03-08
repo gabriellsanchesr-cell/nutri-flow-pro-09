@@ -453,6 +453,106 @@ export type Database = {
           },
         ]
       }
+      diario_config: {
+        Row: {
+          ativo: boolean
+          created_at: string
+          frequencia: string
+          id: string
+          paciente_id: string
+          refeicoes_habilitadas: string[] | null
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          ativo?: boolean
+          created_at?: string
+          frequencia?: string
+          id?: string
+          paciente_id: string
+          refeicoes_habilitadas?: string[] | null
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          ativo?: boolean
+          created_at?: string
+          frequencia?: string
+          id?: string
+          paciente_id?: string
+          refeicoes_habilitadas?: string[] | null
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "diario_config_paciente_id_fkey"
+            columns: ["paciente_id"]
+            isOneToOne: true
+            referencedRelation: "pacientes"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      diario_registros: {
+        Row: {
+          created_at: string
+          data_registro: string
+          descricao: string
+          feedback_data: string | null
+          feedback_nutri: string | null
+          foto_path: string | null
+          horario: string | null
+          id: string
+          paciente_id: string
+          paciente_user_id: string
+          sentimento: string | null
+          tipo_refeicao: string
+          updated_at: string
+          visto_nutri: boolean
+        }
+        Insert: {
+          created_at?: string
+          data_registro?: string
+          descricao?: string
+          feedback_data?: string | null
+          feedback_nutri?: string | null
+          foto_path?: string | null
+          horario?: string | null
+          id?: string
+          paciente_id: string
+          paciente_user_id: string
+          sentimento?: string | null
+          tipo_refeicao?: string
+          updated_at?: string
+          visto_nutri?: boolean
+        }
+        Update: {
+          created_at?: string
+          data_registro?: string
+          descricao?: string
+          feedback_data?: string | null
+          feedback_nutri?: string | null
+          foto_path?: string | null
+          horario?: string | null
+          id?: string
+          paciente_id?: string
+          paciente_user_id?: string
+          sentimento?: string | null
+          tipo_refeicao?: string
+          updated_at?: string
+          visto_nutri?: boolean
+        }
+        Relationships: [
+          {
+            foreignKeyName: "diario_registros_paciente_id_fkey"
+            columns: ["paciente_id"]
+            isOneToOne: false
+            referencedRelation: "pacientes"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       evolucao_fotos: {
         Row: {
           angulo: string
