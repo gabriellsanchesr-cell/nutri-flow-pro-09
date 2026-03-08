@@ -18,6 +18,7 @@ import { ExamesSection } from "@/components/paciente/ExamesSection";
 import { OrientacoesSection } from "@/components/paciente/OrientacoesSection";
 import { ProntuarioSection } from "@/components/paciente/ProntuarioSection";
 import { PlaceholderSection } from "@/components/paciente/PlaceholderSection";
+import { ReceitaSection } from "@/components/paciente/ReceitaSection";
 import { AvaliacoesFisicasSection } from "@/components/paciente/AvaliacoesFisicasSection";
 import { DiarioAlimentarSection } from "@/components/paciente/DiarioAlimentarSection";
 import { PacienteAccessModal } from "@/components/PacienteAccessModal";
