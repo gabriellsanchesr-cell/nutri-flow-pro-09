@@ -44,7 +44,7 @@ function NutriRoute({ children }: { children: React.ReactNode }) {
   const { session, loading, role } = useAuth();
   if (loading) return <div className="min-h-screen flex items-center justify-center text-muted-foreground">Carregando...</div>;
   if (!session) return <Navigate to="/login" replace />;
-  if (role === "paciente") return <Navigate to="/meu-painel" replace />;
+  if (role === "nutri") return <Navigate to="/" replace />;
   return <>{children}</>;
 }
 
