@@ -375,13 +375,16 @@ export function PlanoAlimentarEditor({ pacienteId, planoId, onBack, paciente }: 
                           value={ali.quantidade}
                           onChange={e => {
                             const qty = parseFloat(e.target.value) || 0;
-                            // Recalculate macros based on per-100g from TACO
-                            if (ali.alimento_taco_id) {
+                            updateAlimento(refIdx, aliIdx, "quantidade", qty);
+                            
+                            // Recalcular macros automaticamente se for alimento da TACO
+                            if (ali.alimento_taco_id && ali.base_energia_kcal !== undefined) {
                               const ratio = qty / 100;
-                              // We need base values — fetch them or use stored
-                              updateAlimento(refIdx, aliIdx, "quantidade", qty);
-                            } else {
-                              updateAlimento(refIdx, aliIdx, "quantidade", qty);
+                              updateAlimento(refIdx, aliIdx, "energia_kcal", ali.base_energia_kcal * ratio);
+                              updateAlimento(refIdx, aliIdx, "proteina_g", (ali.base_proteina_g || 0) * ratio);
+                              updateAlimento(refIdx, aliIdx, "carboidrato_g", (ali.base_carboidrato_g || 0) * ratio);
+                              updateAlimento(refIdx, aliIdx, "lipidio_g", (ali.base_lipidio_g || 0) * ratio);
+                              updateAlimento(refIdx, aliIdx, "fibra_g", (ali.base_fibra_g || 0) * ratio);
                             }
                           }}
                         />
