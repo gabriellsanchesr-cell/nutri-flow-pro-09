@@ -173,6 +173,9 @@ export function PlanoAlimentarSection({ paciente }: Props) {
                     <Button variant="ghost" size="icon" className="h-8 w-8" title="Duplicar" onClick={() => duplicatePlano(plano)}>
                       <Copy className="h-3.5 w-3.5" />
                     </Button>
+                    <Button variant="ghost" size="icon" className="h-8 w-8" title="Exportar PDF" onClick={() => { setExportPlano(plano); setExportType("plano_alimentar"); }}>
+                      <FileDown className="h-3.5 w-3.5" />
+                    </Button>
                     <Button variant="ghost" size="icon" className="h-8 w-8" title={plano.status === "ativo" ? "Desativar" : "Ativar"} onClick={() => toggleStatus(plano)}>
                       <Power className="h-3.5 w-3.5" />
                     </Button>
