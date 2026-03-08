@@ -256,7 +256,7 @@ export function autoTable(
 export async function loadPdfConfig(userId: string): Promise<PdfConfig> {
   const { supabase } = await import("@/integrations/supabase/client");
   const { data } = await supabase
-    .from("configuracoes_pdf")
+    .from("configuracoes_clinica")
     .select("*")
     .eq("user_id", userId)
     .maybeSingle();
