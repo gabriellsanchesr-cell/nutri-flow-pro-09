@@ -18,6 +18,7 @@ import { ExamesSection } from "@/components/paciente/ExamesSection";
 import { OrientacoesSection } from "@/components/paciente/OrientacoesSection";
 import { ProntuarioSection } from "@/components/paciente/ProntuarioSection";
 import { PlaceholderSection } from "@/components/paciente/PlaceholderSection";
+import { ReceitaSection } from "@/components/paciente/ReceitaSection";
 import { AvaliacoesFisicasSection } from "@/components/paciente/AvaliacoesFisicasSection";
 import { DiarioAlimentarSection } from "@/components/paciente/DiarioAlimentarSection";
 import { PacienteAccessModal } from "@/components/PacienteAccessModal";
@@ -104,7 +105,7 @@ export default function PacienteDetalhe() {
       case "prontuario": return <ProntuarioSection paciente={paciente} />;
       case "avaliacoes": return <AvaliacoesFisicasSection paciente={paciente} />;
       case "diario": return <DiarioAlimentarSection paciente={paciente} />;
-      case "receituario": return <PlaceholderSection title="Receituário" description="Módulo de receitas em desenvolvimento." />;
+      case "receituario": return <ReceitaSection paciente={paciente} />;
       case "metas": return <PlaceholderSection title="Metas" description="Módulo de metas em desenvolvimento." />;
       case "materiais": return <PlaceholderSection title="Materiais Extras" description="Módulo de materiais extras em desenvolvimento." />;
       default: return null;

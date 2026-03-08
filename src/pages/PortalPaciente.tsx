@@ -1,6 +1,7 @@
 import { useEffect, useState, useMemo } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { PortalDiario } from "@/components/portal/PortalDiario";
+import { PortalReceitas } from "@/components/portal/PortalReceitas";
 import { useAuth } from "@/hooks/useAuth";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -444,8 +445,8 @@ export default function PortalPaciente() {
           </Button>
         </div>
       );
+      case "receitas": return <PortalReceitas paciente={paciente} />;
       default: return renderPlaceholder(
-        moreTab === "receitas" ? "Receitas" :
         moreTab === "materiais" ? "Materiais" : "Mensagens",
         "Este recurso estará disponível em breve."
       );
