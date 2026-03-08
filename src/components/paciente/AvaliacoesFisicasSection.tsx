@@ -446,9 +446,14 @@ export function AvaliacoesFisicasSection({ paciente }: Props) {
         </div>
         <div className="flex gap-2">
           {editId && (
-            <Button variant="destructive" size="sm" onClick={() => { deleteAvaliacao(editId); setView("list"); }}>
-              <Trash2 className="h-4 w-4 mr-1" /> Excluir
-            </Button>
+            <>
+              <Button variant="outline" size="sm" onClick={() => setShowExportPdf(true)}>
+                <FileDown className="h-4 w-4 mr-1" /> Exportar PDF
+              </Button>
+              <Button variant="destructive" size="sm" onClick={() => { deleteAvaliacao(editId); setView("list"); }}>
+                <Trash2 className="h-4 w-4 mr-1" /> Excluir
+              </Button>
+            </>
           )}
           <Button size="sm" onClick={saveAvaliacao} disabled={saving} className="bg-primary text-primary-foreground">
             <Save className="h-4 w-4 mr-1" /> Salvar
