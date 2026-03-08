@@ -43,7 +43,7 @@ export function AcompanhamentoSection({ paciente }: Props) {
     observacoes_nutricionista: "",
   });
 
-  useEffect(() => { loadRecords(); }, [paciente.id]);
+  useEffect(() => { loadRecords(); loadExtras(); }, [paciente.id]);
 
   const loadRecords = async () => {
     setLoading(true);
