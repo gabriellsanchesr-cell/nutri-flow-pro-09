@@ -56,6 +56,13 @@ export function AcompanhamentoSection({ paciente }: Props) {
     setLoading(false);
   };
 
+  const loadExtras = async () => {
+    const { data: c } = await supabase.from("consultas").select("*").eq("paciente_id", paciente.id).order("data_hora", { ascending: false });
+    setConsultas(c || []);
+    const { data: p } = await supabase.from("planos_alimentares").select("*").eq("paciente_id", paciente.id).eq("status", "ativo").order("created_at", { ascending: false }).limit(1).maybeSingle();
+    setPlanoAtivo(p);
+  };
+
   const filterDate = () => {
     const now = new Date();
     if (filter === "4w") { now.setDate(now.getDate() - 28); return now; }
