@@ -169,6 +169,68 @@ export type Database = {
         }
         Relationships: []
       }
+      anamneses: {
+        Row: {
+          created_at: string
+          espaco_livre: string | null
+          historico_alimentar: string | null
+          historico_medico: string | null
+          historico_treino: string | null
+          id: string
+          objetivos_motivacoes: string | null
+          paciente_id: string
+          preenchido_por: Database["public"]["Enums"]["preenchido_por"]
+          respondido: boolean
+          saude_intestinal: string | null
+          sono_estresse: string | null
+          token: string
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          espaco_livre?: string | null
+          historico_alimentar?: string | null
+          historico_medico?: string | null
+          historico_treino?: string | null
+          id?: string
+          objetivos_motivacoes?: string | null
+          paciente_id: string
+          preenchido_por?: Database["public"]["Enums"]["preenchido_por"]
+          respondido?: boolean
+          saude_intestinal?: string | null
+          sono_estresse?: string | null
+          token?: string
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          espaco_livre?: string | null
+          historico_alimentar?: string | null
+          historico_medico?: string | null
+          historico_treino?: string | null
+          id?: string
+          objetivos_motivacoes?: string | null
+          paciente_id?: string
+          preenchido_por?: Database["public"]["Enums"]["preenchido_por"]
+          respondido?: boolean
+          saude_intestinal?: string | null
+          sono_estresse?: string | null
+          token?: string
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "anamneses_paciente_id_fkey"
+            columns: ["paciente_id"]
+            isOneToOne: false
+            referencedRelation: "pacientes"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       checklist_respostas: {
         Row: {
           aderencia_plano: number | null
@@ -256,6 +318,47 @@ export type Database = {
         Relationships: [
           {
             foreignKeyName: "consultas_paciente_id_fkey"
+            columns: ["paciente_id"]
+            isOneToOne: false
+            referencedRelation: "pacientes"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      evolucao_fotos: {
+        Row: {
+          angulo: string
+          created_at: string
+          data_registro: string
+          foto_path: string
+          id: string
+          observacoes: string | null
+          paciente_id: string
+          user_id: string
+        }
+        Insert: {
+          angulo?: string
+          created_at?: string
+          data_registro?: string
+          foto_path: string
+          id?: string
+          observacoes?: string | null
+          paciente_id: string
+          user_id: string
+        }
+        Update: {
+          angulo?: string
+          created_at?: string
+          data_registro?: string
+          foto_path?: string
+          id?: string
+          observacoes?: string | null
+          paciente_id?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "evolucao_fotos_paciente_id_fkey"
             columns: ["paciente_id"]
             isOneToOne: false
             referencedRelation: "pacientes"
@@ -431,6 +534,53 @@ export type Database = {
         }
         Relationships: []
       }
+      questionarios: {
+        Row: {
+          created_at: string
+          data_envio: string | null
+          data_resposta: string | null
+          id: string
+          paciente_id: string
+          respostas: Json | null
+          status: Database["public"]["Enums"]["status_questionario"]
+          tipo: Database["public"]["Enums"]["tipo_questionario"]
+          token: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          data_envio?: string | null
+          data_resposta?: string | null
+          id?: string
+          paciente_id: string
+          respostas?: Json | null
+          status?: Database["public"]["Enums"]["status_questionario"]
+          tipo: Database["public"]["Enums"]["tipo_questionario"]
+          token?: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          data_envio?: string | null
+          data_resposta?: string | null
+          id?: string
+          paciente_id?: string
+          respostas?: Json | null
+          status?: Database["public"]["Enums"]["status_questionario"]
+          tipo?: Database["public"]["Enums"]["tipo_questionario"]
+          token?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "questionarios_paciente_id_fkey"
+            columns: ["paciente_id"]
+            isOneToOne: false
+            referencedRelation: "pacientes"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       refeicoes: {
         Row: {
           created_at: string
@@ -565,8 +715,16 @@ export type Database = {
         | "controle_ansiedade_alimentar"
         | "performance"
         | "outro"
+      preenchido_por: "nutricionista" | "paciente"
       status_consulta: "agendado" | "realizado" | "cancelado"
+      status_questionario: "pendente" | "enviado" | "respondido"
       tipo_consulta: "primeira_consulta" | "retorno" | "online" | "presencial"
+      tipo_questionario:
+        | "anamnese"
+        | "checkin_semanal"
+        | "qualidade_vida"
+        | "comportamento_alimentar"
+        | "sintomas_intestinais"
       tipo_refeicao:
         | "cafe_da_manha"
         | "lanche_da_manha"
@@ -731,8 +889,17 @@ export const Constants = {
         "performance",
         "outro",
       ],
+      preenchido_por: ["nutricionista", "paciente"],
       status_consulta: ["agendado", "realizado", "cancelado"],
+      status_questionario: ["pendente", "enviado", "respondido"],
       tipo_consulta: ["primeira_consulta", "retorno", "online", "presencial"],
+      tipo_questionario: [
+        "anamnese",
+        "checkin_semanal",
+        "qualidade_vida",
+        "comportamento_alimentar",
+        "sintomas_intestinais",
+      ],
       tipo_refeicao: [
         "cafe_da_manha",
         "lanche_da_manha",

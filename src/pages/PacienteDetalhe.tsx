@@ -11,6 +11,9 @@ import { PlanoAlimentarSection } from "@/components/paciente/PlanoAlimentarSecti
 import { ConsultasSection } from "@/components/paciente/ConsultasSection";
 import { CalculoEnergetico } from "@/components/paciente/CalculoEnergetico";
 import { AcessoPaciente } from "@/components/paciente/AcessoPaciente";
+import { AnamneseSection } from "@/components/paciente/AnamneseSection";
+import { EvolucaoFotograficaSection } from "@/components/paciente/EvolucaoFotograficaSection";
+import { QuestionariosSection } from "@/components/paciente/QuestionariosSection";
 import { PlaceholderSection } from "@/components/paciente/PlaceholderSection";
 import { PacienteAccessModal } from "@/components/PacienteAccessModal";
 import { DeleteConfirmModal } from "@/components/DeleteConfirmModal";
@@ -88,9 +91,9 @@ export default function PacienteDetalhe() {
           actionLoading={actionLoading}
         />
       );
-      case "anamnese": return <PlaceholderSection title="Anamnese" description="Formulário completo de anamnese com envio de link ao paciente. Em breve." />;
-      case "fotos": return <PlaceholderSection title="Evolução Fotográfica" description="Upload e comparação lado a lado de fotos de progresso. Em breve." />;
-      case "questionarios": return <PlaceholderSection title="Questionários" description="Envio e gestão de questionários personalizados ao paciente. Em breve." />;
+      case "anamnese": return <AnamneseSection paciente={paciente} />;
+      case "fotos": return <EvolucaoFotograficaSection paciente={paciente} />;
+      case "questionarios": return <QuestionariosSection paciente={paciente} />;
       case "exames": return <PlaceholderSection title="Exames Laboratoriais" description="Upload e organização de resultados de exames. Em breve." />;
       case "orientacoes": return <PlaceholderSection title="Orientações e Materiais" description="Biblioteca de orientações enviadas ao paciente. Em breve." />;
       case "prontuario": return <PlaceholderSection title="Prontuário" description="Linha do tempo cronológica de todo o acompanhamento. Em breve." />;
