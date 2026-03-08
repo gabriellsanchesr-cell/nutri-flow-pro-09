@@ -1,3 +1,4 @@
+import { useEffect, useState } from "react";
 import {
   LayoutDashboard,
   Users,
@@ -7,10 +8,13 @@ import {
   BookOpen,
   FileText,
   LogOut,
+  MessageSquare,
 } from "lucide-react";
 import { NavLink } from "@/components/NavLink";
 import { useLocation } from "react-router-dom";
 import { useAuth } from "@/hooks/useAuth";
+import { supabase } from "@/integrations/supabase/client";
+import { Badge } from "@/components/ui/badge";
 import {
   Sidebar,
   SidebarContent,
@@ -27,6 +31,7 @@ import {
 const menuItems = [
   { title: "Dashboard", url: "/", icon: LayoutDashboard },
   { title: "Pacientes", url: "/pacientes", icon: Users },
+  { title: "Chat", url: "/chat", icon: MessageSquare },
   { title: "Planos Alimentares", url: "/planos", icon: Utensils },
   { title: "Acompanhamento", url: "/acompanhamento", icon: Activity },
   { title: "Agenda", url: "/agenda", icon: Calendar },
@@ -38,7 +43,26 @@ export function AppSidebar() {
   const { state } = useSidebar();
   const collapsed = state === "collapsed";
   const location = useLocation();
-  const { signOut } = useAuth();
+  const { signOut, user } = useAuth();
+  const [unreadChat, setUnreadChat] = useState(0);
+
+  useEffect(() => {
+    if (!user) return;
+    const loadUnread = async () => {
+      const { data } = await supabase
+        .from("conversas")
+        .select("nao_lidas_nutri")
+        .eq("nutri_id", user.id);
+      const total = (data || []).reduce((sum, c) => sum + (c.nao_lidas_nutri || 0), 0);
+      setUnreadChat(total);
+    };
+    loadUnread();
+    const channel = supabase
+      .channel("sidebar-unread")
+      .on("postgres_changes", { event: "*", schema: "public", table: "conversas", filter: `nutri_id=eq.${user.id}` }, () => loadUnread())
+      .subscribe();
+    return () => { supabase.removeChannel(channel); };
+  }, [user]);
 
   return (
     <Sidebar collapsible="icon">
@@ -76,7 +100,12 @@ export function AppSidebar() {
                       activeClassName="bg-sidebar-accent text-sidebar-primary font-semibold"
                     >
                       <item.icon className="h-5 w-5 shrink-0" />
-                      {!collapsed && <span>{item.title}</span>}
+                      {!collapsed && <span className="flex-1">{item.title}</span>}
+                      {!collapsed && item.url === "/chat" && unreadChat > 0 && (
+                        <Badge className="h-4 min-w-[16px] text-[9px] px-1 bg-destructive text-destructive-foreground">
+                          {unreadChat > 99 ? "99+" : unreadChat}
+                        </Badge>
+                      )}
                     </NavLink>
                   </SidebarMenuButton>
                 </SidebarMenuItem>
