@@ -122,6 +122,12 @@ export function PlanoAlimentarEditor({ pacienteId, planoId, onBack, paciente }: 
           energia_kcal: a.energia_kcal || 0, proteina_g: a.proteina_g || 0,
           carboidrato_g: a.carboidrato_g || 0, lipidio_g: a.lipidio_g || 0,
           fibra_g: a.fibra_g || 0, alimento_taco_id: a.alimento_taco_id,
+          // Para alimentos já salvos sem base, calcular a partir dos valores atuais
+          base_energia_kcal: a.alimento_taco_id ? (a.energia_kcal * 100 / (a.quantidade || 100)) : undefined,
+          base_proteina_g: a.alimento_taco_id ? (a.proteina_g * 100 / (a.quantidade || 100)) : undefined,
+          base_carboidrato_g: a.alimento_taco_id ? (a.carboidrato_g * 100 / (a.quantidade || 100)) : undefined,
+          base_lipidio_g: a.alimento_taco_id ? (a.lipidio_g * 100 / (a.quantidade || 100)) : undefined,
+          base_fibra_g: a.alimento_taco_id ? (a.fibra_g * 100 / (a.quantidade || 100)) : undefined,
         })),
         expanded: true,
       })));
