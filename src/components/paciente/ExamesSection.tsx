@@ -210,11 +210,7 @@ export function ExamesSection({ paciente }: Props) {
                   className="w-full h-full object-contain"
                 />
               ) : (
-                <iframe
-                  src={getPublicUrl(viewingExame.arquivo_path)}
-                  className="w-full h-full"
-                  title={viewingExame.nome_exame}
-                />
+                <PdfViewer url={getPublicUrl(viewingExame.arquivo_path)} />
               )
             )}
           </div>
