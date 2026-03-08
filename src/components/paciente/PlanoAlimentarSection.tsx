@@ -237,6 +237,16 @@ export function PlanoAlimentarSection({ paciente }: Props) {
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>
+
+      {exportPlano && (
+        <ExportPdfModal
+          open={!!exportPlano}
+          onOpenChange={(open) => { if (!open) setExportPlano(null); }}
+          type={exportType}
+          paciente={paciente}
+          planoData={exportPlano}
+        />
+      )}
     </div>
   );
 }
