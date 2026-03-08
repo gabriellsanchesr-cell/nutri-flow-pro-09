@@ -43,7 +43,26 @@ export function AppSidebar() {
   const { state } = useSidebar();
   const collapsed = state === "collapsed";
   const location = useLocation();
-  const { signOut } = useAuth();
+  const { signOut, user } = useAuth();
+  const [unreadChat, setUnreadChat] = useState(0);
+
+  useEffect(() => {
+    if (!user) return;
+    const loadUnread = async () => {
+      const { data } = await supabase
+        .from("conversas")
+        .select("nao_lidas_nutri")
+        .eq("nutri_id", user.id);
+      const total = (data || []).reduce((sum, c) => sum + (c.nao_lidas_nutri || 0), 0);
+      setUnreadChat(total);
+    };
+    loadUnread();
+    const channel = supabase
+      .channel("sidebar-unread")
+      .on("postgres_changes", { event: "*", schema: "public", table: "conversas", filter: `nutri_id=eq.${user.id}` }, () => loadUnread())
+      .subscribe();
+    return () => { supabase.removeChannel(channel); };
+  }, [user]);
 
   return (
     <Sidebar collapsible="icon">
