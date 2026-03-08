@@ -417,6 +417,16 @@ export function PlanoAlimentarEditor({ pacienteId, planoId, onBack, paciente }: 
           </Card>
         );
       })}
+
+      {showExport && paciente && (
+        <ExportPdfModal
+          open={showExport}
+          onOpenChange={setShowExport}
+          type="plano_alimentar"
+          paciente={paciente}
+          planoData={{ ...plano, id: planoId, refeicoes: refeicoes.map(r => ({ ...r, alimentos_plano: r.alimentos })) }}
+        />
+      )}
     </div>
   );
 }
