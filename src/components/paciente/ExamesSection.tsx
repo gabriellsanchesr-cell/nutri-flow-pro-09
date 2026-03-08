@@ -14,7 +14,7 @@ import {
 import {
   Table, TableBody, TableCell, TableHead, TableHeader, TableRow,
 } from "@/components/ui/table";
-import { Plus, Download, Trash2, FileText, Search, Upload } from "lucide-react";
+import { Plus, Download, Trash2, FileText, Search, Upload, Eye, X } from "lucide-react";
 import { format } from "date-fns";
 import { ptBR } from "date-fns/locale";
 
@@ -32,6 +32,7 @@ export function ExamesSection({ paciente }: Props) {
   const [search, setSearch] = useState("");
   const [form, setForm] = useState({ nome_exame: "", data_coleta: new Date().toISOString().split("T")[0], observacoes: "" });
   const [file, setFile] = useState<File | null>(null);
+  const [viewingExame, setViewingExame] = useState<any | null>(null);
 
   useEffect(() => { loadExames(); }, [paciente.id]);
 
