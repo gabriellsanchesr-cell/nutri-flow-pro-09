@@ -10,8 +10,9 @@ import { Textarea } from "@/components/ui/textarea";
 import { Badge } from "@/components/ui/badge";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import {
-  Save, ArrowLeft, Plus, Trash2, Search, Clock, ChevronDown, ChevronUp,
+  Save, ArrowLeft, Plus, Trash2, Search, Clock, ChevronDown, ChevronUp, FileDown,
 } from "lucide-react";
+import { ExportPdfModal } from "@/components/pdf/ExportPdfModal";
 
 const REFEICAO_TIPOS = [
   { value: "cafe_da_manha", label: "Café da Manhã", ordem: 1 },
@@ -60,12 +61,14 @@ interface Props {
   pacienteId: string;
   planoId?: string;
   onBack: () => void;
+  paciente?: any;
 }
 
-export function PlanoAlimentarEditor({ pacienteId, planoId, onBack }: Props) {
+export function PlanoAlimentarEditor({ pacienteId, planoId, onBack, paciente }: Props) {
   const { user } = useAuth();
   const { toast } = useToast();
   const [saving, setSaving] = useState(false);
+  const [showExport, setShowExport] = useState(false);
   const [plano, setPlano] = useState<PlanoData>({
     nome: "Plano Alimentar", observacoes: "", status: "rascunho",
     data_inicio: "", data_fim: "", objetivo_template: "",
@@ -241,9 +244,16 @@ export function PlanoAlimentarEditor({ pacienteId, planoId, onBack }: Props) {
             </Button>
             <h3 className="font-semibold text-foreground">Editor de Plano Alimentar</h3>
           </div>
-          <Button onClick={handleSave} disabled={saving} size="sm">
-            <Save className="h-4 w-4 mr-1" /> {saving ? "Salvando..." : "Salvar Plano"}
-          </Button>
+          <div className="flex items-center gap-2">
+            <Button onClick={handleSave} disabled={saving} size="sm">
+              <Save className="h-4 w-4 mr-1" /> {saving ? "Salvando..." : "Salvar Plano"}
+            </Button>
+            {planoId && (
+              <Button variant="outline" size="sm" onClick={() => setShowExport(true)}>
+                <FileDown className="h-4 w-4 mr-1" /> Exportar PDF
+              </Button>
+            )}
+          </div>
         </div>
         <div className="grid grid-cols-5 gap-3">
           <MacroBox label="Calorias" value={`${totals.kcal}`} unit="kcal" color="bg-primary" />
@@ -407,6 +417,16 @@ export function PlanoAlimentarEditor({ pacienteId, planoId, onBack }: Props) {
           </Card>
         );
       })}
+
+      {showExport && paciente && (
+        <ExportPdfModal
+          open={showExport}
+          onOpenChange={setShowExport}
+          type="plano_alimentar"
+          paciente={paciente}
+          planoData={{ ...plano, id: planoId, refeicoes: refeicoes.map(r => ({ ...r, alimentos_plano: r.alimentos })) }}
+        />
+      )}
     </div>
   );
 }

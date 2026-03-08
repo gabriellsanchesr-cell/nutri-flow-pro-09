@@ -6,9 +6,10 @@ import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { useToast } from "@/hooks/use-toast";
 import {
-  Plus, Utensils, ChevronDown, ChevronUp, Pencil, Copy, Power, Trash2, Send,
+  Plus, Utensils, ChevronDown, ChevronUp, Pencil, Copy, Power, Trash2, Send, FileDown,
 } from "lucide-react";
 import { PlanoAlimentarEditor } from "./PlanoAlimentarEditor";
+import { ExportPdfModal } from "@/components/pdf/ExportPdfModal";
 import {
   AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent,
   AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle,
@@ -38,6 +39,8 @@ export function PlanoAlimentarSection({ paciente }: Props) {
   const [refeicoes, setRefeicoes] = useState<Record<string, any[]>>({});
   const [editingPlanoId, setEditingPlanoId] = useState<string | null | "new">(null);
   const [deleteId, setDeleteId] = useState<string | null>(null);
+  const [exportPlano, setExportPlano] = useState<any>(null);
+  const [exportType, setExportType] = useState<"plano_alimentar" | "plano_simplificado">("plano_alimentar");
 
   useEffect(() => { loadPlanos(); }, [paciente.id]);
 
@@ -125,6 +128,7 @@ export function PlanoAlimentarSection({ paciente }: Props) {
         pacienteId={paciente.id}
         planoId={editingPlanoId === "new" ? undefined : editingPlanoId}
         onBack={() => { setEditingPlanoId(null); loadPlanos(); }}
+        paciente={paciente}
       />
     );
   }
@@ -169,6 +173,9 @@ export function PlanoAlimentarSection({ paciente }: Props) {
                     </Button>
                     <Button variant="ghost" size="icon" className="h-8 w-8" title="Duplicar" onClick={() => duplicatePlano(plano)}>
                       <Copy className="h-3.5 w-3.5" />
+                    </Button>
+                    <Button variant="ghost" size="icon" className="h-8 w-8" title="Exportar PDF" onClick={() => { setExportPlano(plano); setExportType("plano_alimentar"); }}>
+                      <FileDown className="h-3.5 w-3.5" />
                     </Button>
                     <Button variant="ghost" size="icon" className="h-8 w-8" title={plano.status === "ativo" ? "Desativar" : "Ativar"} onClick={() => toggleStatus(plano)}>
                       <Power className="h-3.5 w-3.5" />
@@ -231,6 +238,16 @@ export function PlanoAlimentarSection({ paciente }: Props) {
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>
+
+      {exportPlano && (
+        <ExportPdfModal
+          open={!!exportPlano}
+          onOpenChange={(open) => { if (!open) setExportPlano(null); }}
+          type={exportType}
+          paciente={paciente}
+          planoData={exportPlano}
+        />
+      )}
     </div>
   );
 }

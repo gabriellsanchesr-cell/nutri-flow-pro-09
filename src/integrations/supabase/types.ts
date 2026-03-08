@@ -579,6 +579,48 @@ export type Database = {
           },
         ]
       }
+      configuracoes_pdf: {
+        Row: {
+          cor_primaria: string | null
+          created_at: string | null
+          crn: string | null
+          id: string
+          incluir_capa: boolean | null
+          logo_url: string | null
+          marca_dagua: boolean | null
+          site: string | null
+          telefone: string | null
+          updated_at: string | null
+          user_id: string
+        }
+        Insert: {
+          cor_primaria?: string | null
+          created_at?: string | null
+          crn?: string | null
+          id?: string
+          incluir_capa?: boolean | null
+          logo_url?: string | null
+          marca_dagua?: boolean | null
+          site?: string | null
+          telefone?: string | null
+          updated_at?: string | null
+          user_id: string
+        }
+        Update: {
+          cor_primaria?: string | null
+          created_at?: string | null
+          crn?: string | null
+          id?: string
+          incluir_capa?: boolean | null
+          logo_url?: string | null
+          marca_dagua?: boolean | null
+          site?: string | null
+          telefone?: string | null
+          updated_at?: string | null
+          user_id?: string
+        }
+        Relationships: []
+      }
       consultas: {
         Row: {
           anotacoes: string | null
@@ -763,6 +805,47 @@ export type Database = {
         Relationships: [
           {
             foreignKeyName: "diario_registros_paciente_id_fkey"
+            columns: ["paciente_id"]
+            isOneToOne: false
+            referencedRelation: "pacientes"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      documentos_gerados: {
+        Row: {
+          arquivo_path: string | null
+          created_at: string | null
+          expires_at: string | null
+          id: string
+          nome: string
+          paciente_id: string
+          tipo: string
+          user_id: string
+        }
+        Insert: {
+          arquivo_path?: string | null
+          created_at?: string | null
+          expires_at?: string | null
+          id?: string
+          nome: string
+          paciente_id: string
+          tipo?: string
+          user_id: string
+        }
+        Update: {
+          arquivo_path?: string | null
+          created_at?: string | null
+          expires_at?: string | null
+          id?: string
+          nome?: string
+          paciente_id?: string
+          tipo?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "documentos_gerados_paciente_id_fkey"
             columns: ["paciente_id"]
             isOneToOne: false
             referencedRelation: "pacientes"

@@ -10,8 +10,9 @@ import { Textarea } from "@/components/ui/textarea";
 import { Slider } from "@/components/ui/slider";
 import { useToast } from "@/hooks/use-toast";
 import { useAuth } from "@/hooks/useAuth";
-import { Plus, Trash2 } from "lucide-react";
+import { Plus, Trash2, FileDown } from "lucide-react";
 import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, Legend } from "recharts";
+import { ExportPdfModal } from "@/components/pdf/ExportPdfModal";
 
 interface Props {
   paciente: any;
@@ -26,6 +27,9 @@ export function AcompanhamentoSection({ paciente }: Props) {
   const [filter, setFilter] = useState<FilterPeriod>("3m");
   const { toast } = useToast();
   const { session } = useAuth();
+  const [showRelatorio, setShowRelatorio] = useState(false);
+  const [consultas, setConsultas] = useState<any[]>([]);
+  const [planoAtivo, setPlanoAtivo] = useState<any>(null);
 
   const [form, setForm] = useState({
     data_registro: new Date().toISOString().split("T")[0],
@@ -39,7 +43,7 @@ export function AcompanhamentoSection({ paciente }: Props) {
     observacoes_nutricionista: "",
   });
 
-  useEffect(() => { loadRecords(); }, [paciente.id]);
+  useEffect(() => { loadRecords(); loadExtras(); }, [paciente.id]);
 
   const loadRecords = async () => {
     setLoading(true);
@@ -50,6 +54,13 @@ export function AcompanhamentoSection({ paciente }: Props) {
       .order("data_registro", { ascending: true });
     setRecords(data || []);
     setLoading(false);
+  };
+
+  const loadExtras = async () => {
+    const { data: c } = await supabase.from("consultas").select("*").eq("paciente_id", paciente.id).order("data_hora", { ascending: false });
+    setConsultas(c || []);
+    const { data: p } = await supabase.from("planos_alimentares").select("*").eq("paciente_id", paciente.id).eq("status", "ativo").order("created_at", { ascending: false }).limit(1).maybeSingle();
+    setPlanoAtivo(p);
   };
 
   const filterDate = () => {
@@ -113,9 +124,14 @@ export function AcompanhamentoSection({ paciente }: Props) {
             </Button>
           ))}
         </div>
-        <Button size="sm" onClick={() => setModalOpen(true)}>
-          <Plus className="h-3.5 w-3.5 mr-1" /> Registrar semana
-        </Button>
+        <div className="flex gap-2">
+          <Button size="sm" variant="outline" onClick={() => setShowRelatorio(true)}>
+            <FileDown className="h-3.5 w-3.5 mr-1" /> Relatório Mensal
+          </Button>
+          <Button size="sm" onClick={() => setModalOpen(true)}>
+            <Plus className="h-3.5 w-3.5 mr-1" /> Registrar semana
+          </Button>
+        </div>
       </div>
 
       {chartData.length > 1 && (
@@ -211,6 +227,16 @@ export function AcompanhamentoSection({ paciente }: Props) {
           </DialogFooter>
         </DialogContent>
       </Dialog>
+
+      <ExportPdfModal
+        open={showRelatorio}
+        onOpenChange={setShowRelatorio}
+        type="relatorio_mensal"
+        paciente={paciente}
+        acompanhamentos={records}
+        consultas={consultas}
+        planoAtivo={planoAtivo}
+      />
     </div>
   );
 }

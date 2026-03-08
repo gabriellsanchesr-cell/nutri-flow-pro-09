@@ -14,8 +14,9 @@ import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from "@/
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import {
   Plus, ArrowLeft, Save, Trash2, TrendingUp, TrendingDown, Minus,
-  Scale, Ruler, Activity, BarChart3, ChevronRight, Calendar, Eye,
+  Scale, Ruler, Activity, BarChart3, ChevronRight, Calendar, Eye, FileDown,
 } from "lucide-react";
+import { ExportPdfModal } from "@/components/pdf/ExportPdfModal";
 import { format } from "date-fns";
 import { ptBR } from "date-fns/locale";
 import {
@@ -226,6 +227,7 @@ export function AvaliacoesFisicasSection({ paciente }: Props) {
   const [showCharts, setShowCharts] = useState(false);
   const [chartMetric, setChartMetric] = useState("peso");
   const [showPrevList, setShowPrevList] = useState(false);
+  const [showExportPdf, setShowExportPdf] = useState(false);
 
   const age = calcAge(paciente.data_nascimento);
 
@@ -444,9 +446,14 @@ export function AvaliacoesFisicasSection({ paciente }: Props) {
         </div>
         <div className="flex gap-2">
           {editId && (
-            <Button variant="destructive" size="sm" onClick={() => { deleteAvaliacao(editId); setView("list"); }}>
-              <Trash2 className="h-4 w-4 mr-1" /> Excluir
-            </Button>
+            <>
+              <Button variant="outline" size="sm" onClick={() => setShowExportPdf(true)}>
+                <FileDown className="h-4 w-4 mr-1" /> Exportar PDF
+              </Button>
+              <Button variant="destructive" size="sm" onClick={() => { deleteAvaliacao(editId); setView("list"); }}>
+                <Trash2 className="h-4 w-4 mr-1" /> Excluir
+              </Button>
+            </>
           )}
           <Button size="sm" onClick={saveAvaliacao} disabled={saving} className="bg-primary text-primary-foreground">
             <Save className="h-4 w-4 mr-1" /> Salvar
@@ -686,6 +693,17 @@ export function AvaliacoesFisicasSection({ paciente }: Props) {
           </div>
         </div>
       </div>
+
+      {showExportPdf && editId && (
+        <ExportPdfModal
+          open={showExportPdf}
+          onOpenChange={setShowExportPdf}
+          type="avaliacao"
+          paciente={paciente}
+          avaliacaoData={form}
+          avaliacaoAnterior={previousAv}
+        />
+      )}
     </div>
   );
 }
