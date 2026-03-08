@@ -61,6 +61,7 @@ interface Props {
   pacienteId: string;
   planoId?: string;
   onBack: () => void;
+  paciente?: any;
 }
 
 export function PlanoAlimentarEditor({ pacienteId, planoId, onBack }: Props) {
