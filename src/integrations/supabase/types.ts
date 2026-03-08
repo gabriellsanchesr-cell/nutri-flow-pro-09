@@ -231,6 +231,134 @@ export type Database = {
           },
         ]
       }
+      avaliacoes_fisicas: {
+        Row: {
+          altura: number | null
+          bio_agua_corporal: number | null
+          bio_idade_metabolica: number | null
+          bio_massa_gorda: number | null
+          bio_massa_muscular: number | null
+          bio_metabolismo_basal: number | null
+          bio_percentual_gordura: number | null
+          circ_braco_dir: number | null
+          circ_braco_esq: number | null
+          circ_cintura: number | null
+          circ_coxa_dir: number | null
+          circ_coxa_esq: number | null
+          circ_panturrilha: number | null
+          circ_quadril: number | null
+          circ_torax: number | null
+          classificacao_imc: string | null
+          created_at: string
+          data_avaliacao: string
+          dobra_abdominal: number | null
+          dobra_biceps: number | null
+          dobra_coxa: number | null
+          dobra_peitoral: number | null
+          dobra_subescapular: number | null
+          dobra_suprailiaca: number | null
+          dobra_triceps: number | null
+          id: string
+          imc: number | null
+          massa_gorda_kg: number | null
+          massa_magra_kg: number | null
+          observacoes: string | null
+          paciente_id: string
+          percentual_gordura_dobras: number | null
+          peso: number | null
+          protocolo_dobras: string | null
+          relacao_cintura_quadril: number | null
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          altura?: number | null
+          bio_agua_corporal?: number | null
+          bio_idade_metabolica?: number | null
+          bio_massa_gorda?: number | null
+          bio_massa_muscular?: number | null
+          bio_metabolismo_basal?: number | null
+          bio_percentual_gordura?: number | null
+          circ_braco_dir?: number | null
+          circ_braco_esq?: number | null
+          circ_cintura?: number | null
+          circ_coxa_dir?: number | null
+          circ_coxa_esq?: number | null
+          circ_panturrilha?: number | null
+          circ_quadril?: number | null
+          circ_torax?: number | null
+          classificacao_imc?: string | null
+          created_at?: string
+          data_avaliacao?: string
+          dobra_abdominal?: number | null
+          dobra_biceps?: number | null
+          dobra_coxa?: number | null
+          dobra_peitoral?: number | null
+          dobra_subescapular?: number | null
+          dobra_suprailiaca?: number | null
+          dobra_triceps?: number | null
+          id?: string
+          imc?: number | null
+          massa_gorda_kg?: number | null
+          massa_magra_kg?: number | null
+          observacoes?: string | null
+          paciente_id: string
+          percentual_gordura_dobras?: number | null
+          peso?: number | null
+          protocolo_dobras?: string | null
+          relacao_cintura_quadril?: number | null
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          altura?: number | null
+          bio_agua_corporal?: number | null
+          bio_idade_metabolica?: number | null
+          bio_massa_gorda?: number | null
+          bio_massa_muscular?: number | null
+          bio_metabolismo_basal?: number | null
+          bio_percentual_gordura?: number | null
+          circ_braco_dir?: number | null
+          circ_braco_esq?: number | null
+          circ_cintura?: number | null
+          circ_coxa_dir?: number | null
+          circ_coxa_esq?: number | null
+          circ_panturrilha?: number | null
+          circ_quadril?: number | null
+          circ_torax?: number | null
+          classificacao_imc?: string | null
+          created_at?: string
+          data_avaliacao?: string
+          dobra_abdominal?: number | null
+          dobra_biceps?: number | null
+          dobra_coxa?: number | null
+          dobra_peitoral?: number | null
+          dobra_subescapular?: number | null
+          dobra_suprailiaca?: number | null
+          dobra_triceps?: number | null
+          id?: string
+          imc?: number | null
+          massa_gorda_kg?: number | null
+          massa_magra_kg?: number | null
+          observacoes?: string | null
+          paciente_id?: string
+          percentual_gordura_dobras?: number | null
+          peso?: number | null
+          protocolo_dobras?: string | null
+          relacao_cintura_quadril?: number | null
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "avaliacoes_fisicas_paciente_id_fkey"
+            columns: ["paciente_id"]
+            isOneToOne: false
+            referencedRelation: "pacientes"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       checklist_respostas: {
         Row: {
           aderencia_plano: number | null
