@@ -1076,6 +1076,108 @@ export type Database = {
           },
         ]
       }
+      receitas: {
+        Row: {
+          calorias_total: number | null
+          carboidrato_total: number | null
+          created_at: string
+          descricao: string | null
+          fibra_total: number | null
+          foto_url: string | null
+          gordura_total: number | null
+          id: string
+          ingredientes: Json | null
+          modo_preparo: string | null
+          porcoes: number | null
+          proteina_total: number | null
+          tags: string[] | null
+          tempo_preparo_min: number | null
+          titulo: string
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          calorias_total?: number | null
+          carboidrato_total?: number | null
+          created_at?: string
+          descricao?: string | null
+          fibra_total?: number | null
+          foto_url?: string | null
+          gordura_total?: number | null
+          id?: string
+          ingredientes?: Json | null
+          modo_preparo?: string | null
+          porcoes?: number | null
+          proteina_total?: number | null
+          tags?: string[] | null
+          tempo_preparo_min?: number | null
+          titulo: string
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          calorias_total?: number | null
+          carboidrato_total?: number | null
+          created_at?: string
+          descricao?: string | null
+          fibra_total?: number | null
+          foto_url?: string | null
+          gordura_total?: number | null
+          id?: string
+          ingredientes?: Json | null
+          modo_preparo?: string | null
+          porcoes?: number | null
+          proteina_total?: number | null
+          tags?: string[] | null
+          tempo_preparo_min?: number | null
+          titulo?: string
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
+      receitas_pacientes: {
+        Row: {
+          enviada_em: string
+          id: string
+          paciente_id: string
+          receita_id: string
+          user_id: string
+          visualizada: boolean | null
+        }
+        Insert: {
+          enviada_em?: string
+          id?: string
+          paciente_id: string
+          receita_id: string
+          user_id: string
+          visualizada?: boolean | null
+        }
+        Update: {
+          enviada_em?: string
+          id?: string
+          paciente_id?: string
+          receita_id?: string
+          user_id?: string
+          visualizada?: boolean | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "receitas_pacientes_paciente_id_fkey"
+            columns: ["paciente_id"]
+            isOneToOne: false
+            referencedRelation: "pacientes"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "receitas_pacientes_receita_id_fkey"
+            columns: ["receita_id"]
+            isOneToOne: false
+            referencedRelation: "receitas"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       refeicoes: {
         Row: {
           created_at: string
