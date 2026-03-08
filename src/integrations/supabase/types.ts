@@ -325,6 +325,47 @@ export type Database = {
           },
         ]
       }
+      evolucao_fotos: {
+        Row: {
+          angulo: string
+          created_at: string
+          data_registro: string
+          foto_path: string
+          id: string
+          observacoes: string | null
+          paciente_id: string
+          user_id: string
+        }
+        Insert: {
+          angulo?: string
+          created_at?: string
+          data_registro?: string
+          foto_path: string
+          id?: string
+          observacoes?: string | null
+          paciente_id: string
+          user_id: string
+        }
+        Update: {
+          angulo?: string
+          created_at?: string
+          data_registro?: string
+          foto_path?: string
+          id?: string
+          observacoes?: string | null
+          paciente_id?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "evolucao_fotos_paciente_id_fkey"
+            columns: ["paciente_id"]
+            isOneToOne: false
+            referencedRelation: "pacientes"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       pacientes: {
         Row: {
           account_status: string | null
@@ -493,6 +534,53 @@ export type Database = {
         }
         Relationships: []
       }
+      questionarios: {
+        Row: {
+          created_at: string
+          data_envio: string | null
+          data_resposta: string | null
+          id: string
+          paciente_id: string
+          respostas: Json | null
+          status: Database["public"]["Enums"]["status_questionario"]
+          tipo: Database["public"]["Enums"]["tipo_questionario"]
+          token: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          data_envio?: string | null
+          data_resposta?: string | null
+          id?: string
+          paciente_id: string
+          respostas?: Json | null
+          status?: Database["public"]["Enums"]["status_questionario"]
+          tipo: Database["public"]["Enums"]["tipo_questionario"]
+          token?: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          data_envio?: string | null
+          data_resposta?: string | null
+          id?: string
+          paciente_id?: string
+          respostas?: Json | null
+          status?: Database["public"]["Enums"]["status_questionario"]
+          tipo?: Database["public"]["Enums"]["tipo_questionario"]
+          token?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "questionarios_paciente_id_fkey"
+            columns: ["paciente_id"]
+            isOneToOne: false
+            referencedRelation: "pacientes"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       refeicoes: {
         Row: {
           created_at: string
@@ -629,7 +717,14 @@ export type Database = {
         | "outro"
       preenchido_por: "nutricionista" | "paciente"
       status_consulta: "agendado" | "realizado" | "cancelado"
+      status_questionario: "pendente" | "enviado" | "respondido"
       tipo_consulta: "primeira_consulta" | "retorno" | "online" | "presencial"
+      tipo_questionario:
+        | "anamnese"
+        | "checkin_semanal"
+        | "qualidade_vida"
+        | "comportamento_alimentar"
+        | "sintomas_intestinais"
       tipo_refeicao:
         | "cafe_da_manha"
         | "lanche_da_manha"
@@ -796,7 +891,15 @@ export const Constants = {
       ],
       preenchido_por: ["nutricionista", "paciente"],
       status_consulta: ["agendado", "realizado", "cancelado"],
+      status_questionario: ["pendente", "enviado", "respondido"],
       tipo_consulta: ["primeira_consulta", "retorno", "online", "presencial"],
+      tipo_questionario: [
+        "anamnese",
+        "checkin_semanal",
+        "qualidade_vida",
+        "comportamento_alimentar",
+        "sintomas_intestinais",
+      ],
       tipo_refeicao: [
         "cafe_da_manha",
         "lanche_da_manha",
