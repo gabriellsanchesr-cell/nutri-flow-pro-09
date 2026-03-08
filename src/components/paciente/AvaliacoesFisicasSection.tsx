@@ -305,7 +305,7 @@ export function AvaliacoesFisicasSection({ paciente }: Props) {
       } else {
         payload.paciente_id = paciente.id;
         payload.user_id = user.id;
-        const { error } = await supabase.from("avaliacoes_fisicas").insert(payload);
+        const { error } = await supabase.from("avaliacoes_fisicas").insert(payload as any);
         if (error) throw error;
       }
       toast({ title: "Avaliação salva!" });
