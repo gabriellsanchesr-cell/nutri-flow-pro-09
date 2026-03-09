@@ -429,8 +429,8 @@ export default function PortalPaciente() {
     );
   };
 
-  const [portalPresc, setPortalPresc] = useState<any[]>([]);
-  const [prescLoaded, setPrescLoaded] = useState(false);
+  const [portalPresc, setPortalPrescLocal] = useState<any[]>([]);
+  const [prescLoaded, setPrescLoadedLocal] = useState(false);
 
   const loadPrescricoes = async () => {
     if (prescLoaded || !paciente) return;
