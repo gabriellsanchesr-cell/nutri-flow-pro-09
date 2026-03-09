@@ -11,7 +11,7 @@ import { Badge } from "@/components/ui/badge";
 import {
   LogOut, Home, Utensils, BookMarked, Target, MoreHorizontal,
   ChevronDown, ChevronUp, Clock, User, Activity, Sparkles,
-  UtensilsCrossed, FolderOpen, MessageSquare, Scale, TrendingUp, TrendingDown, Minus, ArrowLeft,
+  UtensilsCrossed, FolderOpen, MessageSquare, Scale, TrendingUp, TrendingDown, Minus, ArrowLeft, Pill,
 } from "lucide-react";
 import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetTrigger } from "@/components/ui/sheet";
 import { format } from "date-fns";
