@@ -2,7 +2,7 @@ import { cn } from "@/lib/utils";
 import {
   LayoutDashboard, User, ClipboardList, TrendingUp, Camera, Utensils,
   Calculator, CalendarDays, FileQuestion, TestTube, BookOpen, FileText, KeyRound,
-  ChevronDown, Ruler, BookMarked, Target, FolderOpen, UtensilsCrossed,
+  ChevronDown, Ruler, BookMarked, Target, FolderOpen, UtensilsCrossed, Pill,
 } from "lucide-react";
 import { useIsMobile } from "@/hooks/use-mobile";
 import { useState } from "react";
