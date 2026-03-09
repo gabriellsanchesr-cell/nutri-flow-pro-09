@@ -451,6 +451,7 @@ export default function PortalPaciente() {
       case "receitas": return <PortalReceitas paciente={paciente} />;
       case "mensagens": return <PortalChat paciente={paciente} />;
       case "jornada": return <PortalJornada paciente={paciente} />;
+      case "suplementos": return renderPortalSuplemenos();
       default: return renderPlaceholder(
         "Materiais",
         "Este recurso estará disponível em breve."
