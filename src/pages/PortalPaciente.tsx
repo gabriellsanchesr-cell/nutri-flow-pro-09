@@ -21,7 +21,7 @@ import {
 } from "recharts";
 
 type PortalTab = "inicio" | "plano" | "diario" | "metas" | "mais";
-type MoreTab = "avaliacoes" | "receitas" | "materiais" | "mensagens" | "perfil";
+type MoreTab = "avaliacoes" | "receitas" | "materiais" | "mensagens" | "perfil" | "jornada";
 
 const tipoRefeicaoLabels: Record<string, string> = {
   cafe_da_manha: "Café da Manhã", lanche_da_manha: "Lanche da Manhã", almoco: "Almoço",
