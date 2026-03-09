@@ -47,7 +47,12 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
   const fetchRole = async (userId: string) => {
     try {
-      const { data, error } = await supabase.rpc("get_user_role", { _user_id: userId });
+      const rolePromise = supabase.rpc("get_user_role", { _user_id: userId });
+      const timeoutPromise = new Promise<never>((_, reject) =>
+        setTimeout(() => reject(new Error("timeout")), 5000)
+      );
+      const { data, error } = await Promise.race([rolePromise, timeoutPromise]) as any;
+
       if (!error && data) {
         const r = data as AppRole;
         setRole(r);
@@ -74,29 +79,45 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   };
 
   useEffect(() => {
+    // Safety net: force loading=false after 5s no matter what
+    const safetyTimer = setTimeout(() => setLoading(false), 5000);
+
+    // Set up auth state listener FIRST
     const { data: { subscription } } = supabase.auth.onAuthStateChange(
-      async (_event, session) => {
-        setSession(session);
-        if (session?.user) {
-          await fetchRole(session.user.id);
+      (_event, newSession) => {
+        setSession(newSession);
+        if (newSession?.user) {
+          // Defer to avoid Supabase deadlock inside the callback
+          setTimeout(() => {
+            fetchRole(newSession.user.id).finally(() => {
+              clearTimeout(safetyTimer);
+              setLoading(false);
+            });
+          }, 0);
         } else {
           setRole(null);
           setEquipeMembro(null);
           setEquipePermissoes({});
+          clearTimeout(safetyTimer);
+          setLoading(false);
         }
-        setLoading(false);
       }
     );
 
-    supabase.auth.getSession().then(async ({ data: { session } }) => {
-      setSession(session);
-      if (session?.user) {
-        await fetchRole(session.user.id);
+    // Then get the current session
+    supabase.auth.getSession().then(({ data: { session: currentSession } }) => {
+      setSession(currentSession);
+      if (!currentSession) {
+        clearTimeout(safetyTimer);
+        setLoading(false);
       }
-      setLoading(false);
+      // If session exists, onAuthStateChange will handle role fetch + setLoading
     });
 
-    return () => subscription.unsubscribe();
+    return () => {
+      subscription.unsubscribe();
+      clearTimeout(safetyTimer);
+    };
   }, []);
 
   const signOut = async () => {
