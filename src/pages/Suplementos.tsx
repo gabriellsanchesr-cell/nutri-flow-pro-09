@@ -146,10 +146,11 @@ export default function Suplementos() {
   };
 
   const handleDuplicate = async (item: any) => {
+    const sb = supabase as any;
     const { id, manipulado_ativos, created_at, updated_at, ...rest } = item;
-    const { data } = await supabase.from("suplementos_banco").insert({ ...rest, nome: `${rest.nome} (cópia)` }).select("id").single();
+    const { data } = await sb.from("suplementos_banco").insert({ ...rest, nome: `${rest.nome} (cópia)` }).select("id").single();
     if (data && manipulado_ativos?.length) {
-      await supabase.from("manipulado_ativos").insert(
+      await sb.from("manipulado_ativos").insert(
         manipulado_ativos.map((a: any) => ({ suplemento_id: data.id, nome_ativo: a.nome_ativo, dose: a.dose, unidade: a.unidade }))
       );
     }
@@ -158,7 +159,7 @@ export default function Suplementos() {
   };
 
   const handleDelete = async (id: string) => {
-    await supabase.from("suplementos_banco").delete().eq("id", id);
+    await (supabase as any).from("suplementos_banco").delete().eq("id", id);
     toast({ title: "Excluído!" });
     load();
   };
