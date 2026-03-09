@@ -24,6 +24,7 @@ import PortalPaciente from "./pages/PortalPaciente";
 import Chat from "./pages/Chat";
 import GestaoUsuarios from "./pages/GestaoUsuarios";
 import TrocarSenha from "./pages/TrocarSenha";
+import ConfiguracaoClinica from "./pages/ConfiguracaoClinica";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
@@ -89,6 +90,7 @@ const App = () => (
               <Route path="agenda" element={<Agenda />} />
               <Route path="biblioteca" element={<Biblioteca />} />
               <Route path="templates" element={<Templates />} />
+              <Route path="configuracoes/geral" element={<ConfiguracaoClinica />} />
               <Route path="configuracoes/usuarios" element={<GestaoUsuarios />} />
             </Route>
             <Route path="*" element={<NotFound />} />

@@ -34,6 +34,12 @@ interface Alimento {
   lipidio_g: number;
   fibra_g: number;
   alimento_taco_id: number | null;
+  // Valores base por 100g para recálculo automático
+  base_energia_kcal?: number;
+  base_proteina_g?: number;
+  base_carboidrato_g?: number;
+  base_lipidio_g?: number;
+  base_fibra_g?: number;
 }
 
 interface Refeicao {
@@ -116,6 +122,12 @@ export function PlanoAlimentarEditor({ pacienteId, planoId, onBack, paciente }: 
           energia_kcal: a.energia_kcal || 0, proteina_g: a.proteina_g || 0,
           carboidrato_g: a.carboidrato_g || 0, lipidio_g: a.lipidio_g || 0,
           fibra_g: a.fibra_g || 0, alimento_taco_id: a.alimento_taco_id,
+          // Para alimentos já salvos sem base, calcular a partir dos valores atuais
+          base_energia_kcal: a.alimento_taco_id ? (a.energia_kcal * 100 / (a.quantidade || 100)) : undefined,
+          base_proteina_g: a.alimento_taco_id ? (a.proteina_g * 100 / (a.quantidade || 100)) : undefined,
+          base_carboidrato_g: a.alimento_taco_id ? (a.carboidrato_g * 100 / (a.quantidade || 100)) : undefined,
+          base_lipidio_g: a.alimento_taco_id ? (a.lipidio_g * 100 / (a.quantidade || 100)) : undefined,
+          base_fibra_g: a.alimento_taco_id ? (a.fibra_g * 100 / (a.quantidade || 100)) : undefined,
         })),
         expanded: true,
       })));
@@ -210,21 +222,6 @@ export function PlanoAlimentarEditor({ pacienteId, planoId, onBack, paciente }: 
         ...r, alimentos: r.alimentos.map((a, j) => j === aliIdx ? { ...a, [field]: value } : a)
       } : r
     ));
-  };
-
-  const reCalcAlimento = (refIdx: number, aliIdx: number, newQty: number) => {
-    setRefeicoes(prev => prev.map((r, i) => {
-      if (i !== refIdx) return r;
-      return {
-        ...r, alimentos: r.alimentos.map((a, j) => {
-          if (j !== aliIdx || !a.alimento_taco_id) return a;
-          const ratio = newQty / 100;
-          // We need original per-100g values; store them differently later.
-          // For now, simple recalc from base:
-          return { ...a, quantidade: newQty };
-        })
-      };
-    }));
   };
 
   const macroTotal = (ref: Refeicao) => {
@@ -363,13 +360,16 @@ export function PlanoAlimentarEditor({ pacienteId, planoId, onBack, paciente }: 
                           value={ali.quantidade}
                           onChange={e => {
                             const qty = parseFloat(e.target.value) || 0;
-                            // Recalculate macros based on per-100g from TACO
-                            if (ali.alimento_taco_id) {
+                            updateAlimento(refIdx, aliIdx, "quantidade", qty);
+                            
+                            // Recalcular macros automaticamente se for alimento da TACO
+                            if (ali.alimento_taco_id && ali.base_energia_kcal !== undefined) {
                               const ratio = qty / 100;
-                              // We need base values — fetch them or use stored
-                              updateAlimento(refIdx, aliIdx, "quantidade", qty);
-                            } else {
-                              updateAlimento(refIdx, aliIdx, "quantidade", qty);
+                              updateAlimento(refIdx, aliIdx, "energia_kcal", ali.base_energia_kcal * ratio);
+                              updateAlimento(refIdx, aliIdx, "proteina_g", (ali.base_proteina_g || 0) * ratio);
+                              updateAlimento(refIdx, aliIdx, "carboidrato_g", (ali.base_carboidrato_g || 0) * ratio);
+                              updateAlimento(refIdx, aliIdx, "lipidio_g", (ali.base_lipidio_g || 0) * ratio);
+                              updateAlimento(refIdx, aliIdx, "fibra_g", (ali.base_fibra_g || 0) * ratio);
                             }
                           }}
                         />
@@ -477,6 +477,12 @@ function AlimentoSearch({ onSelect }: { onSelect: (a: Alimento) => void }) {
       lipidio_g: item.lipidio_g || 0,
       fibra_g: item.fibra_g || 0,
       alimento_taco_id: item.id,
+      // Armazenar valores base para recálculo automático
+      base_energia_kcal: item.energia_kcal || 0,
+      base_proteina_g: item.proteina_g || 0,
+      base_carboidrato_g: item.carboidrato_g || 0,
+      base_lipidio_g: item.lipidio_g || 0,
+      base_fibra_g: item.fibra_g || 0,
     });
     setQuery("");
     setResults([]);
