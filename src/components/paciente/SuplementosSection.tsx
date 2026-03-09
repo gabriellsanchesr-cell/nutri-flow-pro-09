@@ -120,10 +120,11 @@ export function SuplementosSection({ paciente }: { paciente: any }) {
         observacoes_internas: form.observacoes_internas || null,
         ativa: true,
       };
+      const sb = supabase as any;
       if (editId) {
-        await supabase.from("prescricoes_suplementos").update(payload).eq("id", editId);
+        await sb.from("prescricoes_suplementos").update(payload).eq("id", editId);
       } else {
-        await supabase.from("prescricoes_suplementos").insert(payload);
+        await sb.from("prescricoes_suplementos").insert(payload);
       }
       toast({ title: editId ? "Atualizado!" : "Prescrito!" });
       setModalOpen(false);
