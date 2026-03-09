@@ -10,7 +10,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import {
   LogOut, Home, Utensils, BookMarked, Target, MoreHorizontal,
-  ChevronDown, ChevronUp, Clock, User, Activity,
+  ChevronDown, ChevronUp, Clock, User, Activity, Sparkles,
   UtensilsCrossed, FolderOpen, MessageSquare, Scale, TrendingUp, TrendingDown, Minus, ArrowLeft,
 } from "lucide-react";
 import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetTrigger } from "@/components/ui/sheet";
