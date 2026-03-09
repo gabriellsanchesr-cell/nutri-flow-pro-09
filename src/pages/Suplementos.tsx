@@ -76,7 +76,7 @@ export default function Suplementos() {
   useEffect(() => { if (user) load(); }, [user]);
 
   const load = async () => {
-    const { data } = await supabase
+    const { data } = await (supabase as any)
       .from("suplementos_banco")
       .select("*, manipulado_ativos(*)")
       .eq("user_id", user!.id)
