@@ -90,6 +90,29 @@ export function AppSidebar() {
                   </SidebarMenuButton>
                 </SidebarMenuItem>
               ))}
+              {isAdmin && configItems.length > 0 && (
+                <>
+                  <div className="px-3 py-2">
+                    <div className="text-xs font-semibold text-sidebar-foreground/60 uppercase tracking-wider">
+                      Configurações
+                    </div>
+                  </div>
+                  {configItems.map((item) => (
+                    <SidebarMenuItem key={item.title}>
+                      <SidebarMenuButton asChild tooltip={item.title}>
+                        <NavLink
+                          to={item.url}
+                          className="flex items-center gap-3 rounded-lg px-3 py-2 transition-colors hover:bg-sidebar-accent"
+                          activeClassName="bg-sidebar-accent text-sidebar-primary font-semibold"
+                        >
+                          <item.icon className="h-5 w-5 shrink-0" />
+                          {!collapsed && <span className="flex-1">{item.title}</span>}
+                        </NavLink>
+                      </SidebarMenuButton>
+                    </SidebarMenuItem>
+                  ))}
+                </>
+              )}
             </SidebarMenu>
           </SidebarGroupContent>
         </SidebarGroup>

@@ -90,6 +90,7 @@ const App = () => (
               <Route path="agenda" element={<Agenda />} />
               <Route path="biblioteca" element={<Biblioteca />} />
               <Route path="templates" element={<Templates />} />
+              <Route path="configuracoes/geral" element={<ConfiguracaoClinica />} />
               <Route path="configuracoes/usuarios" element={<GestaoUsuarios />} />
             </Route>
             <Route path="*" element={<NotFound />} />
