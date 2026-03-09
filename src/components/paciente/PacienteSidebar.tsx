@@ -20,6 +20,7 @@ export const sections = [
   { id: "receituario", label: "Receituário", icon: UtensilsCrossed },
   { id: "metas", label: "Metas", icon: Target },
   { id: "materiais", label: "Materiais Extras", icon: FolderOpen },
+  { id: "suplementos", label: "Suplementos", icon: Pill },
   { id: "calculo", label: "Cálculo Energético", icon: Calculator },
   { id: "consultas", label: "Consultas", icon: CalendarDays },
   { id: "questionarios", label: "Questionários", icon: FileQuestion },

@@ -109,6 +109,7 @@ export default function PacienteDetalhe() {
       case "receituario": return <ReceitaSection paciente={paciente} />;
       case "metas": return <PlaceholderSection title="Metas" description="Módulo de metas em desenvolvimento." />;
       case "materiais": return <PlaceholderSection title="Materiais Extras" description="Módulo de materiais extras em desenvolvimento." />;
+      case "suplementos": return <SuplementosSection paciente={paciente} />;
       default: return null;
     }
   };
