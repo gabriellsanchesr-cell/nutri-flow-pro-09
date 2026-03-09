@@ -119,18 +119,19 @@ export default function Suplementos() {
       };
 
       let supId = editId;
+      const sb = supabase as any;
       if (editId) {
-        await supabase.from("suplementos_banco").update(payload).eq("id", editId);
+        await sb.from("suplementos_banco").update(payload).eq("id", editId);
       } else {
-        const { data } = await supabase.from("suplementos_banco").insert(payload).select("id").single();
+        const { data } = await sb.from("suplementos_banco").insert(payload).select("id").single();
         supId = data!.id;
       }
 
       // Manage ativos for manipulados
       if (form.tipo === "manipulado" && supId) {
-        await supabase.from("manipulado_ativos").delete().eq("suplemento_id", supId);
+        await sb.from("manipulado_ativos").delete().eq("suplemento_id", supId);
         if (ativos.length > 0) {
-          await supabase.from("manipulado_ativos").insert(
+          await sb.from("manipulado_ativos").insert(
             ativos.map(a => ({ suplemento_id: supId!, nome_ativo: a.nome_ativo, dose: a.dose, unidade: a.unidade }))
           );
         }
