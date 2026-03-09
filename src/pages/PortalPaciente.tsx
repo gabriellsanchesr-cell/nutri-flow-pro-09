@@ -117,6 +117,7 @@ export default function PortalPaciente() {
       case "plano": return renderPlano();
       case "diario": return <PortalDiario paciente={paciente} />;
       case "metas": return renderPlaceholder("Metas", "Suas metas aparecerão aqui quando o nutricionista configurá-las.");
+      case "mais": return renderMoreContent();
       default: return null;
     }
   };
