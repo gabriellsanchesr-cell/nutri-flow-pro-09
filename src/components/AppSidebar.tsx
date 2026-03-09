@@ -46,7 +46,11 @@ export function AppSidebar() {
     { title: "Agenda", url: "/agenda", icon: Calendar, show: hasPermission("consultas", "ver_agenda") },
     { title: "Biblioteca", url: "/biblioteca", icon: BookOpen, show: true },
     { title: "Templates", url: "/templates", icon: FileText, show: isAdmin },
-    { title: "Configurações", url: "/configuracoes/usuarios", icon: Settings, show: isAdmin },
+  ].filter(i => i.show);
+
+  const configItems = [
+    { title: "Geral", url: "/configuracoes/geral", icon: Settings, show: isAdmin },
+    { title: "Usuários", url: "/configuracoes/usuarios", icon: Users, show: isAdmin },
   ].filter(i => i.show);
 
   return (
