@@ -135,12 +135,12 @@ export function SuplementosSection({ paciente }: { paciente: any }) {
   };
 
   const toggleAtiva = async (id: string, ativa: boolean) => {
-    await supabase.from("prescricoes_suplementos").update({ ativa }).eq("id", id);
+    await (supabase as any).from("prescricoes_suplementos").update({ ativa }).eq("id", id);
     load();
   };
 
   const handleDelete = async (id: string) => {
-    await supabase.from("prescricoes_suplementos").delete().eq("id", id);
+    await (supabase as any).from("prescricoes_suplementos").delete().eq("id", id);
     toast({ title: "Removido!" });
     load();
   };
