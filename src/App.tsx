@@ -95,6 +95,7 @@ const App = () => (
               <Route path="conteudo-real" element={<ConteudoReal />} />
               <Route path="suplementos" element={<Suplementos />} />
               <Route path="templates" element={<Templates />} />
+              <Route path="relatorios" element={<Relatorios />} />
               <Route path="configuracoes/geral" element={<ConfiguracaoClinica />} />
               <Route path="configuracoes/usuarios" element={<GestaoUsuarios />} />
             </Route>

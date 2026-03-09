@@ -47,6 +47,7 @@ export function AppSidebar() {
     { title: "Biblioteca", url: "/biblioteca", icon: BookOpen, show: true },
     { title: "Conteúdo R.E.A.L.", url: "/conteudo-real", icon: Sparkles, show: isAdmin },
     { title: "Suplementos", url: "/suplementos", icon: Pill, show: isAdmin },
+    { title: "Relatórios", url: "/relatorios", icon: BarChart3, show: isAdmin },
     { title: "Templates", url: "/templates", icon: FileText, show: isAdmin },
   ].filter(i => i.show);
 
