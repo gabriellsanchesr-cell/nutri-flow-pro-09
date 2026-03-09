@@ -45,6 +45,7 @@ export function AppSidebar() {
     { title: "Acompanhamento", url: "/acompanhamento", icon: Activity, show: hasPermission("avaliacoes", "ver_acompanhamento") },
     { title: "Agenda", url: "/agenda", icon: Calendar, show: hasPermission("consultas", "ver_agenda") },
     { title: "Biblioteca", url: "/biblioteca", icon: BookOpen, show: true },
+    { title: "Conteúdo R.E.A.L.", url: "/conteudo-real", icon: Sparkles, show: isAdmin },
     { title: "Templates", url: "/templates", icon: FileText, show: isAdmin },
   ].filter(i => i.show);
 

@@ -90,6 +90,7 @@ const App = () => (
               <Route path="acompanhamento" element={<Acompanhamento />} />
               <Route path="agenda" element={<Agenda />} />
               <Route path="biblioteca" element={<Biblioteca />} />
+              <Route path="conteudo-real" element={<ConteudoReal />} />
               <Route path="templates" element={<Templates />} />
               <Route path="configuracoes/geral" element={<ConfiguracaoClinica />} />
               <Route path="configuracoes/usuarios" element={<GestaoUsuarios />} />
