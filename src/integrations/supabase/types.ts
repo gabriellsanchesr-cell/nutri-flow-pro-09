@@ -785,6 +785,186 @@ export type Database = {
           },
         ]
       }
+      conteudo_favoritos: {
+        Row: {
+          conteudo_id: string
+          created_at: string
+          id: string
+          paciente_id: string
+        }
+        Insert: {
+          conteudo_id: string
+          created_at?: string
+          id?: string
+          paciente_id: string
+        }
+        Update: {
+          conteudo_id?: string
+          created_at?: string
+          id?: string
+          paciente_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "conteudo_favoritos_conteudo_id_fkey"
+            columns: ["conteudo_id"]
+            isOneToOne: false
+            referencedRelation: "conteudos_real"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "conteudo_favoritos_paciente_id_fkey"
+            columns: ["paciente_id"]
+            isOneToOne: false
+            referencedRelation: "pacientes"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      conteudo_liberacoes: {
+        Row: {
+          conteudo_id: string
+          created_at: string
+          id: string
+          liberado: boolean | null
+          paciente_id: string
+        }
+        Insert: {
+          conteudo_id: string
+          created_at?: string
+          id?: string
+          liberado?: boolean | null
+          paciente_id: string
+        }
+        Update: {
+          conteudo_id?: string
+          created_at?: string
+          id?: string
+          liberado?: boolean | null
+          paciente_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "conteudo_liberacoes_conteudo_id_fkey"
+            columns: ["conteudo_id"]
+            isOneToOne: false
+            referencedRelation: "conteudos_real"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "conteudo_liberacoes_paciente_id_fkey"
+            columns: ["paciente_id"]
+            isOneToOne: false
+            referencedRelation: "pacientes"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      conteudo_visualizacoes: {
+        Row: {
+          conteudo_id: string
+          created_at: string
+          id: string
+          paciente_id: string
+          visto: boolean | null
+          visto_em: string | null
+        }
+        Insert: {
+          conteudo_id: string
+          created_at?: string
+          id?: string
+          paciente_id: string
+          visto?: boolean | null
+          visto_em?: string | null
+        }
+        Update: {
+          conteudo_id?: string
+          created_at?: string
+          id?: string
+          paciente_id?: string
+          visto?: boolean | null
+          visto_em?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "conteudo_visualizacoes_conteudo_id_fkey"
+            columns: ["conteudo_id"]
+            isOneToOne: false
+            referencedRelation: "conteudos_real"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "conteudo_visualizacoes_paciente_id_fkey"
+            columns: ["paciente_id"]
+            isOneToOne: false
+            referencedRelation: "pacientes"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      conteudos_real: {
+        Row: {
+          arquivo_path: string | null
+          categoria: Database["public"]["Enums"]["categoria_conteudo"]
+          conteudo_texto: string | null
+          created_at: string
+          descricao: string | null
+          duracao_estimada: string | null
+          fase: string
+          id: string
+          obrigatorio: boolean | null
+          ordem: number | null
+          status: Database["public"]["Enums"]["status_conteudo"]
+          tags: string[] | null
+          thumbnail_url: string | null
+          tipo: Database["public"]["Enums"]["tipo_conteudo"]
+          titulo: string
+          updated_at: string
+          url_midia: string | null
+          user_id: string
+        }
+        Insert: {
+          arquivo_path?: string | null
+          categoria?: Database["public"]["Enums"]["categoria_conteudo"]
+          conteudo_texto?: string | null
+          created_at?: string
+          descricao?: string | null
+          duracao_estimada?: string | null
+          fase?: string
+          id?: string
+          obrigatorio?: boolean | null
+          ordem?: number | null
+          status?: Database["public"]["Enums"]["status_conteudo"]
+          tags?: string[] | null
+          thumbnail_url?: string | null
+          tipo?: Database["public"]["Enums"]["tipo_conteudo"]
+          titulo: string
+          updated_at?: string
+          url_midia?: string | null
+          user_id: string
+        }
+        Update: {
+          arquivo_path?: string | null
+          categoria?: Database["public"]["Enums"]["categoria_conteudo"]
+          conteudo_texto?: string | null
+          created_at?: string
+          descricao?: string | null
+          duracao_estimada?: string | null
+          fase?: string
+          id?: string
+          obrigatorio?: boolean | null
+          ordem?: number | null
+          status?: Database["public"]["Enums"]["status_conteudo"]
+          tags?: string[] | null
+          thumbnail_url?: string | null
+          tipo?: Database["public"]["Enums"]["tipo_conteudo"]
+          titulo?: string
+          updated_at?: string
+          url_midia?: string | null
+          user_id?: string
+        }
+        Relationships: []
+      }
       conversas: {
         Row: {
           arquivada: boolean
@@ -1774,6 +1954,17 @@ export type Database = {
     }
     Enums: {
       app_role: "nutri" | "paciente" | "equipe"
+      categoria_conteudo:
+        | "alimentacao"
+        | "comportamento"
+        | "rotina"
+        | "exercicio"
+        | "sono"
+        | "saude_intestinal"
+        | "ansiedade"
+        | "motivacao"
+        | "receitas"
+        | "outro"
       categoria_orientacao:
         | "alimentacao"
         | "hidratacao"
@@ -1810,8 +2001,10 @@ export type Database = {
         | "outro"
       preenchido_por: "nutricionista" | "paciente"
       status_consulta: "agendado" | "realizado" | "cancelado"
+      status_conteudo: "rascunho" | "publicado"
       status_questionario: "pendente" | "enviado" | "respondido"
       tipo_consulta: "primeira_consulta" | "retorno" | "online" | "presencial"
+      tipo_conteudo: "video" | "pdf" | "texto" | "audio" | "link"
       tipo_questionario:
         | "anamnese"
         | "checkin_semanal"
@@ -1953,6 +2146,18 @@ export const Constants = {
   public: {
     Enums: {
       app_role: ["nutri", "paciente", "equipe"],
+      categoria_conteudo: [
+        "alimentacao",
+        "comportamento",
+        "rotina",
+        "exercicio",
+        "sono",
+        "saude_intestinal",
+        "ansiedade",
+        "motivacao",
+        "receitas",
+        "outro",
+      ],
       categoria_orientacao: [
         "alimentacao",
         "hidratacao",
@@ -1993,8 +2198,10 @@ export const Constants = {
       ],
       preenchido_por: ["nutricionista", "paciente"],
       status_consulta: ["agendado", "realizado", "cancelado"],
+      status_conteudo: ["rascunho", "publicado"],
       status_questionario: ["pendente", "enviado", "respondido"],
       tipo_consulta: ["primeira_consulta", "retorno", "online", "presencial"],
+      tipo_conteudo: ["video", "pdf", "texto", "audio", "link"],
       tipo_questionario: [
         "anamnese",
         "checkin_semanal",

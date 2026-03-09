@@ -1,6 +1,7 @@
 import { useEffect, useState, useMemo } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { PortalDiario } from "@/components/portal/PortalDiario";
+import { PortalJornada } from "@/components/portal/PortalJornada";
 import { PortalReceitas } from "@/components/portal/PortalReceitas";
 import { PortalChat } from "@/components/portal/PortalChat";
 import { useAuth } from "@/hooks/useAuth";
@@ -9,7 +10,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import {
   LogOut, Home, Utensils, BookMarked, Target, MoreHorizontal,
-  ChevronDown, ChevronUp, Clock, User, Activity,
+  ChevronDown, ChevronUp, Clock, User, Activity, Sparkles,
   UtensilsCrossed, FolderOpen, MessageSquare, Scale, TrendingUp, TrendingDown, Minus, ArrowLeft,
 } from "lucide-react";
 import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetTrigger } from "@/components/ui/sheet";
@@ -20,7 +21,7 @@ import {
 } from "recharts";
 
 type PortalTab = "inicio" | "plano" | "diario" | "metas" | "mais";
-type MoreTab = "avaliacoes" | "receitas" | "materiais" | "mensagens" | "perfil";
+type MoreTab = "avaliacoes" | "receitas" | "materiais" | "mensagens" | "perfil" | "jornada";
 
 const tipoRefeicaoLabels: Record<string, string> = {
   cafe_da_manha: "Café da Manhã", lanche_da_manha: "Lanche da Manhã", almoco: "Almoço",
@@ -116,6 +117,7 @@ export default function PortalPaciente() {
       case "plano": return renderPlano();
       case "diario": return <PortalDiario paciente={paciente} />;
       case "metas": return renderPlaceholder("Metas", "Suas metas aparecerão aqui quando o nutricionista configurá-las.");
+      case "mais": return renderMoreContent();
       default: return null;
     }
   };
@@ -448,6 +450,7 @@ export default function PortalPaciente() {
       );
       case "receitas": return <PortalReceitas paciente={paciente} />;
       case "mensagens": return <PortalChat paciente={paciente} />;
+      case "jornada": return <PortalJornada paciente={paciente} />;
       default: return renderPlaceholder(
         "Materiais",
         "Este recurso estará disponível em breve."
@@ -465,7 +468,7 @@ export default function PortalPaciente() {
   const moreItems = [
     { id: "avaliacoes" as MoreTab, label: "Avaliações", icon: Activity },
     { id: "receitas" as MoreTab, label: "Receitas", icon: UtensilsCrossed },
-    { id: "materiais" as MoreTab, label: "Materiais", icon: FolderOpen },
+    { id: "jornada" as MoreTab, label: "Minha Jornada", icon: Sparkles },
     { id: "mensagens" as MoreTab, label: "Mensagens", icon: MessageSquare },
     { id: "perfil" as MoreTab, label: "Perfil", icon: User },
   ];
