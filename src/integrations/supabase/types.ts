@@ -1295,6 +1295,38 @@ export type Database = {
           },
         ]
       }
+      manipulado_ativos: {
+        Row: {
+          dose: number | null
+          id: string
+          nome_ativo: string
+          suplemento_id: string
+          unidade: string | null
+        }
+        Insert: {
+          dose?: number | null
+          id?: string
+          nome_ativo: string
+          suplemento_id: string
+          unidade?: string | null
+        }
+        Update: {
+          dose?: number | null
+          id?: string
+          nome_ativo?: string
+          suplemento_id?: string
+          unidade?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "manipulado_ativos_suplemento_id_fkey"
+            columns: ["suplemento_id"]
+            isOneToOne: false
+            referencedRelation: "suplementos_banco"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       mensagens: {
         Row: {
           arquivo_url: string | null
@@ -1631,6 +1663,87 @@ export type Database = {
           },
         ]
       }
+      prescricoes_suplementos: {
+        Row: {
+          ativa: boolean
+          created_at: string
+          data_fim: string | null
+          data_inicio: string
+          dose_prescrita: string | null
+          duracao: string | null
+          farmacia: string | null
+          frequencia: string | null
+          id: string
+          instrucoes_farmacia: string | null
+          momento_uso: string | null
+          observacoes_internas: string | null
+          observacoes_paciente: string | null
+          paciente_id: string
+          qtd_capsulas: number | null
+          suplemento_id: string
+          unidade_dose: string | null
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          ativa?: boolean
+          created_at?: string
+          data_fim?: string | null
+          data_inicio?: string
+          dose_prescrita?: string | null
+          duracao?: string | null
+          farmacia?: string | null
+          frequencia?: string | null
+          id?: string
+          instrucoes_farmacia?: string | null
+          momento_uso?: string | null
+          observacoes_internas?: string | null
+          observacoes_paciente?: string | null
+          paciente_id: string
+          qtd_capsulas?: number | null
+          suplemento_id: string
+          unidade_dose?: string | null
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          ativa?: boolean
+          created_at?: string
+          data_fim?: string | null
+          data_inicio?: string
+          dose_prescrita?: string | null
+          duracao?: string | null
+          farmacia?: string | null
+          frequencia?: string | null
+          id?: string
+          instrucoes_farmacia?: string | null
+          momento_uso?: string | null
+          observacoes_internas?: string | null
+          observacoes_paciente?: string | null
+          paciente_id?: string
+          qtd_capsulas?: number | null
+          suplemento_id?: string
+          unidade_dose?: string | null
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "prescricoes_suplementos_paciente_id_fkey"
+            columns: ["paciente_id"]
+            isOneToOne: false
+            referencedRelation: "pacientes"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "prescricoes_suplementos_suplemento_id_fkey"
+            columns: ["suplemento_id"]
+            isOneToOne: false
+            referencedRelation: "suplementos_banco"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       profiles: {
         Row: {
           avatar_url: string | null
@@ -1914,6 +2027,57 @@ export type Database = {
         }
         Relationships: []
       }
+      suplementos_banco: {
+        Row: {
+          apresentacao: string | null
+          ativo: boolean
+          categoria: Database["public"]["Enums"]["categoria_suplemento"]
+          created_at: string
+          dose_padrao: number | null
+          finalidade: string | null
+          id: string
+          marca_referencia: string | null
+          nome: string
+          observacoes: string | null
+          tipo: Database["public"]["Enums"]["tipo_suplemento"]
+          unidade_medida: string | null
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          apresentacao?: string | null
+          ativo?: boolean
+          categoria?: Database["public"]["Enums"]["categoria_suplemento"]
+          created_at?: string
+          dose_padrao?: number | null
+          finalidade?: string | null
+          id?: string
+          marca_referencia?: string | null
+          nome: string
+          observacoes?: string | null
+          tipo?: Database["public"]["Enums"]["tipo_suplemento"]
+          unidade_medida?: string | null
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          apresentacao?: string | null
+          ativo?: boolean
+          categoria?: Database["public"]["Enums"]["categoria_suplemento"]
+          created_at?: string
+          dose_padrao?: number | null
+          finalidade?: string | null
+          id?: string
+          marca_referencia?: string | null
+          nome?: string
+          observacoes?: string | null
+          tipo?: Database["public"]["Enums"]["tipo_suplemento"]
+          unidade_medida?: string | null
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
       user_roles: {
         Row: {
           created_at: string
@@ -1973,6 +2137,21 @@ export type Database = {
         | "intestino"
         | "comportamento"
         | "outro"
+      categoria_suplemento:
+        | "proteinas_aminoacidos"
+        | "vitaminas_minerais"
+        | "omega_gorduras"
+        | "probioticos_fibras"
+        | "performance_energia"
+        | "fitoterapicos"
+        | "colageno_pele"
+        | "emagrecimento"
+        | "ganho_massa"
+        | "saude_intestinal"
+        | "hormonal"
+        | "sono_ansiedade"
+        | "imunidade"
+        | "outro"
       fase_real: "rotina" | "estrategia" | "autonomia" | "liberdade"
       grupo_alimentar:
         | "cereais"
@@ -2018,6 +2197,7 @@ export type Database = {
         | "lanche_da_tarde"
         | "jantar"
         | "ceia"
+      tipo_suplemento: "suplemento" | "manipulado"
     }
     CompositeTypes: {
       [_ in never]: never
@@ -2167,6 +2347,22 @@ export const Constants = {
         "comportamento",
         "outro",
       ],
+      categoria_suplemento: [
+        "proteinas_aminoacidos",
+        "vitaminas_minerais",
+        "omega_gorduras",
+        "probioticos_fibras",
+        "performance_energia",
+        "fitoterapicos",
+        "colageno_pele",
+        "emagrecimento",
+        "ganho_massa",
+        "saude_intestinal",
+        "hormonal",
+        "sono_ansiedade",
+        "imunidade",
+        "outro",
+      ],
       fase_real: ["rotina", "estrategia", "autonomia", "liberdade"],
       grupo_alimentar: [
         "cereais",
@@ -2217,6 +2413,7 @@ export const Constants = {
         "jantar",
         "ceia",
       ],
+      tipo_suplemento: ["suplemento", "manipulado"],
     },
   },
 } as const

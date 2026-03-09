@@ -26,6 +26,7 @@ import GestaoUsuarios from "./pages/GestaoUsuarios";
 import TrocarSenha from "./pages/TrocarSenha";
 import ConfiguracaoClinica from "./pages/ConfiguracaoClinica";
 import ConteudoReal from "./pages/ConteudoReal";
+import Suplementos from "./pages/Suplementos";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
@@ -91,6 +92,7 @@ const App = () => (
               <Route path="agenda" element={<Agenda />} />
               <Route path="biblioteca" element={<Biblioteca />} />
               <Route path="conteudo-real" element={<ConteudoReal />} />
+              <Route path="suplementos" element={<Suplementos />} />
               <Route path="templates" element={<Templates />} />
               <Route path="configuracoes/geral" element={<ConfiguracaoClinica />} />
               <Route path="configuracoes/usuarios" element={<GestaoUsuarios />} />

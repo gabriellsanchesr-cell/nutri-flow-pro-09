@@ -1,6 +1,6 @@
 import { useEffect, useState } from "react";
 import {
-  LayoutDashboard, Users, Utensils, Activity, Calendar, BookOpen, FileText, LogOut, MessageSquare, Settings, Sparkles,
+  LayoutDashboard, Users, Utensils, Activity, Calendar, BookOpen, FileText, LogOut, MessageSquare, Settings, Sparkles, Pill,
 } from "lucide-react";
 import { NavLink } from "@/components/NavLink";
 import { useLocation } from "react-router-dom";
@@ -46,6 +46,7 @@ export function AppSidebar() {
     { title: "Agenda", url: "/agenda", icon: Calendar, show: hasPermission("consultas", "ver_agenda") },
     { title: "Biblioteca", url: "/biblioteca", icon: BookOpen, show: true },
     { title: "Conteúdo R.E.A.L.", url: "/conteudo-real", icon: Sparkles, show: isAdmin },
+    { title: "Suplementos", url: "/suplementos", icon: Pill, show: isAdmin },
     { title: "Templates", url: "/templates", icon: FileText, show: isAdmin },
   ].filter(i => i.show);
 

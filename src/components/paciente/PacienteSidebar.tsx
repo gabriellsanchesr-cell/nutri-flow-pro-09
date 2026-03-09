@@ -2,7 +2,7 @@ import { cn } from "@/lib/utils";
 import {
   LayoutDashboard, User, ClipboardList, TrendingUp, Camera, Utensils,
   Calculator, CalendarDays, FileQuestion, TestTube, BookOpen, FileText, KeyRound,
-  ChevronDown, Ruler, BookMarked, Target, FolderOpen, UtensilsCrossed,
+  ChevronDown, Ruler, BookMarked, Target, FolderOpen, UtensilsCrossed, Pill,
 } from "lucide-react";
 import { useIsMobile } from "@/hooks/use-mobile";
 import { useState } from "react";
@@ -20,6 +20,7 @@ export const sections = [
   { id: "receituario", label: "Receituário", icon: UtensilsCrossed },
   { id: "metas", label: "Metas", icon: Target },
   { id: "materiais", label: "Materiais Extras", icon: FolderOpen },
+  { id: "suplementos", label: "Suplementos", icon: Pill },
   { id: "calculo", label: "Cálculo Energético", icon: Calculator },
   { id: "consultas", label: "Consultas", icon: CalendarDays },
   { id: "questionarios", label: "Questionários", icon: FileQuestion },

@@ -11,17 +11,17 @@ import { Badge } from "@/components/ui/badge";
 import {
   LogOut, Home, Utensils, BookMarked, Target, MoreHorizontal,
   ChevronDown, ChevronUp, Clock, User, Activity, Sparkles,
-  UtensilsCrossed, FolderOpen, MessageSquare, Scale, TrendingUp, TrendingDown, Minus, ArrowLeft,
+  UtensilsCrossed, FolderOpen, MessageSquare, Scale, TrendingUp, TrendingDown, Minus, ArrowLeft, Pill, FlaskConical,
 } from "lucide-react";
 import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetTrigger } from "@/components/ui/sheet";
-import { format } from "date-fns";
+import { format, differenceInDays } from "date-fns";
 import { ptBR } from "date-fns/locale";
 import {
   LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer,
 } from "recharts";
 
 type PortalTab = "inicio" | "plano" | "diario" | "metas" | "mais";
-type MoreTab = "avaliacoes" | "receitas" | "materiais" | "mensagens" | "perfil" | "jornada";
+type MoreTab = "avaliacoes" | "receitas" | "materiais" | "mensagens" | "perfil" | "jornada" | "suplementos";
 
 const tipoRefeicaoLabels: Record<string, string> = {
   cafe_da_manha: "Café da Manhã", lanche_da_manha: "Lanche da Manhã", almoco: "Almoço",
@@ -50,6 +50,8 @@ export default function PortalPaciente() {
   const [activeTab, setActiveTab] = useState<PortalTab>("inicio");
   const [moreTab, setMoreTab] = useState<MoreTab | null>(null);
   const [expandedMeal, setExpandedMeal] = useState<string | null>(null);
+  const [portalPresc, setPortalPresc] = useState<any[]>([]);
+  const [prescLoaded, setPrescLoaded] = useState(false);
 
   // Avaliacoes state
   const [avaliacoes, setAvaliacoes] = useState<any[]>([]);
@@ -429,6 +431,69 @@ export default function PortalPaciente() {
     );
   };
 
+
+  const loadPrescricoes = async () => {
+    if (prescLoaded || !paciente) return;
+    const { data } = await (supabase as any)
+      .from("prescricoes_suplementos")
+      .select("*, suplementos_banco(nome, tipo, categoria, apresentacao, manipulado_ativos(*))")
+      .eq("paciente_id", paciente.id)
+      .eq("ativa", true)
+      .order("created_at", { ascending: false });
+    setPortalPresc(data || []);
+    setPrescLoaded(true);
+  };
+
+  const renderPortalSuplemenos = () => {
+    if (!prescLoaded) { loadPrescricoes(); return <div className="text-center py-8 text-muted-foreground">Carregando...</div>; }
+    if (portalPresc.length === 0) {
+      return (
+        <div className="text-center py-12 text-muted-foreground">
+          <Pill className="h-8 w-8 mx-auto mb-2 opacity-40" />
+          <p className="font-medium">Nenhum suplemento prescrito</p>
+          <p className="text-sm mt-1">Seu nutricionista adicionará suas prescrições aqui.</p>
+        </div>
+      );
+    }
+    return (
+      <div className="space-y-4">
+        <h2 className="text-lg font-bold text-foreground">Meus Suplementos</h2>
+        {portalPresc.map((p: any) => {
+          const sup = p.suplementos_banco;
+          const remaining = p.data_fim ? differenceInDays(new Date(p.data_fim), new Date()) : null;
+          const totalDays = p.data_fim && p.data_inicio ? differenceInDays(new Date(p.data_fim), new Date(p.data_inicio)) : null;
+          const progress = remaining != null && totalDays ? Math.max(0, Math.min(100, ((totalDays - remaining) / totalDays) * 100)) : null;
+          return (
+            <Card key={p.id} className="rounded-2xl">
+              <CardContent className="p-4 space-y-2">
+                <div className="flex items-center gap-2">
+                  {sup?.tipo === "manipulado" ? <FlaskConical className="h-4 w-4 text-violet-500" /> : <Pill className="h-4 w-4 text-primary" />}
+                  <span className="font-semibold text-foreground">{sup?.nome}</span>
+                </div>
+                <p className="text-sm font-medium text-foreground">{p.dose_prescrita} {p.unidade_dose} — {p.frequencia}</p>
+                <p className="text-sm text-muted-foreground">{p.momento_uso} • {p.duracao}</p>
+                {remaining != null && (
+                  <div>
+                    <div className="flex justify-between text-xs text-muted-foreground mb-1">
+                      <span>{remaining > 0 ? `${remaining} dias restantes` : "Encerrada"}</span>
+                      {progress != null && <span>{Math.round(progress)}%</span>}
+                    </div>
+                    {progress != null && (
+                      <div className="h-1.5 bg-muted rounded-full overflow-hidden">
+                        <div className="h-full bg-primary rounded-full transition-all" style={{ width: `${progress}%` }} />
+                      </div>
+                    )}
+                  </div>
+                )}
+                {p.observacoes_paciente && <p className="text-xs text-muted-foreground italic">{p.observacoes_paciente}</p>}
+              </CardContent>
+            </Card>
+          );
+        })}
+      </div>
+    );
+  };
+
   const renderMoreContent = () => {
     switch (moreTab) {
       case "avaliacoes": return renderAvaliacoes();
@@ -451,6 +516,7 @@ export default function PortalPaciente() {
       case "receitas": return <PortalReceitas paciente={paciente} />;
       case "mensagens": return <PortalChat paciente={paciente} />;
       case "jornada": return <PortalJornada paciente={paciente} />;
+      case "suplementos": return renderPortalSuplemenos();
       default: return renderPlaceholder(
         "Materiais",
         "Este recurso estará disponível em breve."
@@ -468,6 +534,7 @@ export default function PortalPaciente() {
   const moreItems = [
     { id: "avaliacoes" as MoreTab, label: "Avaliações", icon: Activity },
     { id: "receitas" as MoreTab, label: "Receitas", icon: UtensilsCrossed },
+    { id: "suplementos" as MoreTab, label: "Suplementos", icon: Pill },
     { id: "jornada" as MoreTab, label: "Minha Jornada", icon: Sparkles },
     { id: "mensagens" as MoreTab, label: "Mensagens", icon: MessageSquare },
     { id: "perfil" as MoreTab, label: "Perfil", icon: User },
