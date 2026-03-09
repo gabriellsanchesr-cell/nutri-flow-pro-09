@@ -50,6 +50,8 @@ export default function PortalPaciente() {
   const [activeTab, setActiveTab] = useState<PortalTab>("inicio");
   const [moreTab, setMoreTab] = useState<MoreTab | null>(null);
   const [expandedMeal, setExpandedMeal] = useState<string | null>(null);
+  const [portalPresc, setPortalPresc] = useState<any[]>([]);
+  const [prescLoaded, setPrescLoaded] = useState(false);
 
   // Avaliacoes state
   const [avaliacoes, setAvaliacoes] = useState<any[]>([]);
