@@ -468,7 +468,7 @@ export default function PortalPaciente() {
   const moreItems = [
     { id: "avaliacoes" as MoreTab, label: "Avaliações", icon: Activity },
     { id: "receitas" as MoreTab, label: "Receitas", icon: UtensilsCrossed },
-    { id: "materiais" as MoreTab, label: "Materiais", icon: FolderOpen },
+    { id: "jornada" as MoreTab, label: "Minha Jornada", icon: Sparkles },
     { id: "mensagens" as MoreTab, label: "Mensagens", icon: MessageSquare },
     { id: "perfil" as MoreTab, label: "Perfil", icon: User },
   ];
