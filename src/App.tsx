@@ -25,6 +25,7 @@ import Chat from "./pages/Chat";
 import GestaoUsuarios from "./pages/GestaoUsuarios";
 import TrocarSenha from "./pages/TrocarSenha";
 import ConfiguracaoClinica from "./pages/ConfiguracaoClinica";
+import ConteudoReal from "./pages/ConteudoReal";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
