@@ -69,12 +69,13 @@ export function SuplementosSection({ paciente }: { paciente: any }) {
   useEffect(() => { if (user) load(); }, [user, paciente.id]);
 
   const load = async () => {
+    const sb = supabase as any;
     const [{ data: presc }, { data: bancoData }] = await Promise.all([
-      supabase.from("prescricoes_suplementos")
+      sb.from("prescricoes_suplementos")
         .select("*, suplementos_banco(*, manipulado_ativos(*))")
         .eq("paciente_id", paciente.id)
         .order("created_at", { ascending: false }),
-      supabase.from("suplementos_banco")
+      sb.from("suplementos_banco")
         .select("*")
         .eq("user_id", user!.id)
         .eq("ativo", true)
