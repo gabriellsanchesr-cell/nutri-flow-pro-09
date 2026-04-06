@@ -45,7 +45,16 @@ export function PacienteAccessModal({
         body: payload,
       });
 
-      if (error) throw error;
+      if (error) {
+        // tenta extrair a mensagem real da resposta da função
+        try {
+          const body = await (error as any).context?.json?.();
+          if (body?.error) throw new Error(body.error);
+        } catch (parseErr: any) {
+          if (parseErr.message && parseErr.message !== "body used already") throw parseErr;
+        }
+        throw error;
+      }
       if (data?.error) throw new Error(data.error);
 
       toast({
