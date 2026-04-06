@@ -1,21 +1,60 @@
 
 
-# Fix: Truncated "Masculino" Legend in Sex Distribution Chart
+# Plan: Fix Patient Access & Visibility Issues
 
-## Problem
-The `PieChart` label renderer uses `outerRadius={80}` with default label positioning, causing long text like "Masculino (100%)" to overflow and get clipped by the `ResponsiveContainer` bounds.
+## Issues Found
 
-## Solution
-In `src/components/relatorios/PacientesTab.tsx` (line 163):
+After auditing all RLS policies and portal code, I identified **3 critical RLS gaps** that prevent patients from seeing data in the portal:
 
-1. Reduce `outerRadius` from `80` to `70` to give labels more room
-2. Use a shorter label format: abbreviate to initials — `M`, `F`, `O` — followed by percentage, or use a `Legend` component below the chart instead of inline labels
-3. Best approach: replace inline `label` with a `<Legend>` component from Recharts, which renders cleanly below the pie and never truncates
+### 1. `suplementos_banco` — No patient SELECT policy
+The portal queries `prescricoes_suplementos` joined with `suplementos_banco(nome, tipo, categoria, apresentacao, manipulado_ativos(*))`. Patients can read prescriptions but the join to `suplementos_banco` and `manipulado_ativos` returns null because there's no SELECT policy for patients on these tables.
 
-### Specific change
-- Remove the `label` prop from `<Pie>`
-- Add `<Legend />` component inside `<PieChart>` to show the legend below the chart with full names
-- Increase container height from `220` to `260` to accommodate the legend
+### 2. `orientacoes` — No patient SELECT policy
+Orientações sent by the nutritionist are invisible to patients. No SELECT policy exists for patients on this table.
 
-This ensures "Masculino", "Feminino", and "Outro" always display fully regardless of chart size.
+### 3. `manage-patient-auth` edge function uses `auth.getClaims()`
+This method may not be available in all Supabase JS versions. Should fall back to `auth.getUser()` for reliability.
+
+## Changes
+
+### Migration (1 SQL migration)
+Add 3 new RLS policies:
+
+```sql
+-- Patients can view supplements linked to their prescriptions
+CREATE POLICY "Paciente can view prescribed suplementos"
+  ON public.suplementos_banco FOR SELECT TO authenticated
+  USING (EXISTS (
+    SELECT 1 FROM prescricoes_suplementos ps
+    JOIN pacientes p ON p.id = ps.paciente_id
+    WHERE ps.suplemento_id = suplementos_banco.id
+    AND p.auth_user_id = auth.uid()
+  ));
+
+-- Patients can view actives of their prescribed manipulados
+CREATE POLICY "Paciente can view prescribed manipulado_ativos"
+  ON public.manipulado_ativos FOR SELECT TO authenticated
+  USING (EXISTS (
+    SELECT 1 FROM suplementos_banco s
+    JOIN prescricoes_suplementos ps ON ps.suplemento_id = s.id
+    JOIN pacientes p ON p.id = ps.paciente_id
+    WHERE manipulado_ativos.suplemento_id = s.id
+    AND p.auth_user_id = auth.uid()
+  ));
+
+-- Patients can view orientações sent to them
+CREATE POLICY "Paciente can view own orientacoes"
+  ON public.orientacoes FOR SELECT TO authenticated
+  USING (EXISTS (
+    SELECT 1 FROM pacientes p
+    WHERE p.id = orientacoes.paciente_id
+    AND p.auth_user_id = auth.uid()
+  ));
+```
+
+### Edge Function Fix: `manage-patient-auth/index.ts`
+Replace `auth.getClaims(token)` with `auth.getUser(token)` to ensure compatibility. Extract `callerId` from `user.id` instead of claims.
+
+### No UI changes needed
+The portal components already query these tables correctly — they just fail silently due to missing RLS policies. Once policies are added, data will flow automatically.
 
