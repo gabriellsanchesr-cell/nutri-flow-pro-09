@@ -1,44 +1,21 @@
 
-# Issue Analysis: Preview Loading Problem
 
-After thorough investigation of the codebase and runtime environment, I discovered that the application **is actually working correctly**. The preview loads successfully and displays the full dashboard interface.
+# Fix: Truncated "Masculino" Legend in Sex Distribution Chart
 
-## Root Cause Investigation
+## Problem
+The `PieChart` label renderer uses `outerRadius={80}` with default label positioning, causing long text like "Masculino (100%)" to overflow and get clipped by the `ResponsiveContainer` bounds.
 
-### 1. Authentication System
-- Examined `useAuth.tsx` hook - properly configured with safety timeouts
-- The hook correctly handles role fetching with `Promise.race` timeout protection
-- User authentication is working as expected
+## Solution
+In `src/components/relatorios/PacientesTab.tsx` (line 163):
 
-### 2. Browser Testing Results
-- Successfully navigated to the sandbox environment
-- The app renders the complete Dashboard interface with:
-  - Functional sidebar with all menu items including "Suplementos" and "Relatórios"
-  - Dashboard cards showing metrics (Pacientes Ativos, Retorno Pendente, etc.)
-  - Proper navigation and styling
+1. Reduce `outerRadius` from `80` to `70` to give labels more room
+2. Use a shorter label format: abbreviate to initials — `M`, `F`, `O` — followed by percentage, or use a `Legend` component below the chart instead of inline labels
+3. Best approach: replace inline `label` with a `<Legend>` component from Recharts, which renders cleanly below the pie and never truncates
 
-### 3. Console Analysis
-- Found only React development warnings about ref forwarding in sidebar components
-- No build errors or runtime crashes
-- All components are loading and rendering successfully
+### Specific change
+- Remove the `label` prop from `<Pie>`
+- Add `<Legend />` component inside `<PieChart>` to show the legend below the chart with full names
+- Increase container height from `220` to `260` to accommodate the legend
 
-### 4. Code Structure Verification
-- All newly implemented modules are properly wired:
-  - `Relatorios.tsx` correctly imports all tab components
-  - `Suplementos.tsx` properly integrates with the database
-  - Routes are correctly registered in `App.tsx`
-  - Sidebar navigation includes both new menu items
+This ensures "Masculino", "Feminino", and "Outro" always display fully regardless of chart size.
 
-## Technical Findings
-
-The application architecture is solid:
-- **Database**: All tables (`suplementos_banco`, `prescricoes_suplementos`, etc.) exist with proper RLS policies
-- **Components**: All React components compile and render without errors
-- **Routing**: Navigation between pages works correctly
-- **Authentication**: User roles and permissions are properly enforced
-
-## Actual Status
-
-The **Módulo de Suplementos e Manipulados** and **Módulo de Relatórios e Indicadores** are both fully functional and accessible through the main navigation. The preview environment is operational and the user can navigate to both `/suplementos` and `/relatorios` successfully.
-
-The user's report of "não carrega o preview" appears to be resolved - the application is loading and functioning as expected.
