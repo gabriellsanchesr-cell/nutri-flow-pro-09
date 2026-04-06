@@ -233,7 +233,7 @@ export function PlanoAlimentarEditor({ pacienteId, planoId, onBack, paciente }: 
   return (
     <div className="space-y-4">
       {/* Sticky macro bar */}
-      <div className="sticky top-0 z-10 bg-card border border-border rounded-xl p-4 shadow-sm">
+      <div className="sticky top-0 z-[5] bg-card border border-border rounded-xl p-4 shadow-sm">
         <div className="flex items-center justify-between mb-2">
           <div className="flex items-center gap-2">
             <Button variant="ghost" size="sm" onClick={onBack}>
