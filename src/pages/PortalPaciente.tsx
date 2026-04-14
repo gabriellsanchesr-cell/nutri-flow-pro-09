@@ -10,14 +10,16 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
+import { Progress } from "@/components/ui/progress";
 import {
   LogOut, Home, Utensils, BookMarked, Target, MoreHorizontal,
   ChevronDown, ChevronUp, Clock, User, Activity, Sparkles,
   UtensilsCrossed, FolderOpen, MessageSquare, Scale, TrendingUp, TrendingDown, Minus, ArrowLeft, Pill, FlaskConical,
-  Bell, Flame, Weight, Zap, CalendarDays, ChevronRight,
+  Bell, Flame, Weight, Zap, CalendarDays, ChevronRight, Heart, Droplets, Moon, Sun, Sunrise, Sunset,
+  Calendar, Star, Trophy, CheckCircle2,
 } from "lucide-react";
 import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetTrigger } from "@/components/ui/sheet";
-import { format, differenceInDays } from "date-fns";
+import { format, differenceInDays, isToday, isTomorrow, addDays, startOfWeek, endOfWeek } from "date-fns";
 import { ptBR } from "date-fns/locale";
 import {
   LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer,
@@ -31,11 +33,12 @@ const tipoRefeicaoLabels: Record<string, string> = {
   lanche_da_tarde: "Lanche da Tarde", jantar: "Jantar", ceia: "Ceia",
 };
 
-function getGreeting(): string {
+function getGreeting(): { text: string; icon: any; emoji: string } {
   const h = new Date().getHours();
-  if (h < 12) return "Bom dia";
-  if (h < 18) return "Boa tarde";
-  return "Boa noite";
+  if (h < 6) return { text: "Boa noite", icon: Moon, emoji: "🌙" };
+  if (h < 12) return { text: "Bom dia", icon: Sunrise, emoji: "☀️" };
+  if (h < 18) return { text: "Boa tarde", icon: Sun, emoji: "🌤️" };
+  return { text: "Boa noite", icon: Sunset, emoji: "🌙" };
 }
 
 function getInitials(name: string): string {
@@ -68,6 +71,9 @@ export default function PortalPaciente() {
   const [prescLoaded, setPrescLoaded] = useState(false);
   const [avaliacoes, setAvaliacoes] = useState<any[]>([]);
   const [selectedAvaliacao, setSelectedAvaliacao] = useState<any>(null);
+  const [proximaConsulta, setProximaConsulta] = useState<any>(null);
+  const [diaryStreak, setDiaryStreak] = useState(0);
+  const [weeklyProgress, setWeeklyProgress] = useState({ done: 0, total: 7 });
 
   useEffect(() => { if (user) loadData(); }, [user]);
 
@@ -92,6 +98,42 @@ export default function PortalPaciente() {
         .eq("paciente_id", pac.id)
         .order("data_avaliacao", { ascending: false });
       setAvaliacoes((avData as any) || []);
+
+      // Load next consultation
+      const now = new Date().toISOString();
+      const { data: consultaData } = await supabase
+        .from("consultas")
+        .select("*")
+        .eq("paciente_id", pac.id)
+        .gte("data_hora", now)
+        .order("data_hora", { ascending: true })
+        .limit(1);
+      if (consultaData && consultaData.length > 0) setProximaConsulta(consultaData[0]);
+
+      // Load diary streak
+      const { data: diarioData } = await supabase
+        .from("diario_registros")
+        .select("data_registro")
+        .eq("paciente_id", pac.id)
+        .order("data_registro", { ascending: false })
+        .limit(30);
+      if (diarioData) {
+        const uniqueDates = [...new Set(diarioData.map(d => d.data_registro))];
+        let streak = 0;
+        const today = new Date();
+        for (let i = 0; i < uniqueDates.length; i++) {
+          const expected = format(addDays(today, -i), "yyyy-MM-dd");
+          if (uniqueDates.includes(expected)) streak++;
+          else break;
+        }
+        setDiaryStreak(streak);
+
+        // Weekly progress
+        const weekStart = format(startOfWeek(today, { weekStartsOn: 1 }), "yyyy-MM-dd");
+        const weekEnd = format(endOfWeek(today, { weekStartsOn: 1 }), "yyyy-MM-dd");
+        const weekDays = uniqueDates.filter(d => d >= weekStart && d <= weekEnd);
+        setWeeklyProgress({ done: weekDays.length, total: 7 });
+      }
     }
     setLoading(false);
   };
@@ -108,13 +150,19 @@ export default function PortalPaciente() {
           </div>
         </header>
         <main className="flex-1 px-4 py-4 space-y-4">
-          <Skeleton className="h-24 w-full rounded-2xl" />
-          <div className="grid grid-cols-2 gap-3">
-            <Skeleton className="h-20 rounded-2xl" />
-            <Skeleton className="h-20 rounded-2xl" />
+          <Skeleton className="h-28 w-full rounded-2xl" />
+          <div className="grid grid-cols-3 gap-3">
+            <Skeleton className="h-24 rounded-2xl" />
+            <Skeleton className="h-24 rounded-2xl" />
+            <Skeleton className="h-24 rounded-2xl" />
           </div>
-          <Skeleton className="h-32 w-full rounded-2xl" />
-          <Skeleton className="h-14 w-full rounded-2xl" />
+          <div className="flex gap-3">
+            <Skeleton className="h-10 w-28 rounded-xl" />
+            <Skeleton className="h-10 w-32 rounded-xl" />
+            <Skeleton className="h-10 w-28 rounded-xl" />
+          </div>
+          <Skeleton className="h-36 w-full rounded-2xl" />
+          <Skeleton className="h-20 w-full rounded-2xl" />
         </main>
       </div>
     );
@@ -123,7 +171,7 @@ export default function PortalPaciente() {
   if (!paciente) {
     return (
       <div className="min-h-screen flex items-center justify-center bg-background px-4">
-        <Card className="max-w-sm w-full rounded-2xl">
+        <Card className="max-w-sm w-full rounded-2xl glass-card">
           <CardContent className="py-8 text-center text-muted-foreground">
             <p>Seu perfil de paciente ainda não foi vinculado.</p>
             <p className="text-sm mt-2">Entre em contato com seu nutricionista.</p>
@@ -142,6 +190,7 @@ export default function PortalPaciente() {
 
   const firstName = paciente.nome_completo.split(" ")[0];
   const initials = getInitials(paciente.nome_completo);
+  const greeting = getGreeting();
 
   const renderContent = () => {
     if (moreTab) return renderMoreContent();
@@ -155,112 +204,194 @@ export default function PortalPaciente() {
     }
   };
 
-  const renderInicio = () => (
-    <div className="space-y-5">
-      {/* Welcome banner */}
-      <div className="relative overflow-hidden rounded-2xl bg-gradient-to-br from-primary/90 to-primary p-5 text-primary-foreground">
-        <div className="absolute -right-6 -top-6 h-28 w-28 rounded-full bg-primary-foreground/10" />
-        <div className="absolute -right-2 -bottom-8 h-20 w-20 rounded-full bg-primary-foreground/5" />
-        <div className="relative">
-          <p className="text-sm font-medium opacity-90">{getGreeting()} 👋</p>
-          <h2 className="text-xl font-bold mt-0.5">{firstName}</h2>
-          <p className="text-xs mt-1 opacity-80">Acompanhe seu progresso nutricional</p>
+  const renderInicio = () => {
+    const consultaDate = proximaConsulta ? new Date(proximaConsulta.data_hora) : null;
+    const consultaLabel = consultaDate
+      ? isToday(consultaDate) ? "Hoje" : isTomorrow(consultaDate) ? "Amanhã" : format(consultaDate, "dd 'de' MMM", { locale: ptBR })
+      : null;
+
+    return (
+      <div className="space-y-5">
+        {/* Welcome banner - glassmorphism */}
+        <div className="relative overflow-hidden rounded-2xl bg-gradient-to-br from-primary via-primary/90 to-primary/70 p-5 text-primary-foreground animate-fade-in">
+          <div className="absolute -right-8 -top-8 h-32 w-32 rounded-full bg-primary-foreground/10 blur-sm" />
+          <div className="absolute right-8 bottom-0 h-20 w-20 rounded-full bg-primary-foreground/5 blur-sm" />
+          <div className="absolute -left-4 -bottom-6 h-16 w-16 rounded-full bg-primary-foreground/8" />
+          <div className="relative flex items-center justify-between">
+            <div>
+              <p className="text-sm font-medium opacity-90 flex items-center gap-1.5">
+                {greeting.emoji} {greeting.text}
+              </p>
+              <h2 className="text-xl font-bold mt-0.5">{firstName}</h2>
+              <p className="text-xs mt-1.5 opacity-80">Acompanhe seu progresso nutricional</p>
+            </div>
+            <div className="flex flex-col items-center gap-1">
+              <div className="h-12 w-12 rounded-2xl bg-primary-foreground/15 backdrop-blur-sm flex items-center justify-center">
+                <Trophy className="h-6 w-6" />
+              </div>
+              {diaryStreak > 0 && (
+                <span className="text-[10px] font-bold opacity-90">{diaryStreak} dias</span>
+              )}
+            </div>
+          </div>
         </div>
-      </div>
 
-      {/* Metric cards */}
-      <div className="grid grid-cols-3 gap-3">
-        <Card className="rounded-2xl border-none shadow-sm">
-          <CardContent className="p-3 text-center">
-            <div className="mx-auto h-9 w-9 rounded-xl bg-blue-100 flex items-center justify-center mb-1.5">
-              <Weight className="h-4 w-4 text-blue-600" />
-            </div>
-            <p className="text-lg font-bold text-foreground">{paciente.peso_inicial || "—"}</p>
-            <p className="text-[10px] text-muted-foreground">Peso (kg)</p>
-          </CardContent>
-        </Card>
-        <Card className="rounded-2xl border-none shadow-sm">
-          <CardContent className="p-3 text-center">
-            <div className="mx-auto h-9 w-9 rounded-xl bg-orange-100 flex items-center justify-center mb-1.5">
-              <Flame className="h-4 w-4 text-orange-600" />
-            </div>
-            <p className="text-lg font-bold text-foreground">{Math.round(totalDiario)}</p>
-            <p className="text-[10px] text-muted-foreground">Kcal/dia</p>
-          </CardContent>
-        </Card>
-        <Card className="rounded-2xl border-none shadow-sm">
-          <CardContent className="p-3 text-center">
-            <div className="mx-auto h-9 w-9 rounded-xl bg-violet-100 flex items-center justify-center mb-1.5">
-              <Sparkles className="h-4 w-4 text-violet-600" />
-            </div>
-            <p className="text-lg font-bold text-foreground capitalize">{paciente.fase_real || "—"}</p>
-            <p className="text-[10px] text-muted-foreground">Fase R.E.A.L.</p>
-          </CardContent>
-        </Card>
-      </div>
+        {/* Weekly progress bar */}
+        <div className="animate-slide-up animate-stagger-1">
+          <div className="flex items-center justify-between mb-2">
+            <p className="text-xs font-semibold text-foreground flex items-center gap-1.5">
+              <Star className="h-3.5 w-3.5 text-warning" />
+              Progresso Semanal
+            </p>
+            <span className="text-xs text-muted-foreground">{weeklyProgress.done}/{weeklyProgress.total} dias</span>
+          </div>
+          <div className="flex gap-1.5">
+            {Array.from({ length: 7 }).map((_, i) => (
+              <div
+                key={i}
+                className={`h-2 flex-1 rounded-full transition-all duration-300 ${
+                  i < weeklyProgress.done
+                    ? "bg-gradient-to-r from-primary to-primary/70"
+                    : "bg-muted"
+                }`}
+              />
+            ))}
+          </div>
+        </div>
 
-      {/* Quick actions */}
-      <div className="flex gap-3 overflow-x-auto pb-1">
-        <button
-          onClick={() => { setActiveTab("plano"); setMoreTab(null); }}
-          className="flex items-center gap-2 px-4 py-2.5 rounded-xl bg-primary/10 hover:bg-primary/15 transition-colors shrink-0"
-        >
-          <Utensils className="h-4 w-4 text-primary" />
-          <span className="text-xs font-semibold text-primary">Ver Plano</span>
-        </button>
-        <button
-          onClick={() => { setActiveTab("diario"); setMoreTab(null); }}
-          className="flex items-center gap-2 px-4 py-2.5 rounded-xl bg-accent hover:bg-accent/80 transition-colors shrink-0"
-        >
-          <BookMarked className="h-4 w-4 text-accent-foreground" />
-          <span className="text-xs font-semibold text-accent-foreground">Registrar Diário</span>
-        </button>
-        <button
-          onClick={() => { setMoreTab("mensagens"); setActiveTab("mais"); }}
-          className="flex items-center gap-2 px-4 py-2.5 rounded-xl bg-accent hover:bg-accent/80 transition-colors shrink-0"
-        >
-          <MessageSquare className="h-4 w-4 text-accent-foreground" />
-          <span className="text-xs font-semibold text-accent-foreground">Mensagens</span>
-        </button>
-      </div>
+        {/* Metric cards - glassmorphism */}
+        <div className="grid grid-cols-3 gap-3 animate-slide-up animate-stagger-2">
+          {[
+            { icon: Weight, value: paciente.peso_inicial || "—", label: "Peso (kg)", color: "from-blue-500/20 to-blue-600/5", iconColor: "text-blue-600 bg-blue-100" },
+            { icon: Flame, value: Math.round(totalDiario), label: "Kcal/dia", color: "from-orange-500/20 to-orange-600/5", iconColor: "text-orange-600 bg-orange-100" },
+            { icon: Sparkles, value: paciente.fase_real || "—", label: "Fase R.E.A.L.", color: "from-violet-500/20 to-violet-600/5", iconColor: "text-violet-600 bg-violet-100" },
+          ].map((metric, idx) => (
+            <Card key={idx} className="rounded-2xl border-none shadow-sm overflow-hidden group hover:shadow-md transition-all duration-300">
+              <div className={`absolute inset-0 bg-gradient-to-br ${metric.color} opacity-0 group-hover:opacity-100 transition-opacity duration-300`} />
+              <CardContent className="p-3 text-center relative">
+                <div className={`mx-auto h-9 w-9 rounded-xl ${metric.iconColor} flex items-center justify-center mb-1.5 transition-transform duration-300 group-hover:scale-110`}>
+                  <metric.icon className="h-4 w-4" />
+                </div>
+                <p className="text-lg font-bold text-foreground capitalize">{metric.value}</p>
+                <p className="text-[10px] text-muted-foreground">{metric.label}</p>
+              </CardContent>
+            </Card>
+          ))}
+        </div>
 
-      {/* Active plan card */}
-      {plano ? (
-        <Card className="rounded-2xl overflow-hidden border-primary/20 shadow-sm">
-          <div className="h-1 bg-gradient-to-r from-primary via-primary/70 to-primary/40" />
-          <CardHeader className="pb-2 pt-4">
-            <div className="flex items-center justify-between">
-              <CardTitle className="text-sm flex items-center gap-2">
-                <Utensils className="h-4 w-4 text-primary" />
-                Plano Ativo
-              </CardTitle>
-              <Badge className="text-[10px] px-2 py-0.5 bg-emerald-500 hover:bg-emerald-500">Ativo</Badge>
-            </div>
-          </CardHeader>
-          <CardContent className="pb-4">
-            <p className="font-semibold text-foreground">{plano.nome}</p>
-            <p className="text-xs text-muted-foreground mt-1">{plano.refeicoes?.length || 0} refeições • {Math.round(totalDiario)} kcal/dia</p>
-            <Button size="sm" className="mt-3 w-full rounded-xl" onClick={() => { setActiveTab("plano"); setMoreTab(null); }}>
-              Ver Plano Completo
-              <ChevronRight className="h-3.5 w-3.5 ml-1" />
-            </Button>
-          </CardContent>
-        </Card>
-      ) : (
-        <Card className="rounded-2xl border-dashed">
-          <CardContent className="py-8 text-center text-muted-foreground text-sm">
-            <Utensils className="h-8 w-8 mx-auto mb-2 opacity-40" />
-            Seu plano alimentar será enviado em breve pelo nutricionista.
-          </CardContent>
-        </Card>
-      )}
-    </div>
-  );
+        {/* Quick actions - pill style */}
+        <div className="flex gap-2.5 overflow-x-auto pb-1 animate-slide-up animate-stagger-3 scrollbar-hide">
+          {[
+            { label: "Ver Plano", icon: Utensils, action: () => { setActiveTab("plano"); setMoreTab(null); }, variant: "primary" as const },
+            { label: "Registrar Diário", icon: BookMarked, action: () => { setActiveTab("diario"); setMoreTab(null); }, variant: "secondary" as const },
+            { label: "Mensagens", icon: MessageSquare, action: () => { setMoreTab("mensagens"); setActiveTab("mais"); }, variant: "secondary" as const },
+          ].map((btn, idx) => (
+            <button
+              key={idx}
+              onClick={btn.action}
+              className={`flex items-center gap-2 px-4 py-2.5 rounded-full shrink-0 transition-all duration-200 active:scale-95 ${
+                btn.variant === "primary"
+                  ? "bg-primary text-primary-foreground shadow-md shadow-primary/25 hover:shadow-lg hover:shadow-primary/30"
+                  : "bg-accent hover:bg-accent/80 text-accent-foreground"
+              }`}
+            >
+              <btn.icon className="h-4 w-4" />
+              <span className="text-xs font-semibold whitespace-nowrap">{btn.label}</span>
+            </button>
+          ))}
+        </div>
+
+        {/* Next consultation */}
+        {proximaConsulta && (
+          <Card className="rounded-2xl overflow-hidden border-primary/15 shadow-sm animate-slide-up animate-stagger-3">
+            <CardContent className="p-4">
+              <div className="flex items-center gap-3">
+                <div className="h-11 w-11 rounded-2xl bg-gradient-to-br from-primary/20 to-primary/5 flex items-center justify-center shrink-0">
+                  <Calendar className="h-5 w-5 text-primary" />
+                </div>
+                <div className="flex-1 min-w-0">
+                  <p className="text-xs text-muted-foreground font-medium">Próxima Consulta</p>
+                  <p className="font-bold text-foreground text-sm">
+                    {consultaLabel} às {format(consultaDate!, "HH:mm")}
+                  </p>
+                </div>
+                {isToday(consultaDate!) && (
+                  <Badge className="bg-primary/15 text-primary hover:bg-primary/15 text-[10px] font-bold animate-pulse">
+                    Hoje!
+                  </Badge>
+                )}
+              </div>
+            </CardContent>
+          </Card>
+        )}
+
+        {/* Active plan card - premium */}
+        <div className="animate-slide-up animate-stagger-4">
+          {plano ? (
+            <Card className="rounded-2xl overflow-hidden shadow-sm gradient-border">
+              <div className="h-1.5 bg-gradient-to-r from-primary via-primary/60 to-accent" />
+              <CardHeader className="pb-2 pt-4">
+                <div className="flex items-center justify-between">
+                  <CardTitle className="text-sm flex items-center gap-2">
+                    <div className="h-7 w-7 rounded-lg bg-primary/10 flex items-center justify-center">
+                      <Utensils className="h-3.5 w-3.5 text-primary" />
+                    </div>
+                    Plano Ativo
+                  </CardTitle>
+                  <Badge className="text-[10px] px-2.5 py-0.5 bg-emerald-500 hover:bg-emerald-500 rounded-full">
+                    <CheckCircle2 className="h-3 w-3 mr-0.5" /> Ativo
+                  </Badge>
+                </div>
+              </CardHeader>
+              <CardContent className="pb-4">
+                <p className="font-semibold text-foreground">{plano.nome}</p>
+                <p className="text-xs text-muted-foreground mt-1 flex items-center gap-2">
+                  <span>{plano.refeicoes?.length || 0} refeições</span>
+                  <span className="h-1 w-1 rounded-full bg-muted-foreground/40" />
+                  <span>{Math.round(totalDiario)} kcal/dia</span>
+                </p>
+                <Button
+                  size="sm"
+                  className="mt-3 w-full rounded-xl bg-gradient-to-r from-primary to-primary/80 hover:from-primary/90 hover:to-primary/70 transition-all duration-300"
+                  onClick={() => { setActiveTab("plano"); setMoreTab(null); }}
+                >
+                  Ver Plano Completo
+                  <ChevronRight className="h-3.5 w-3.5 ml-1" />
+                </Button>
+              </CardContent>
+            </Card>
+          ) : (
+            <Card className="rounded-2xl border-dashed">
+              <CardContent className="py-8 text-center text-muted-foreground text-sm">
+                <Utensils className="h-8 w-8 mx-auto mb-2 opacity-40" />
+                Seu plano alimentar será enviado em breve pelo nutricionista.
+              </CardContent>
+            </Card>
+          )}
+        </div>
+
+        {/* Diary streak card */}
+        {diaryStreak > 0 && (
+          <Card className="rounded-2xl border-none shadow-sm bg-gradient-to-r from-amber-50 to-orange-50 dark:from-amber-950/30 dark:to-orange-950/30 animate-scale-in">
+            <CardContent className="p-4 flex items-center gap-3">
+              <div className="h-11 w-11 rounded-2xl bg-gradient-to-br from-amber-400 to-orange-500 flex items-center justify-center shrink-0 shadow-md shadow-amber-500/20">
+                <Flame className="h-5 w-5 text-white" />
+              </div>
+              <div>
+                <p className="font-bold text-foreground text-sm">{diaryStreak} dias seguidos!</p>
+                <p className="text-xs text-muted-foreground">Continue registrando seu diário 🔥</p>
+              </div>
+            </CardContent>
+          </Card>
+        )}
+      </div>
+    );
+  };
 
   const renderPlano = () => {
     if (!plano) {
       return (
-        <div className="text-center py-12 text-muted-foreground">
+        <div className="text-center py-12 text-muted-foreground animate-fade-in">
           <Utensils className="h-10 w-10 mx-auto mb-3 opacity-40" />
           <p className="font-medium">Nenhum plano ativo</p>
           <p className="text-sm mt-1">Seu plano alimentar será enviado em breve.</p>
@@ -269,14 +400,14 @@ export default function PortalPaciente() {
     }
     const sortedRefeicoes = [...(plano.refeicoes || [])].sort((a: any, b: any) => (a.ordem || 0) - (b.ordem || 0));
     return (
-      <div className="space-y-4">
+      <div className="space-y-4 animate-fade-in">
         <div className="flex justify-between items-center">
           <div>
             <h2 className="text-lg font-bold text-foreground">{plano.nome}</h2>
             <p className="text-xs text-muted-foreground">{Math.round(totalDiario)} kcal/dia</p>
           </div>
         </div>
-        <Card className="rounded-2xl">
+        <Card className="rounded-2xl glass-card">
           <CardContent className="p-4">
             <div className="grid grid-cols-4 gap-2 text-center">
               {(() => {
@@ -287,23 +418,23 @@ export default function PortalPaciente() {
                 return (
                   <>
                     <div><p className="text-lg font-bold text-primary">{Math.round(totalDiario)}</p><p className="text-[10px] text-muted-foreground">Kcal</p></div>
-                    <div><p className="text-lg font-bold" style={{ color: "hsl(217, 91%, 60%)" }}>{Math.round(p)}g</p><p className="text-[10px] text-muted-foreground">Proteína</p></div>
-                    <div><p className="text-lg font-bold" style={{ color: "hsl(25, 95%, 53%)" }}>{Math.round(c)}g</p><p className="text-[10px] text-muted-foreground">Carb</p></div>
-                    <div><p className="text-lg font-bold" style={{ color: "hsl(48, 96%, 53%)" }}>{Math.round(g)}g</p><p className="text-[10px] text-muted-foreground">Gordura</p></div>
+                    <div><p className="text-lg font-bold text-blue-500">{Math.round(p)}g</p><p className="text-[10px] text-muted-foreground">Proteína</p></div>
+                    <div><p className="text-lg font-bold text-orange-500">{Math.round(c)}g</p><p className="text-[10px] text-muted-foreground">Carb</p></div>
+                    <div><p className="text-lg font-bold text-yellow-500">{Math.round(g)}g</p><p className="text-[10px] text-muted-foreground">Gordura</p></div>
                   </>
                 );
               })()}
             </div>
           </CardContent>
         </Card>
-        {sortedRefeicoes.map((ref: any) => {
+        {sortedRefeicoes.map((ref: any, idx: number) => {
           const isExp = expandedMeal === ref.id;
           const mealKcal = ref.alimentos_plano?.reduce((a: number, al: any) => a + (al.energia_kcal || 0), 0) || 0;
           return (
-            <Card key={ref.id} className="rounded-2xl overflow-hidden">
+            <Card key={ref.id} className="rounded-2xl overflow-hidden transition-all duration-200 hover:shadow-md" style={{ animationDelay: `${idx * 0.05}s` }}>
               <button className="w-full text-left p-4 flex items-center justify-between" onClick={() => setExpandedMeal(isExp ? null : ref.id)}>
                 <div className="flex items-center gap-3">
-                  <div className="h-10 w-10 rounded-xl bg-primary/10 flex items-center justify-center">
+                  <div className="h-10 w-10 rounded-xl bg-gradient-to-br from-primary/15 to-primary/5 flex items-center justify-center">
                     <Utensils className="h-4 w-4 text-primary" />
                   </div>
                   <div>
@@ -314,27 +445,29 @@ export default function PortalPaciente() {
                     </div>
                   </div>
                 </div>
-                {isExp ? <ChevronUp className="h-4 w-4 text-muted-foreground" /> : <ChevronDown className="h-4 w-4 text-muted-foreground" />}
+                <div className={`transition-transform duration-200 ${isExp ? "rotate-180" : ""}`}>
+                  <ChevronDown className="h-4 w-4 text-muted-foreground" />
+                </div>
               </button>
               {isExp && (
-                <div className="px-4 pb-4 space-y-2">
+                <div className="px-4 pb-4 space-y-2 animate-fade-in">
                   {ref.alimentos_plano?.map((ali: any) => (
-                    <div key={ali.id} className="flex justify-between items-center py-1.5 border-t text-sm">
+                    <div key={ali.id} className="flex justify-between items-center py-2 border-t border-border/50 text-sm">
                       <div>
                         <p className="text-foreground">{ali.nome_alimento}</p>
                         <p className="text-xs text-muted-foreground">{ali.quantidade}g • {ali.medida_caseira}</p>
                       </div>
-                      <span className="text-xs text-muted-foreground">{Math.round(ali.energia_kcal || 0)} kcal</span>
+                      <span className="text-xs font-medium text-muted-foreground bg-muted/50 px-2 py-0.5 rounded-full">{Math.round(ali.energia_kcal || 0)} kcal</span>
                     </div>
                   ))}
                   {ref.substituicoes_sugeridas && (
-                    <div className="bg-muted/50 rounded-lg p-3 text-xs">
+                    <div className="bg-muted/50 rounded-xl p-3 text-xs">
                       <p className="font-medium text-foreground mb-1">🔄 Substituições</p>
                       <p className="text-muted-foreground">{ref.substituicoes_sugeridas}</p>
                     </div>
                   )}
                   {ref.observacoes && (
-                    <div className="bg-primary/5 rounded-lg p-3 text-xs">
+                    <div className="bg-primary/5 rounded-xl p-3 text-xs">
                       <p className="font-medium text-foreground mb-1">📝 Observações</p>
                       <p className="text-muted-foreground">{ref.observacoes}</p>
                     </div>
@@ -363,7 +496,7 @@ export default function PortalPaciente() {
       const prev = idx < avaliacoes.length - 1 ? avaliacoes[idx + 1] : null;
 
       return (
-        <div className="space-y-4">
+        <div className="space-y-4 animate-fade-in">
           <Button variant="ghost" size="sm" onClick={() => setSelectedAvaliacao(null)}>
             <ArrowLeft className="h-4 w-4 mr-1" /> Voltar
           </Button>
@@ -371,7 +504,7 @@ export default function PortalPaciente() {
             Avaliação — {format(new Date(av.data_avaliacao), "dd/MM/yyyy")}
           </h2>
 
-          <Card className="rounded-2xl">
+          <Card className="rounded-2xl glass-card">
             <CardContent className="p-4 grid grid-cols-2 gap-4 text-sm">
               <div>
                 <p className="text-muted-foreground text-xs">Peso</p>
@@ -425,7 +558,7 @@ export default function PortalPaciente() {
     })).filter(d => d.peso != null);
 
     return (
-      <div className="space-y-4">
+      <div className="space-y-4 animate-fade-in">
         <h2 className="text-lg font-bold text-foreground">Minhas Avaliações</h2>
 
         {avaliacoes.length === 0 ? (
@@ -439,7 +572,7 @@ export default function PortalPaciente() {
         ) : (
           <>
             {chartData.length > 1 && (
-              <Card className="rounded-2xl">
+              <Card className="rounded-2xl glass-card">
                 <CardHeader className="pb-1">
                   <CardTitle className="text-sm">Evolução do Peso</CardTitle>
                 </CardHeader>
@@ -450,8 +583,8 @@ export default function PortalPaciente() {
                         <CartesianGrid strokeDasharray="3 3" className="stroke-border" />
                         <XAxis dataKey="data" tick={{ fill: "hsl(var(--muted-foreground))", fontSize: 10 }} />
                         <YAxis tick={{ fill: "hsl(var(--muted-foreground))", fontSize: 10 }} domain={["dataMin - 1", "dataMax + 1"]} />
-                        <Tooltip contentStyle={{ backgroundColor: "hsl(var(--card))", border: "1px solid hsl(var(--border))", borderRadius: 8, fontSize: 12 }} />
-                        <Line type="monotone" dataKey="peso" stroke="hsl(var(--primary))" strokeWidth={2} dot={{ fill: "hsl(var(--primary))", r: 3 }} />
+                        <Tooltip contentStyle={{ backgroundColor: "hsl(var(--card))", border: "1px solid hsl(var(--border))", borderRadius: 12, fontSize: 12 }} />
+                        <Line type="monotone" dataKey="peso" stroke="hsl(var(--primary))" strokeWidth={2.5} dot={{ fill: "hsl(var(--primary))", r: 4, strokeWidth: 2, stroke: "hsl(var(--card))" }} activeDot={{ r: 6 }} />
                       </LineChart>
                     </ResponsiveContainer>
                   </div>
@@ -460,7 +593,7 @@ export default function PortalPaciente() {
             )}
 
             {avaliacoes.length >= 2 && (
-              <Card className="rounded-2xl border-primary/20">
+              <Card className="rounded-2xl border-primary/20 glass-card">
                 <CardHeader className="pb-1"><CardTitle className="text-sm">Última vs Anterior</CardTitle></CardHeader>
                 <CardContent className="p-4">
                   <div className="grid grid-cols-3 gap-2 text-center text-sm">
@@ -480,11 +613,15 @@ export default function PortalPaciente() {
               </Card>
             )}
 
-            {avaliacoes.map(av => (
-              <Card key={av.id} className="rounded-2xl cursor-pointer hover:shadow-md transition-shadow" onClick={() => setSelectedAvaliacao(av)}>
+            {avaliacoes.map((av, idx) => (
+              <Card
+                key={av.id}
+                className="rounded-2xl cursor-pointer hover:shadow-md transition-all duration-200 active:scale-[0.98]"
+                onClick={() => setSelectedAvaliacao(av)}
+              >
                 <CardContent className="p-4 flex items-center justify-between">
                   <div className="flex items-center gap-3">
-                    <div className="h-9 w-9 rounded-xl bg-primary/10 flex items-center justify-center">
+                    <div className="h-9 w-9 rounded-xl bg-gradient-to-br from-primary/15 to-primary/5 flex items-center justify-center">
                       <Scale className="h-4 w-4 text-primary" />
                     </div>
                     <div>
@@ -494,7 +631,7 @@ export default function PortalPaciente() {
                       </p>
                     </div>
                   </div>
-                  <ChevronDown className="h-4 w-4 text-muted-foreground rotate-[-90deg]" />
+                  <ChevronRight className="h-4 w-4 text-muted-foreground" />
                 </CardContent>
               </Card>
             ))}
@@ -517,10 +654,10 @@ export default function PortalPaciente() {
   };
 
   const renderPortalSuplemenos = () => {
-    if (!prescLoaded) { loadPrescricoes(); return <div className="text-center py-8 text-muted-foreground">Carregando...</div>; }
+    if (!prescLoaded) { loadPrescricoes(); return <div className="space-y-3"><Skeleton className="h-24 rounded-2xl" /><Skeleton className="h-24 rounded-2xl" /></div>; }
     if (portalPresc.length === 0) {
       return (
-        <div className="text-center py-12 text-muted-foreground">
+        <div className="text-center py-12 text-muted-foreground animate-fade-in">
           <Pill className="h-8 w-8 mx-auto mb-2 opacity-40" />
           <p className="font-medium">Nenhum suplemento prescrito</p>
           <p className="text-sm mt-1">Seu nutricionista adicionará suas prescrições aqui.</p>
@@ -528,7 +665,7 @@ export default function PortalPaciente() {
       );
     }
     return (
-      <div className="space-y-4">
+      <div className="space-y-4 animate-fade-in">
         <h2 className="text-lg font-bold text-foreground">Meus Suplementos</h2>
         {portalPresc.map((p: any) => {
           const sup = p.suplementos_banco;
@@ -536,10 +673,12 @@ export default function PortalPaciente() {
           const totalDays = p.data_fim && p.data_inicio ? differenceInDays(new Date(p.data_fim), new Date(p.data_inicio)) : null;
           const progress = remaining != null && totalDays ? Math.max(0, Math.min(100, ((totalDays - remaining) / totalDays) * 100)) : null;
           return (
-            <Card key={p.id} className="rounded-2xl">
+            <Card key={p.id} className="rounded-2xl hover:shadow-md transition-all duration-200">
               <CardContent className="p-4 space-y-2">
                 <div className="flex items-center gap-2">
-                  {sup?.tipo === "manipulado" ? <FlaskConical className="h-4 w-4 text-violet-500" /> : <Pill className="h-4 w-4 text-primary" />}
+                  <div className={`h-8 w-8 rounded-lg flex items-center justify-center ${sup?.tipo === "manipulado" ? "bg-violet-100" : "bg-primary/10"}`}>
+                    {sup?.tipo === "manipulado" ? <FlaskConical className="h-4 w-4 text-violet-500" /> : <Pill className="h-4 w-4 text-primary" />}
+                  </div>
                   <span className="font-semibold text-foreground">{sup?.nome}</span>
                 </div>
                 <p className="text-sm font-medium text-foreground">{p.dose_prescrita} {p.unidade_dose} — {p.frequencia}</p>
@@ -552,7 +691,7 @@ export default function PortalPaciente() {
                     </div>
                     {progress != null && (
                       <div className="h-1.5 bg-muted rounded-full overflow-hidden">
-                        <div className="h-full bg-primary rounded-full transition-all" style={{ width: `${progress}%` }} />
+                        <div className="h-full bg-gradient-to-r from-primary to-primary/60 rounded-full transition-all duration-500" style={{ width: `${progress}%` }} />
                       </div>
                     )}
                   </div>
@@ -579,17 +718,40 @@ export default function PortalPaciente() {
   };
 
   const renderPerfil = () => (
-    <div className="space-y-5">
-      {/* Avatar header */}
-      <div className="flex flex-col items-center pt-2">
-        <Avatar className="h-20 w-20 mb-3">
-          <AvatarFallback className="text-2xl font-bold bg-primary/10 text-primary">
-            {initials}
-          </AvatarFallback>
-        </Avatar>
+    <div className="space-y-5 animate-fade-in">
+      {/* Avatar header with gradient */}
+      <div className="flex flex-col items-center pt-4">
+        <div className="relative">
+          <Avatar className="h-20 w-20 mb-3 ring-4 ring-primary/10">
+            <AvatarFallback className="text-2xl font-bold bg-gradient-to-br from-primary/20 to-primary/5 text-primary">
+              {initials}
+            </AvatarFallback>
+          </Avatar>
+          <div className="absolute bottom-2 right-0 h-5 w-5 rounded-full bg-emerald-500 border-2 border-card" />
+        </div>
         <h2 className="text-lg font-bold text-foreground">{paciente.nome_completo}</h2>
         <p className="text-sm text-muted-foreground">{paciente.email || ""}</p>
       </div>
+
+      {/* Stats mini bar */}
+      {diaryStreak > 0 && (
+        <div className="flex items-center justify-center gap-4 py-2">
+          <div className="text-center">
+            <p className="text-lg font-bold text-foreground">{diaryStreak}</p>
+            <p className="text-[10px] text-muted-foreground">Dias streak</p>
+          </div>
+          <div className="h-8 w-px bg-border" />
+          <div className="text-center">
+            <p className="text-lg font-bold text-foreground">{avaliacoes.length}</p>
+            <p className="text-[10px] text-muted-foreground">Avaliações</p>
+          </div>
+          <div className="h-8 w-px bg-border" />
+          <div className="text-center">
+            <p className="text-lg font-bold text-foreground capitalize">{paciente.fase_real || "—"}</p>
+            <p className="text-[10px] text-muted-foreground">Fase</p>
+          </div>
+        </div>
+      )}
 
       {/* Personal data card */}
       <Card className="rounded-2xl">
@@ -631,40 +793,40 @@ export default function PortalPaciente() {
   );
 
   const renderPlaceholder = (title: string, desc: string) => (
-    <div className="text-center py-12 text-muted-foreground">
+    <div className="text-center py-12 text-muted-foreground animate-fade-in">
       <p className="font-medium text-lg">{title}</p>
       <p className="text-sm mt-1">{desc}</p>
     </div>
   );
 
-  const moreItems: { id: MoreTab; label: string; icon: any; desc: string; color: string }[] = [
-    { id: "avaliacoes", label: "Avaliações", icon: Activity, desc: "Medidas e composição", color: "bg-blue-100 text-blue-600" },
-    { id: "receitas", label: "Receitas", icon: UtensilsCrossed, desc: "Receitas saudáveis", color: "bg-orange-100 text-orange-600" },
-    { id: "suplementos", label: "Suplementos", icon: Pill, desc: "Prescrições ativas", color: "bg-violet-100 text-violet-600" },
-    { id: "jornada", label: "Jornada", icon: Sparkles, desc: "Seu progresso", color: "bg-emerald-100 text-emerald-600" },
-    { id: "mensagens", label: "Mensagens", icon: MessageSquare, desc: "Fale com o nutri", color: "bg-sky-100 text-sky-600" },
-    { id: "perfil", label: "Perfil", icon: User, desc: "Seus dados", color: "bg-slate-100 text-slate-600" },
+  const moreItems: { id: MoreTab; label: string; icon: any; desc: string; color: string; gradient: string }[] = [
+    { id: "avaliacoes", label: "Avaliações", icon: Activity, desc: "Medidas e composição", color: "text-blue-600", gradient: "from-blue-100 to-blue-50" },
+    { id: "receitas", label: "Receitas", icon: UtensilsCrossed, desc: "Receitas saudáveis", color: "text-orange-600", gradient: "from-orange-100 to-orange-50" },
+    { id: "suplementos", label: "Suplementos", icon: Pill, desc: "Prescrições ativas", color: "text-violet-600", gradient: "from-violet-100 to-violet-50" },
+    { id: "jornada", label: "Jornada", icon: Sparkles, desc: "Seu progresso", color: "text-emerald-600", gradient: "from-emerald-100 to-emerald-50" },
+    { id: "mensagens", label: "Mensagens", icon: MessageSquare, desc: "Fale com o nutri", color: "text-sky-600", gradient: "from-sky-100 to-sky-50" },
+    { id: "perfil", label: "Perfil", icon: User, desc: "Seus dados", color: "text-slate-600", gradient: "from-slate-100 to-slate-50" },
   ];
 
   return (
     <div className="min-h-screen bg-background flex flex-col">
       {/* Header premium with glassmorphism */}
-      <header className="sticky top-0 z-40 bg-card/80 backdrop-blur-xl border-b border-border/50 px-4 py-3 safe-area-top">
+      <header className="sticky top-0 z-40 bg-card/80 backdrop-blur-xl border-b border-border/40 px-4 py-3 safe-area-top">
         <div className="flex items-center justify-between">
           <div className="flex items-center gap-3">
-            <Avatar className="h-9 w-9">
-              <AvatarFallback className="text-xs font-bold bg-primary text-primary-foreground">
+            <Avatar className="h-9 w-9 ring-2 ring-primary/10">
+              <AvatarFallback className="text-xs font-bold bg-gradient-to-br from-primary to-primary/70 text-primary-foreground">
                 {initials}
               </AvatarFallback>
             </Avatar>
             <div>
-              <p className="text-xs text-muted-foreground">{getGreeting()}</p>
+              <p className="text-[10px] text-muted-foreground font-medium uppercase tracking-wider">{greeting.text}</p>
               <h1 className="text-sm font-bold text-foreground leading-tight">{firstName}</h1>
             </div>
           </div>
           <div className="flex items-center gap-1">
             {moreTab && (
-              <Button variant="ghost" size="icon" onClick={() => setMoreTab(null)} className="h-9 w-9">
+              <Button variant="ghost" size="icon" onClick={() => setMoreTab(null)} className="h-9 w-9 rounded-xl">
                 <ArrowLeft className="h-4 w-4" />
               </Button>
             )}
@@ -677,7 +839,7 @@ export default function PortalPaciente() {
       </main>
 
       {/* Bottom nav refined */}
-      <nav className="fixed bottom-0 left-0 right-0 bg-card/95 backdrop-blur-xl border-t border-border/50 safe-area-bottom z-50">
+      <nav className="fixed bottom-0 left-0 right-0 bg-card/95 backdrop-blur-xl border-t border-border/40 safe-area-bottom z-50">
         <div className="flex items-center justify-around py-1.5 pb-2">
           <NavBtn icon={Home} label="Início" active={activeTab === "inicio" && !moreTab} onClick={() => { setActiveTab("inicio"); setMoreTab(null); }} />
           <NavBtn icon={Utensils} label="Plano" active={activeTab === "plano" && !moreTab} onClick={() => { setActiveTab("plano"); setMoreTab(null); }} />
@@ -698,10 +860,11 @@ export default function PortalPaciente() {
                 {moreItems.map(item => (
                   <button
                     key={item.id}
-                    className="flex items-center gap-3 p-3.5 rounded-2xl bg-muted/40 hover:bg-muted/70 transition-colors text-left"
+                    className="flex items-center gap-3 p-3.5 rounded-2xl hover:shadow-md transition-all duration-200 text-left active:scale-[0.97] bg-gradient-to-br dark:from-muted/40 dark:to-muted/20"
+                    style={{ background: undefined }}
                     onClick={() => { setMoreTab(item.id); setActiveTab("mais"); }}
                   >
-                    <div className={`h-10 w-10 rounded-xl flex items-center justify-center shrink-0 ${item.color}`}>
+                    <div className={`h-10 w-10 rounded-xl flex items-center justify-center shrink-0 bg-gradient-to-br ${item.gradient} ${item.color}`}>
                       <item.icon className="h-5 w-5" />
                     </div>
                     <div className="min-w-0">
@@ -721,11 +884,13 @@ export default function PortalPaciente() {
 
 function NavBtn({ icon: Icon, label, active, onClick }: { icon: any; label: string; active: boolean; onClick: () => void }) {
   return (
-    <button className="flex flex-col items-center gap-1 px-3 py-1.5 min-w-[48px] relative" onClick={onClick}>
-      <Icon className={`h-[22px] w-[22px] transition-colors ${active ? "text-primary" : "text-muted-foreground"}`} />
-      <span className={`text-[10px] transition-colors ${active ? "text-primary font-semibold" : "text-muted-foreground"}`}>{label}</span>
+    <button className="flex flex-col items-center gap-1 px-3 py-1.5 min-w-[48px] relative group" onClick={onClick}>
+      <div className={`relative transition-all duration-200 ${active ? "scale-110" : "group-active:scale-90"}`}>
+        <Icon className={`h-[22px] w-[22px] transition-colors duration-200 ${active ? "text-primary" : "text-muted-foreground"}`} />
+      </div>
+      <span className={`text-[10px] transition-colors duration-200 ${active ? "text-primary font-semibold" : "text-muted-foreground"}`}>{label}</span>
       {active && (
-        <div className="absolute -bottom-1.5 left-1/2 -translate-x-1/2 w-1.5 h-1.5 bg-primary rounded-full" />
+        <div className="absolute -bottom-1 left-1/2 -translate-x-1/2 h-1 w-5 bg-primary rounded-full" />
       )}
     </button>
   );
