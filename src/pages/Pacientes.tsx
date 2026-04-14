@@ -19,6 +19,10 @@ const statusConfig: Record<string, { label: string; variant: "default" | "second
   sem_conta: { label: "Sem conta", variant: "outline" },
 };
 
+function getInitials(name: string) {
+  return name.split(" ").filter(Boolean).map(n => n[0]).slice(0, 2).join("").toUpperCase();
+}
+
 export default function Pacientes() {
   const { user } = useAuth();
   const navigate = useNavigate();
@@ -27,7 +31,6 @@ export default function Pacientes() {
   const [busca, setBusca] = useState("");
   const [filtroStatus, setFiltroStatus] = useState<string>("todos");
 
-  // Modal states
   const [accessModal, setAccessModal] = useState<{ open: boolean; paciente: any; mode: "create" | "edit" }>({
     open: false, paciente: null, mode: "create",
   });
@@ -92,10 +95,13 @@ export default function Pacientes() {
   };
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-6 animate-fade-in">
       <div className="flex items-center justify-between">
-        <h1 className="text-2xl font-bold">Pacientes</h1>
-        <Button onClick={() => navigate("/pacientes/novo")}>
+        <div>
+          <h1 className="text-2xl font-bold text-foreground">Pacientes</h1>
+          <p className="text-sm text-muted-foreground mt-0.5">{filtered.length} paciente{filtered.length !== 1 ? "s" : ""} encontrado{filtered.length !== 1 ? "s" : ""}</p>
+        </div>
+        <Button onClick={() => navigate("/pacientes/novo")} className="rounded-xl">
           <Plus className="h-4 w-4 mr-2" /> Novo Paciente
         </Button>
       </div>
@@ -103,15 +109,16 @@ export default function Pacientes() {
       <div className="flex gap-3 flex-wrap">
         <div className="relative flex-1 min-w-[200px]">
           <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-          <Input placeholder="Buscar paciente..." value={busca} onChange={(e) => setBusca(e.target.value)} className="pl-10" />
+          <Input placeholder="Buscar paciente..." value={busca} onChange={(e) => setBusca(e.target.value)} className="pl-10 rounded-xl" />
         </div>
-        <div className="flex gap-1">
+        <div className="flex gap-1.5">
           {["todos", "ativo", "desativado", "sem_conta"].map((s) => (
             <Button
               key={s}
               variant={filtroStatus === s ? "default" : "outline"}
               size="sm"
               onClick={() => setFiltroStatus(s)}
+              className="rounded-full px-4 text-xs"
             >
               {s === "todos" ? "Todos" : statusConfig[s]?.label || s}
             </Button>
@@ -119,10 +126,10 @@ export default function Pacientes() {
         </div>
       </div>
 
-      <div className="border rounded-lg">
+      <div className="border rounded-xl overflow-hidden shadow-sm bg-card">
         <Table>
           <TableHeader>
-            <TableRow>
+            <TableRow className="bg-muted/30 hover:bg-muted/30">
               <TableHead>Nome</TableHead>
               <TableHead>E-mail</TableHead>
               <TableHead>Status</TableHead>
@@ -135,11 +142,18 @@ export default function Pacientes() {
               const status = p.account_status || "sem_conta";
               const cfg = statusConfig[status] || statusConfig.sem_conta;
               return (
-                <TableRow key={p.id} className="cursor-pointer" onClick={() => navigate(`/pacientes/${p.id}`)}>
-                  <TableCell className="font-medium">{p.nome_completo}</TableCell>
+                <TableRow key={p.id} className="cursor-pointer hover:bg-muted/30 transition-colors" onClick={() => navigate(`/pacientes/${p.id}`)}>
+                  <TableCell>
+                    <div className="flex items-center gap-3">
+                      <div className="h-8 w-8 rounded-full bg-primary/10 flex items-center justify-center text-primary text-xs font-bold shrink-0">
+                        {getInitials(p.nome_completo)}
+                      </div>
+                      <span className="font-medium text-foreground">{p.nome_completo}</span>
+                    </div>
+                  </TableCell>
                   <TableCell className="text-muted-foreground">{p.email || "—"}</TableCell>
                   <TableCell>
-                    <Badge variant={cfg.variant}>{cfg.label}</Badge>
+                    <Badge variant={cfg.variant} className="rounded-full">{cfg.label}</Badge>
                   </TableCell>
                   <TableCell className="text-muted-foreground text-sm">
                     {p.created_at ? format(new Date(p.created_at), "dd/MM/yyyy") : "—"}
@@ -183,8 +197,9 @@ export default function Pacientes() {
             })}
             {filtered.length === 0 && (
               <TableRow>
-                <TableCell colSpan={5} className="text-center py-8 text-muted-foreground">
-                  Nenhum paciente encontrado
+                <TableCell colSpan={5} className="text-center py-12 text-muted-foreground">
+                  <Search className="h-8 w-8 mx-auto mb-2 opacity-30" />
+                  <p className="text-sm">Nenhum paciente encontrado</p>
                 </TableCell>
               </TableRow>
             )}

@@ -600,9 +600,12 @@ export default function PortalPaciente() {
 
 function NavBtn({ icon: Icon, label, active, onClick }: { icon: any; label: string; active: boolean; onClick: () => void }) {
   return (
-    <button className="flex flex-col items-center gap-0.5 px-3 py-1" onClick={onClick}>
-      <Icon className={`h-5 w-5 ${active ? "text-primary" : "text-muted-foreground"}`} />
-      <span className={`text-[10px] ${active ? "text-primary font-semibold" : "text-muted-foreground"}`}>{label}</span>
+    <button className="flex flex-col items-center gap-0.5 px-3 py-1.5 relative" onClick={onClick}>
+      {active && (
+        <div className="absolute -top-1 left-1/2 -translate-x-1/2 w-8 h-1 bg-primary rounded-full" />
+      )}
+      <Icon className={`h-5 w-5 transition-colors ${active ? "text-primary" : "text-muted-foreground"}`} />
+      <span className={`text-[10px] transition-colors ${active ? "text-primary font-semibold" : "text-muted-foreground"}`}>{label}</span>
     </button>
   );
 }

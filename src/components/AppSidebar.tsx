@@ -7,6 +7,7 @@ import { useLocation } from "react-router-dom";
 import { useAuth } from "@/hooks/useAuth";
 import { supabase } from "@/integrations/supabase/client";
 import { Badge } from "@/components/ui/badge";
+import { Separator } from "@/components/ui/separator";
 import {
   Sidebar, SidebarContent, SidebarGroup, SidebarGroupContent, SidebarMenu,
   SidebarMenuButton, SidebarMenuItem, SidebarHeader, SidebarFooter, useSidebar,
@@ -56,9 +57,12 @@ export function AppSidebar() {
     { title: "Usuários", url: "/configuracoes/usuarios", icon: Users, show: isAdmin },
   ].filter(i => i.show);
 
+  const userEmail = user?.email || "";
+  const userInitial = (userEmail[0] || "N").toUpperCase();
+
   return (
     <Sidebar collapsible="icon">
-      <SidebarHeader className="p-4">
+      <SidebarHeader className="p-4 bg-gradient-to-b from-sidebar-accent/30 to-transparent">
         <div className="flex items-center gap-3">
           <img src="/logo.png" alt="NutriGabriel" className="h-10 w-10 rounded-lg object-contain" />
           {!collapsed && (
@@ -79,8 +83,8 @@ export function AppSidebar() {
                     <NavLink
                       to={item.url}
                       end={item.url === "/"}
-                      className="flex items-center gap-3 rounded-lg px-3 py-2 transition-colors hover:bg-sidebar-accent"
-                      activeClassName="bg-sidebar-accent text-sidebar-primary font-semibold"
+                      className="flex items-center gap-3 rounded-lg px-3 py-2 transition-all duration-200 hover:bg-sidebar-accent"
+                      activeClassName="bg-sidebar-accent text-sidebar-primary font-semibold border-l-[3px] border-sidebar-primary ml-0"
                     >
                       <item.icon className="h-5 w-5 shrink-0" />
                       {!collapsed && <span className="flex-1">{item.title}</span>}
@@ -95,18 +99,21 @@ export function AppSidebar() {
               ))}
               {isAdmin && configItems.length > 0 && (
                 <>
-                  <div className="px-3 py-2">
-                    <div className="text-xs font-semibold text-sidebar-foreground/60 uppercase tracking-wider">
-                      Configurações
+                  {!collapsed && (
+                    <div className="px-3 py-2">
+                      <Separator className="bg-sidebar-border mb-2" />
+                      <div className="text-xs font-semibold text-sidebar-foreground/50 uppercase tracking-wider">
+                        Configurações
+                      </div>
                     </div>
-                  </div>
+                  )}
                   {configItems.map((item) => (
                     <SidebarMenuItem key={item.title}>
                       <SidebarMenuButton asChild tooltip={item.title}>
                         <NavLink
                           to={item.url}
-                          className="flex items-center gap-3 rounded-lg px-3 py-2 transition-colors hover:bg-sidebar-accent"
-                          activeClassName="bg-sidebar-accent text-sidebar-primary font-semibold"
+                          className="flex items-center gap-3 rounded-lg px-3 py-2 transition-all duration-200 hover:bg-sidebar-accent"
+                          activeClassName="bg-sidebar-accent text-sidebar-primary font-semibold border-l-[3px] border-sidebar-primary ml-0"
                         >
                           <item.icon className="h-5 w-5 shrink-0" />
                           {!collapsed && <span className="flex-1">{item.title}</span>}
@@ -120,13 +127,21 @@ export function AppSidebar() {
           </SidebarGroupContent>
         </SidebarGroup>
       </SidebarContent>
-      <SidebarFooter className="p-2">
+      <SidebarFooter className="p-2 border-t border-sidebar-border">
         <SidebarMenu>
+          {!collapsed && (
+            <div className="px-3 py-2 flex items-center gap-2">
+              <div className="h-7 w-7 rounded-full bg-sidebar-primary/20 flex items-center justify-center text-sidebar-primary text-xs font-bold shrink-0">
+                {userInitial}
+              </div>
+              <span className="text-xs text-sidebar-foreground/70 truncate">{userEmail}</span>
+            </div>
+          )}
           <SidebarMenuItem>
             <SidebarMenuButton
               onClick={signOut}
               tooltip="Sair"
-              className="text-sidebar-foreground/60 hover:text-sidebar-foreground hover:bg-sidebar-accent"
+              className="text-sidebar-foreground/60 hover:text-sidebar-foreground hover:bg-sidebar-accent transition-colors"
             >
               <LogOut className="h-5 w-5 shrink-0" />
               {!collapsed && <span>Sair</span>}

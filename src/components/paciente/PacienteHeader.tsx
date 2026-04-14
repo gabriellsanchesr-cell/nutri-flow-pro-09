@@ -13,10 +13,10 @@ import {
 } from "@/components/ui/breadcrumb";
 
 const faseLabels: Record<string, { label: string; color: string }> = {
-  rotina: { label: "Rotina", color: "bg-blue-100 text-blue-800 border-blue-200" },
-  estrategia: { label: "Estratégia", color: "bg-amber-100 text-amber-800 border-amber-200" },
-  autonomia: { label: "Autonomia", color: "bg-emerald-100 text-emerald-800 border-emerald-200" },
-  liberdade: { label: "Liberdade", color: "bg-purple-100 text-purple-800 border-purple-200" },
+  rotina: { label: "Rotina", color: "bg-primary/10 text-primary border-primary/20" },
+  estrategia: { label: "Estratégia", color: "bg-warning/10 text-warning border-warning/20" },
+  autonomia: { label: "Autonomia", color: "bg-success/10 text-success border-success/20" },
+  liberdade: { label: "Liberdade", color: "bg-accent text-accent-foreground border-accent" },
 };
 
 const statusLabels: Record<string, { label: string; color: string }> = {
@@ -72,7 +72,7 @@ export function PacienteHeader({
   const accessCfg = accessLabels[status] || accessLabels.sem_conta;
 
   return (
-    <div className="bg-card border-b border-border">
+    <div className="bg-gradient-to-r from-card to-card/80 border-b border-border">
       <div className="px-6 pt-4 pb-2">
         <Breadcrumb>
           <BreadcrumbList>
@@ -100,7 +100,7 @@ export function PacienteHeader({
           <ArrowLeft className="h-4 w-4" />
         </Button>
 
-        <div className="h-12 w-12 rounded-full bg-primary flex items-center justify-center text-primary-foreground font-bold text-lg shrink-0">
+        <div className="h-12 w-12 rounded-full bg-gradient-to-br from-primary to-primary/70 flex items-center justify-center text-primary-foreground font-bold text-lg shrink-0 shadow-md">
           {getInitials(paciente.nome_completo)}
         </div>
 
@@ -109,8 +109,8 @@ export function PacienteHeader({
             <h1 className="text-xl font-bold text-foreground truncate">{paciente.nome_completo}</h1>
             {age !== null && <span className="text-sm text-muted-foreground">{age} anos</span>}
           </div>
-          <div className="flex gap-2 mt-1 flex-wrap">
-            <span className={`inline-flex items-center rounded-full border px-2.5 py-0.5 text-xs font-semibold ${faseCfg.color}`}>
+          <div className="flex gap-2 mt-1.5 flex-wrap">
+            <span className={`inline-flex items-center rounded-full border px-2.5 py-0.5 text-xs font-semibold transition-colors ${faseCfg.color}`}>
               {faseCfg.label}
             </span>
             <span className={`inline-flex items-center rounded-full border px-2.5 py-0.5 text-xs font-semibold ${statusCfg.color}`}>
@@ -123,25 +123,25 @@ export function PacienteHeader({
         </div>
 
         <div className="flex gap-2 flex-wrap shrink-0">
-          <Button size="sm" variant="outline" onClick={onEdit}>
+          <Button size="sm" variant="outline" onClick={onEdit} className="rounded-lg">
             <Pencil className="h-3.5 w-3.5 mr-1" /> Editar
           </Button>
           {status === "sem_conta" && (
-            <Button size="sm" onClick={onCreateAccess}>
+            <Button size="sm" onClick={onCreateAccess} className="rounded-lg">
               <KeyRound className="h-3.5 w-3.5 mr-1" /> Criar Acesso
             </Button>
           )}
           {status === "ativo" && (
-            <Button size="sm" variant="outline" onClick={onDeactivate} disabled={actionLoading}>
+            <Button size="sm" variant="outline" onClick={onDeactivate} disabled={actionLoading} className="rounded-lg">
               <UserX className="h-3.5 w-3.5 mr-1" /> Desativar
             </Button>
           )}
           {status === "desativado" && (
-            <Button size="sm" variant="outline" onClick={onReactivate} disabled={actionLoading}>
+            <Button size="sm" variant="outline" onClick={onReactivate} disabled={actionLoading} className="rounded-lg">
               <UserCheck className="h-3.5 w-3.5 mr-1" /> Reativar
             </Button>
           )}
-          <Button size="sm" variant="destructive" onClick={onDelete}>
+          <Button size="sm" variant="destructive" onClick={onDelete} className="rounded-lg">
             <Trash2 className="h-3.5 w-3.5 mr-1" /> Excluir
           </Button>
         </div>
