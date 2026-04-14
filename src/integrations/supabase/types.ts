@@ -2119,6 +2119,20 @@ export type Database = {
           sono_estresse: string
         }[]
       }
+      get_checklist_by_token: {
+        Args: { p_token: string }
+        Returns: {
+          aderencia_plano: number
+          id: string
+          nivel_energia: number
+          observacoes: string
+          paciente_id: string
+          peso: number
+          qualidade_sono: number
+          respondido: boolean
+          semana: string
+        }[]
+      }
       get_user_role: {
         Args: { _user_id: string }
         Returns: Database["public"]["Enums"]["app_role"]
@@ -2139,6 +2153,17 @@ export type Database = {
           p_objetivos_motivacoes?: string
           p_saude_intestinal?: string
           p_sono_estresse?: string
+          p_token: string
+        }
+        Returns: boolean
+      }
+      submit_checklist: {
+        Args: {
+          p_aderencia_plano?: number
+          p_nivel_energia?: number
+          p_observacoes?: string
+          p_peso?: number
+          p_qualidade_sono?: number
           p_token: string
         }
         Returns: boolean
