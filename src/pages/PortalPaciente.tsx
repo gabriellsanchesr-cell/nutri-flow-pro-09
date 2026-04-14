@@ -1,4 +1,4 @@
-import { useEffect, useState, useMemo } from "react";
+import { useEffect, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { PortalDiario } from "@/components/portal/PortalDiario";
 import { PortalJornada } from "@/components/portal/PortalJornada";
@@ -8,10 +8,13 @@ import { useAuth } from "@/hooks/useAuth";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
+import { Skeleton } from "@/components/ui/skeleton";
+import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import {
   LogOut, Home, Utensils, BookMarked, Target, MoreHorizontal,
   ChevronDown, ChevronUp, Clock, User, Activity, Sparkles,
   UtensilsCrossed, FolderOpen, MessageSquare, Scale, TrendingUp, TrendingDown, Minus, ArrowLeft, Pill, FlaskConical,
+  Bell, Flame, Weight, Zap, CalendarDays, ChevronRight,
 } from "lucide-react";
 import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetTrigger } from "@/components/ui/sheet";
 import { format, differenceInDays } from "date-fns";
@@ -27,6 +30,17 @@ const tipoRefeicaoLabels: Record<string, string> = {
   cafe_da_manha: "Café da Manhã", lanche_da_manha: "Lanche da Manhã", almoco: "Almoço",
   lanche_da_tarde: "Lanche da Tarde", jantar: "Jantar", ceia: "Ceia",
 };
+
+function getGreeting(): string {
+  const h = new Date().getHours();
+  if (h < 12) return "Bom dia";
+  if (h < 18) return "Boa tarde";
+  return "Boa noite";
+}
+
+function getInitials(name: string): string {
+  return name.split(" ").filter(Boolean).slice(0, 2).map(n => n[0]).join("").toUpperCase();
+}
 
 function PortalDeltaBadge({ current, previous, unit, inverse }: { current: number | null; previous: number | null; unit: string; inverse?: boolean }) {
   if (current == null || previous == null) return null;
@@ -52,8 +66,6 @@ export default function PortalPaciente() {
   const [expandedMeal, setExpandedMeal] = useState<string | null>(null);
   const [portalPresc, setPortalPresc] = useState<any[]>([]);
   const [prescLoaded, setPrescLoaded] = useState(false);
-
-  // Avaliacoes state
   const [avaliacoes, setAvaliacoes] = useState<any[]>([]);
   const [selectedAvaliacao, setSelectedAvaliacao] = useState<any>(null);
 
@@ -84,10 +96,26 @@ export default function PortalPaciente() {
     setLoading(false);
   };
 
+  // Loading skeleton
   if (loading) {
     return (
-      <div className="min-h-screen flex items-center justify-center bg-background">
-        <div className="animate-pulse text-muted-foreground">Carregando...</div>
+      <div className="min-h-screen bg-background flex flex-col">
+        <header className="px-4 py-3 flex items-center gap-3 border-b border-border bg-card/80 backdrop-blur-lg">
+          <Skeleton className="h-10 w-10 rounded-full" />
+          <div className="space-y-1.5 flex-1">
+            <Skeleton className="h-4 w-28" />
+            <Skeleton className="h-3 w-40" />
+          </div>
+        </header>
+        <main className="flex-1 px-4 py-4 space-y-4">
+          <Skeleton className="h-24 w-full rounded-2xl" />
+          <div className="grid grid-cols-2 gap-3">
+            <Skeleton className="h-20 rounded-2xl" />
+            <Skeleton className="h-20 rounded-2xl" />
+          </div>
+          <Skeleton className="h-32 w-full rounded-2xl" />
+          <Skeleton className="h-14 w-full rounded-2xl" />
+        </main>
       </div>
     );
   }
@@ -112,6 +140,9 @@ export default function PortalPaciente() {
     acc + (r.alimentos_plano?.reduce((a: number, al: any) => a + (al.energia_kcal || 0), 0) || 0), 0
   ) || 0;
 
+  const firstName = paciente.nome_completo.split(" ")[0];
+  const initials = getInitials(paciente.nome_completo);
+
   const renderContent = () => {
     if (moreTab) return renderMoreContent();
     switch (activeTab) {
@@ -125,55 +156,101 @@ export default function PortalPaciente() {
   };
 
   const renderInicio = () => (
-    <div className="space-y-4">
-      <div>
-        <h2 className="text-xl font-bold text-foreground">Olá, {paciente.nome_completo.split(" ")[0]}! 👋</h2>
-        <p className="text-sm text-muted-foreground mt-1">Acompanhe seu progresso nutricional</p>
+    <div className="space-y-5">
+      {/* Welcome banner */}
+      <div className="relative overflow-hidden rounded-2xl bg-gradient-to-br from-primary/90 to-primary p-5 text-primary-foreground">
+        <div className="absolute -right-6 -top-6 h-28 w-28 rounded-full bg-primary-foreground/10" />
+        <div className="absolute -right-2 -bottom-8 h-20 w-20 rounded-full bg-primary-foreground/5" />
+        <div className="relative">
+          <p className="text-sm font-medium opacity-90">{getGreeting()} 👋</p>
+          <h2 className="text-xl font-bold mt-0.5">{firstName}</h2>
+          <p className="text-xs mt-1 opacity-80">Acompanhe seu progresso nutricional</p>
+        </div>
       </div>
-      <div className="grid grid-cols-2 gap-3">
-        <Card className="rounded-2xl">
-          <CardContent className="p-4 text-center">
-            <p className="text-2xl font-bold text-primary">{paciente.peso_inicial || "—"}</p>
-            <p className="text-xs text-muted-foreground">Peso inicial (kg)</p>
+
+      {/* Metric cards */}
+      <div className="grid grid-cols-3 gap-3">
+        <Card className="rounded-2xl border-none shadow-sm">
+          <CardContent className="p-3 text-center">
+            <div className="mx-auto h-9 w-9 rounded-xl bg-blue-100 flex items-center justify-center mb-1.5">
+              <Weight className="h-4 w-4 text-blue-600" />
+            </div>
+            <p className="text-lg font-bold text-foreground">{paciente.peso_inicial || "—"}</p>
+            <p className="text-[10px] text-muted-foreground">Peso (kg)</p>
           </CardContent>
         </Card>
-        <Card className="rounded-2xl">
-          <CardContent className="p-4 text-center">
-            <p className="text-2xl font-bold text-primary">{Math.round(totalDiario)}</p>
-            <p className="text-xs text-muted-foreground">Kcal/dia no plano</p>
+        <Card className="rounded-2xl border-none shadow-sm">
+          <CardContent className="p-3 text-center">
+            <div className="mx-auto h-9 w-9 rounded-xl bg-orange-100 flex items-center justify-center mb-1.5">
+              <Flame className="h-4 w-4 text-orange-600" />
+            </div>
+            <p className="text-lg font-bold text-foreground">{Math.round(totalDiario)}</p>
+            <p className="text-[10px] text-muted-foreground">Kcal/dia</p>
+          </CardContent>
+        </Card>
+        <Card className="rounded-2xl border-none shadow-sm">
+          <CardContent className="p-3 text-center">
+            <div className="mx-auto h-9 w-9 rounded-xl bg-violet-100 flex items-center justify-center mb-1.5">
+              <Sparkles className="h-4 w-4 text-violet-600" />
+            </div>
+            <p className="text-lg font-bold text-foreground capitalize">{paciente.fase_real || "—"}</p>
+            <p className="text-[10px] text-muted-foreground">Fase R.E.A.L.</p>
           </CardContent>
         </Card>
       </div>
+
+      {/* Quick actions */}
+      <div className="flex gap-3 overflow-x-auto pb-1">
+        <button
+          onClick={() => { setActiveTab("plano"); setMoreTab(null); }}
+          className="flex items-center gap-2 px-4 py-2.5 rounded-xl bg-primary/10 hover:bg-primary/15 transition-colors shrink-0"
+        >
+          <Utensils className="h-4 w-4 text-primary" />
+          <span className="text-xs font-semibold text-primary">Ver Plano</span>
+        </button>
+        <button
+          onClick={() => { setActiveTab("diario"); setMoreTab(null); }}
+          className="flex items-center gap-2 px-4 py-2.5 rounded-xl bg-accent hover:bg-accent/80 transition-colors shrink-0"
+        >
+          <BookMarked className="h-4 w-4 text-accent-foreground" />
+          <span className="text-xs font-semibold text-accent-foreground">Registrar Diário</span>
+        </button>
+        <button
+          onClick={() => { setMoreTab("mensagens"); setActiveTab("mais"); }}
+          className="flex items-center gap-2 px-4 py-2.5 rounded-xl bg-accent hover:bg-accent/80 transition-colors shrink-0"
+        >
+          <MessageSquare className="h-4 w-4 text-accent-foreground" />
+          <span className="text-xs font-semibold text-accent-foreground">Mensagens</span>
+        </button>
+      </div>
+
+      {/* Active plan card */}
       {plano ? (
-        <Card className="rounded-2xl border-primary/20">
-          <CardHeader className="pb-2">
+        <Card className="rounded-2xl overflow-hidden border-primary/20 shadow-sm">
+          <div className="h-1 bg-gradient-to-r from-primary via-primary/70 to-primary/40" />
+          <CardHeader className="pb-2 pt-4">
             <div className="flex items-center justify-between">
-              <CardTitle className="text-sm">Plano Ativo</CardTitle>
-              <Badge className="text-xs">Ativo</Badge>
+              <CardTitle className="text-sm flex items-center gap-2">
+                <Utensils className="h-4 w-4 text-primary" />
+                Plano Ativo
+              </CardTitle>
+              <Badge className="text-[10px] px-2 py-0.5 bg-emerald-500 hover:bg-emerald-500">Ativo</Badge>
             </div>
           </CardHeader>
-          <CardContent>
+          <CardContent className="pb-4">
             <p className="font-semibold text-foreground">{plano.nome}</p>
-            <p className="text-xs text-muted-foreground mt-1">{plano.refeicoes?.length || 0} refeições configuradas</p>
-            <Button size="sm" className="mt-3 w-full rounded-lg" onClick={() => { setActiveTab("plano"); setMoreTab(null); }}>
-              <Utensils className="h-3.5 w-3.5 mr-1" /> Ver Plano Completo
+            <p className="text-xs text-muted-foreground mt-1">{plano.refeicoes?.length || 0} refeições • {Math.round(totalDiario)} kcal/dia</p>
+            <Button size="sm" className="mt-3 w-full rounded-xl" onClick={() => { setActiveTab("plano"); setMoreTab(null); }}>
+              Ver Plano Completo
+              <ChevronRight className="h-3.5 w-3.5 ml-1" />
             </Button>
           </CardContent>
         </Card>
       ) : (
-        <Card className="rounded-2xl">
-          <CardContent className="py-6 text-center text-muted-foreground text-sm">
-            <Utensils className="h-6 w-6 mx-auto mb-2 opacity-40" />
+        <Card className="rounded-2xl border-dashed">
+          <CardContent className="py-8 text-center text-muted-foreground text-sm">
+            <Utensils className="h-8 w-8 mx-auto mb-2 opacity-40" />
             Seu plano alimentar será enviado em breve pelo nutricionista.
-          </CardContent>
-        </Card>
-      )}
-      {paciente.fase_real && (
-        <Card className="rounded-2xl">
-          <CardContent className="p-4">
-            <p className="text-xs text-muted-foreground uppercase tracking-wide">Fase Atual</p>
-            <p className="font-semibold text-foreground capitalize mt-1">{paciente.fase_real}</p>
-            <p className="text-xs text-muted-foreground mt-1">Método R.E.A.L.</p>
           </CardContent>
         </Card>
       )}
@@ -342,7 +419,6 @@ export default function PortalPaciente() {
       );
     }
 
-    // Weight evolution chart data
     const chartData = [...avaliacoes].reverse().map(a => ({
       data: format(new Date(a.data_avaliacao), "dd/MM", { locale: ptBR }),
       peso: a.peso,
@@ -362,7 +438,6 @@ export default function PortalPaciente() {
           </Card>
         ) : (
           <>
-            {/* Weight chart */}
             {chartData.length > 1 && (
               <Card className="rounded-2xl">
                 <CardHeader className="pb-1">
@@ -384,7 +459,6 @@ export default function PortalPaciente() {
               </Card>
             )}
 
-            {/* Comparison card: latest vs previous */}
             {avaliacoes.length >= 2 && (
               <Card className="rounded-2xl border-primary/20">
                 <CardHeader className="pb-1"><CardTitle className="text-sm">Última vs Anterior</CardTitle></CardHeader>
@@ -406,7 +480,6 @@ export default function PortalPaciente() {
               </Card>
             )}
 
-            {/* List */}
             {avaliacoes.map(av => (
               <Card key={av.id} className="rounded-2xl cursor-pointer hover:shadow-md transition-shadow" onClick={() => setSelectedAvaliacao(av)}>
                 <CardContent className="p-4 flex items-center justify-between">
@@ -430,7 +503,6 @@ export default function PortalPaciente() {
       </div>
     );
   };
-
 
   const loadPrescricoes = async () => {
     if (prescLoaded || !paciente) return;
@@ -497,32 +569,66 @@ export default function PortalPaciente() {
   const renderMoreContent = () => {
     switch (moreTab) {
       case "avaliacoes": return renderAvaliacoes();
-      case "perfil": return (
-        <div className="space-y-4">
-          <h2 className="text-lg font-bold text-foreground">Meu Perfil</h2>
-          <Card className="rounded-2xl">
-            <CardContent className="p-4 text-sm space-y-2">
-              <p><span className="text-muted-foreground">Nome:</span> {paciente.nome_completo}</p>
-              <p><span className="text-muted-foreground">E-mail:</span> {paciente.email || "—"}</p>
-              <p><span className="text-muted-foreground">Telefone:</span> {paciente.telefone || "—"}</p>
-              <p><span className="text-muted-foreground">Objetivo:</span> {paciente.objetivo?.replace(/_/g, " ") || "—"}</p>
-            </CardContent>
-          </Card>
-          <Button variant="outline" className="w-full" onClick={signOut}>
-            <LogOut className="h-4 w-4 mr-2" /> Sair
-          </Button>
-        </div>
-      );
+      case "perfil": return renderPerfil();
       case "receitas": return <PortalReceitas paciente={paciente} />;
       case "mensagens": return <PortalChat paciente={paciente} />;
       case "jornada": return <PortalJornada paciente={paciente} />;
       case "suplementos": return renderPortalSuplemenos();
-      default: return renderPlaceholder(
-        "Materiais",
-        "Este recurso estará disponível em breve."
-      );
+      default: return renderPlaceholder("Materiais", "Este recurso estará disponível em breve.");
     }
   };
+
+  const renderPerfil = () => (
+    <div className="space-y-5">
+      {/* Avatar header */}
+      <div className="flex flex-col items-center pt-2">
+        <Avatar className="h-20 w-20 mb-3">
+          <AvatarFallback className="text-2xl font-bold bg-primary/10 text-primary">
+            {initials}
+          </AvatarFallback>
+        </Avatar>
+        <h2 className="text-lg font-bold text-foreground">{paciente.nome_completo}</h2>
+        <p className="text-sm text-muted-foreground">{paciente.email || ""}</p>
+      </div>
+
+      {/* Personal data card */}
+      <Card className="rounded-2xl">
+        <CardHeader className="pb-2">
+          <CardTitle className="text-sm flex items-center gap-2">
+            <User className="h-4 w-4 text-primary" />
+            Dados Pessoais
+          </CardTitle>
+        </CardHeader>
+        <CardContent className="text-sm space-y-3">
+          <div className="flex justify-between">
+            <span className="text-muted-foreground">Telefone</span>
+            <span className="font-medium text-foreground">{paciente.telefone || "—"}</span>
+          </div>
+          <div className="flex justify-between border-t border-border pt-3">
+            <span className="text-muted-foreground">Objetivo</span>
+            <span className="font-medium text-foreground capitalize">{paciente.objetivo?.replace(/_/g, " ") || "—"}</span>
+          </div>
+          {paciente.data_nascimento && (
+            <div className="flex justify-between border-t border-border pt-3">
+              <span className="text-muted-foreground">Nascimento</span>
+              <span className="font-medium text-foreground">{format(new Date(paciente.data_nascimento), "dd/MM/yyyy")}</span>
+            </div>
+          )}
+          {paciente.sexo && (
+            <div className="flex justify-between border-t border-border pt-3">
+              <span className="text-muted-foreground">Sexo</span>
+              <span className="font-medium text-foreground capitalize">{paciente.sexo}</span>
+            </div>
+          )}
+        </CardContent>
+      </Card>
+
+      {/* Logout */}
+      <Button variant="outline" className="w-full rounded-xl border-destructive/30 text-destructive hover:bg-destructive/5 hover:text-destructive" onClick={signOut}>
+        <LogOut className="h-4 w-4 mr-2" /> Sair da conta
+      </Button>
+    </div>
+  );
 
   const renderPlaceholder = (title: string, desc: string) => (
     <div className="text-center py-12 text-muted-foreground">
@@ -531,62 +637,77 @@ export default function PortalPaciente() {
     </div>
   );
 
-  const moreItems = [
-    { id: "avaliacoes" as MoreTab, label: "Avaliações", icon: Activity },
-    { id: "receitas" as MoreTab, label: "Receitas", icon: UtensilsCrossed },
-    { id: "suplementos" as MoreTab, label: "Suplementos", icon: Pill },
-    { id: "jornada" as MoreTab, label: "Minha Jornada", icon: Sparkles },
-    { id: "mensagens" as MoreTab, label: "Mensagens", icon: MessageSquare },
-    { id: "perfil" as MoreTab, label: "Perfil", icon: User },
+  const moreItems: { id: MoreTab; label: string; icon: any; desc: string; color: string }[] = [
+    { id: "avaliacoes", label: "Avaliações", icon: Activity, desc: "Medidas e composição", color: "bg-blue-100 text-blue-600" },
+    { id: "receitas", label: "Receitas", icon: UtensilsCrossed, desc: "Receitas saudáveis", color: "bg-orange-100 text-orange-600" },
+    { id: "suplementos", label: "Suplementos", icon: Pill, desc: "Prescrições ativas", color: "bg-violet-100 text-violet-600" },
+    { id: "jornada", label: "Jornada", icon: Sparkles, desc: "Seu progresso", color: "bg-emerald-100 text-emerald-600" },
+    { id: "mensagens", label: "Mensagens", icon: MessageSquare, desc: "Fale com o nutri", color: "bg-sky-100 text-sky-600" },
+    { id: "perfil", label: "Perfil", icon: User, desc: "Seus dados", color: "bg-slate-100 text-slate-600" },
   ];
 
   return (
     <div className="min-h-screen bg-background flex flex-col">
-      <header className="bg-card border-b border-border px-4 py-3 flex items-center justify-between safe-area-top">
-        <div className="flex items-center gap-2.5">
-          <img src="/logo.png" alt="Logo" className="h-8 w-8 rounded-lg object-contain" />
-          <div>
-            <h1 className="text-sm font-bold text-foreground">Gabriel Sanches</h1>
-            <p className="text-[10px] text-muted-foreground">Nutrição Individualizada</p>
+      {/* Header premium with glassmorphism */}
+      <header className="sticky top-0 z-40 bg-card/80 backdrop-blur-xl border-b border-border/50 px-4 py-3 safe-area-top">
+        <div className="flex items-center justify-between">
+          <div className="flex items-center gap-3">
+            <Avatar className="h-9 w-9">
+              <AvatarFallback className="text-xs font-bold bg-primary text-primary-foreground">
+                {initials}
+              </AvatarFallback>
+            </Avatar>
+            <div>
+              <p className="text-xs text-muted-foreground">{getGreeting()}</p>
+              <h1 className="text-sm font-bold text-foreground leading-tight">{firstName}</h1>
+            </div>
+          </div>
+          <div className="flex items-center gap-1">
+            {moreTab && (
+              <Button variant="ghost" size="icon" onClick={() => setMoreTab(null)} className="h-9 w-9">
+                <ArrowLeft className="h-4 w-4" />
+              </Button>
+            )}
           </div>
         </div>
-        {moreTab && (
-          <Button variant="ghost" size="sm" onClick={() => setMoreTab(null)} className="text-xs">
-            ← Voltar
-          </Button>
-        )}
       </header>
 
       <main className="flex-1 overflow-y-auto px-4 py-4 pb-24">
         {renderContent()}
       </main>
 
-      <nav className="fixed bottom-0 left-0 right-0 bg-card border-t border-border safe-area-bottom z-50">
-        <div className="flex items-center justify-around py-2">
+      {/* Bottom nav refined */}
+      <nav className="fixed bottom-0 left-0 right-0 bg-card/95 backdrop-blur-xl border-t border-border/50 safe-area-bottom z-50">
+        <div className="flex items-center justify-around py-1.5 pb-2">
           <NavBtn icon={Home} label="Início" active={activeTab === "inicio" && !moreTab} onClick={() => { setActiveTab("inicio"); setMoreTab(null); }} />
           <NavBtn icon={Utensils} label="Plano" active={activeTab === "plano" && !moreTab} onClick={() => { setActiveTab("plano"); setMoreTab(null); }} />
           <NavBtn icon={BookMarked} label="Diário" active={activeTab === "diario" && !moreTab} onClick={() => { setActiveTab("diario"); setMoreTab(null); }} />
           <NavBtn icon={Target} label="Metas" active={activeTab === "metas" && !moreTab} onClick={() => { setActiveTab("metas"); setMoreTab(null); }} />
           <Sheet>
             <SheetTrigger asChild>
-              <button className="flex flex-col items-center gap-0.5 px-3 py-1">
-                <MoreHorizontal className="h-5 w-5 text-muted-foreground" />
+              <button className="flex flex-col items-center gap-0.5 px-3 py-1.5 min-w-[48px]">
+                <MoreHorizontal className="h-[22px] w-[22px] text-muted-foreground transition-colors" />
                 <span className="text-[10px] text-muted-foreground">Mais</span>
               </button>
             </SheetTrigger>
-            <SheetContent side="bottom" className="rounded-t-2xl">
-              <SheetHeader><SheetTitle>Menu</SheetTitle></SheetHeader>
-              <div className="grid grid-cols-3 gap-4 py-4">
+            <SheetContent side="bottom" className="rounded-t-3xl px-5 pb-8">
+              <SheetHeader className="pb-1">
+                <SheetTitle className="text-base">Menu</SheetTitle>
+              </SheetHeader>
+              <div className="grid grid-cols-2 gap-3 pt-3">
                 {moreItems.map(item => (
                   <button
                     key={item.id}
-                    className="flex flex-col items-center gap-2 p-3 rounded-xl hover:bg-muted/50 transition-colors"
+                    className="flex items-center gap-3 p-3.5 rounded-2xl bg-muted/40 hover:bg-muted/70 transition-colors text-left"
                     onClick={() => { setMoreTab(item.id); setActiveTab("mais"); }}
                   >
-                    <div className="h-10 w-10 rounded-xl bg-primary/10 flex items-center justify-center">
-                      <item.icon className="h-5 w-5 text-primary" />
+                    <div className={`h-10 w-10 rounded-xl flex items-center justify-center shrink-0 ${item.color}`}>
+                      <item.icon className="h-5 w-5" />
                     </div>
-                    <span className="text-xs font-medium text-foreground">{item.label}</span>
+                    <div className="min-w-0">
+                      <p className="text-sm font-semibold text-foreground">{item.label}</p>
+                      <p className="text-[10px] text-muted-foreground truncate">{item.desc}</p>
+                    </div>
                   </button>
                 ))}
               </div>
@@ -600,12 +721,12 @@ export default function PortalPaciente() {
 
 function NavBtn({ icon: Icon, label, active, onClick }: { icon: any; label: string; active: boolean; onClick: () => void }) {
   return (
-    <button className="flex flex-col items-center gap-0.5 px-3 py-1.5 relative" onClick={onClick}>
-      {active && (
-        <div className="absolute -top-1 left-1/2 -translate-x-1/2 w-8 h-1 bg-primary rounded-full" />
-      )}
-      <Icon className={`h-5 w-5 transition-colors ${active ? "text-primary" : "text-muted-foreground"}`} />
+    <button className="flex flex-col items-center gap-1 px-3 py-1.5 min-w-[48px] relative" onClick={onClick}>
+      <Icon className={`h-[22px] w-[22px] transition-colors ${active ? "text-primary" : "text-muted-foreground"}`} />
       <span className={`text-[10px] transition-colors ${active ? "text-primary font-semibold" : "text-muted-foreground"}`}>{label}</span>
+      {active && (
+        <div className="absolute -bottom-1.5 left-1/2 -translate-x-1/2 w-1.5 h-1.5 bg-primary rounded-full" />
+      )}
     </button>
   );
 }
