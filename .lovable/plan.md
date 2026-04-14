@@ -1,34 +1,46 @@
 
 
-# Check-in Financeiro por Paciente
+# Aprimorar Layout do Portal do Paciente
 
-Criar uma seção "Financeiro" dentro do perfil de cada paciente, que usa a mesma tabela `financeiro_receitas` já existente, filtrada pelo `paciente_id`.
+Melhorias visuais e de UX no portal mobile-first, mantendo toda a funcionalidade existente.
 
-## O que muda
+## Mudanças planejadas
 
-### 1. Nova seção na sidebar do paciente
-- Adicionar `{ id: "financeiro", label: "Financeiro", icon: DollarSign, group: "outros" }` em `PacienteSidebar.tsx`
+### 1. Header premium
+- Gradiente sutil no header (from-card via glassmorphism com backdrop-blur)
+- Avatar com iniciais do paciente ao lado do logo
+- Saudação temporal ("Bom dia", "Boa tarde", "Boa noite") no lugar do nome fixo "Gabriel Sanches"
+- Botão de notificações/sino discreto
 
-### 2. Novo componente `src/components/paciente/FinanceiroSection.tsx`
-- Recebe `paciente` como prop
-- Lista todas as receitas do paciente (`financeiro_receitas` filtrado por `paciente_id`)
-- Cards resumo no topo: Total pago, Total pendente, Quantidade de registros
-- Tabela com colunas: Descrição, Valor, Data, Forma pagamento, Status, Categoria, Ações
-- Badges coloridos por status: Pago (verde), Pendente (amarelo), Cancelado (vermelho)
-- Botão "Nova Cobrança" abre modal com formulário (descrição, valor, data, forma pagamento, status, categoria, observações)
-- Editar e excluir inline
-- Troca rápida de status direto na tabela (dropdown que atualiza imediatamente)
-- Tudo salva na tabela `financeiro_receitas` com `paciente_id` preenchido, sincronizando automaticamente com o Financeiro geral
+### 2. Tela Início redesenhada
+- Banner de boas-vindas com gradiente e ícone decorativo
+- Cards de métricas com ícones coloridos e layout mais expressivo (peso, kcal, fase)
+- Card do plano ativo com visual mais rico: borda gradiente, indicador de progresso visual
+- Quick actions: botões de atalho horizontais (Ver Plano, Registrar Diário, Mensagens) com ícones em círculos coloridos
+- Próxima consulta (se disponível) em destaque
 
-### 3. Registrar no `PacienteDetalhe.tsx`
-- Importar `FinanceiroSection`
-- Adicionar case `"financeiro"` no `renderSection()`
+### 3. Bottom navigation refinada
+- Ícones levemente maiores (h-5.5)
+- Indicador ativo: ponto/dot abaixo do ícone ao invés de barra no topo
+- Transição suave de cor
+- Safe area padding melhorado para notch/home indicator
 
-## Nenhuma migration necessária
-A tabela `financeiro_receitas` já tem `paciente_id` nullable. Basta filtrar por ele.
+### 4. Menu "Mais" aprimorado
+- Grid 2x3 com cards ao invés de ícones soltos
+- Cada card com background sutil da cor do tema
+- Descrição curta abaixo de cada item
 
-## Arquivos modificados
-1. `src/components/paciente/PacienteSidebar.tsx` — adicionar item "Financeiro"
-2. `src/components/paciente/FinanceiroSection.tsx` — novo componente
-3. `src/pages/PacienteDetalhe.tsx` — registrar a seção
+### 5. Loading state com skeleton
+- Substituir "Carregando..." por skeleton cards animados na tela inicial
+
+### 6. Tela de Perfil melhorada
+- Avatar grande com iniciais no topo
+- Cards separados para dados pessoais vs configurações
+- Botão de sair mais elegante no final
+
+## Arquivo modificado
+- `src/pages/PortalPaciente.tsx` — todas as melhorias de layout concentradas aqui
+
+## Sem mudanças no backend
+Nenhuma migration ou alteração de dados necessária.
 
