@@ -1,24 +1,43 @@
 
 
-# Polish: Modern Login Page Design
+# Redesign: Premium Login Page
 
-## What's changing
+## Problems found
+- Logo image not rendering (likely missing `/logo.png`)
+- Banner image not showing (just gradient overlay on nothing)
+- Form content overflows/gets cut off at 638px viewport height
+- Colors too washed out -- everything blends into white
+- Card is too tall and not scrollable
 
-Elevate the current two-column login page with modern design touches: glassmorphism card for the form, subtle gradient background on the login column, refined typography hierarchy, smoother input styles, and a more polished banner overlay.
+## Design approach
+
+A clean, premium two-column login inspired by modern SaaS portals. Instead of relying on a photo banner (which may not load), the left column will use a **styled gradient background with decorative elements** as fallback, while still attempting to show the banner image if available.
 
 ## Changes to `src/pages/Login.tsx`
 
-1. **Banner column**: Add a stronger gradient overlay (diagonal, from primary/60 to primary/20) and overlay a subtle tagline text at the bottom-left of the banner (e.g., "Sua evolução começa aqui") with a frosted glass pill behind it
-2. **Login column background**: Replace flat `bg-background` with a subtle radial gradient using CSS (light radial glow from primary/5 at center)
-3. **Login card**: Wrap the form area in a glassmorphism container (`bg-white/70 dark:bg-card/70 backdrop-blur-xl border border-white/20 shadow-xl rounded-2xl p-8`)
-4. **Logo**: Increase size slightly (`h-24`), add a subtle glow/shadow effect
-5. **Heading**: Use a gradient text effect on "Entrar no Portal" (bg-gradient-to-r from-primary to-primary/70, bg-clip-text, text-transparent)
-6. **Inputs**: Add focus transition with `transition-all duration-200`, subtle background on focus (`focus:bg-white`), and a left icon (Mail for email, Lock for password) inside each input using a wrapper div
-7. **Login button**: Add a gradient background (`bg-gradient-to-r from-primary to-primary/80`), slight shadow on hover (`hover:shadow-lg hover:shadow-primary/25`), and scale effect (`hover:scale-[1.02] active:scale-[0.98] transition-all`)
-8. **Separator**: Style the "ou" chip with a tiny border and rounded-full pill
-9. **CTA button**: Add a hover color lift and arrow animation on hover
-10. **Animation**: Add staggered fade-in with animation-delay on each section (logo, form, CTA) using inline style `animationDelay`
+### Left column (banner)
+- Use a rich **primary-to-dark gradient** as the base background (always looks good even without image)
+- Layer the banner image on top with `object-cover` (graceful degradation if missing)
+- Add **decorative floating circles/blobs** using CSS (absolute positioned divs with blur) for visual depth
+- Keep the tagline pill at the bottom
+- Add the logo in white on the banner side as well (or a text-based fallback)
 
-## Files to modify
-- `src/pages/Login.tsx` only
+### Right column (login)
+- Remove the glassmorphism card wrapper -- go for a **clean white column** with the form directly centered
+- Fix the logo: use `object-contain` (not just height) and add `max-w-[180px]` to prevent stretching
+- Make the form area use `overflow-y-auto` with proper padding so it never gets cut off
+- Increase contrast: darker labels, stronger input borders on focus
+- The "ou" separator and CTA stay but with better spacing
+- Use `min-h-screen` on the column itself for proper vertical centering
+
+### Responsive
+- On mobile: full-screen white login form, no banner
+- The form area should fit comfortably in `min-h-screen` without overflow issues
+
+### Logo fix
+- Add `object-contain` to the logo `img` tag
+- Cap width with `max-w-[160px]` so it doesn't stretch
+
+## File changes
+- `src/pages/Login.tsx` -- full rewrite of the layout
 
