@@ -22,6 +22,7 @@ import { ReceitaSection } from "@/components/paciente/ReceitaSection";
 import { SuplementosSection } from "@/components/paciente/SuplementosSection";
 import { AvaliacoesFisicasSection } from "@/components/paciente/AvaliacoesFisicasSection";
 import { DiarioAlimentarSection } from "@/components/paciente/DiarioAlimentarSection";
+import { FinanceiroSection } from "@/components/paciente/FinanceiroSection";
 import { PacienteAccessModal } from "@/components/PacienteAccessModal";
 import { DeleteConfirmModal } from "@/components/DeleteConfirmModal";
 
@@ -110,6 +111,7 @@ export default function PacienteDetalhe() {
       case "metas": return <PlaceholderSection title="Metas" description="Módulo de metas em desenvolvimento." />;
       case "materiais": return <PlaceholderSection title="Materiais Extras" description="Módulo de materiais extras em desenvolvimento." />;
       case "suplementos": return <SuplementosSection paciente={paciente} />;
+      case "financeiro": return <FinanceiroSection paciente={paciente} />;
       default: return null;
     }
   };

@@ -2,7 +2,7 @@ import { cn } from "@/lib/utils";
 import {
   LayoutDashboard, User, ClipboardList, TrendingUp, Camera, Utensils,
   Calculator, CalendarDays, FileQuestion, TestTube, BookOpen, FileText, KeyRound,
-  ChevronDown, Ruler, BookMarked, Target, FolderOpen, UtensilsCrossed, Pill,
+  ChevronDown, Ruler, BookMarked, Target, FolderOpen, UtensilsCrossed, Pill, DollarSign,
 } from "lucide-react";
 import { useIsMobile } from "@/hooks/use-mobile";
 import { useState } from "react";
@@ -28,6 +28,7 @@ export const sections = [
   { id: "exames", label: "Exames Laboratoriais", icon: TestTube, group: "outros" },
   { id: "orientacoes", label: "Orientações", icon: BookOpen, group: "outros" },
   { id: "prontuario", label: "Prontuário", icon: FileText, group: "outros" },
+  { id: "financeiro", label: "Financeiro", icon: DollarSign, group: "outros" },
   { id: "acesso", label: "Acesso do Paciente", icon: KeyRound, group: "outros" },
 ] as const;
 
