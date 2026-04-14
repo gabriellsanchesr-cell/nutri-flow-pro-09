@@ -28,6 +28,8 @@ import ConfiguracaoClinica from "./pages/ConfiguracaoClinica";
 import ConteudoReal from "./pages/ConteudoReal";
 import Suplementos from "./pages/Suplementos";
 import Relatorios from "./pages/Relatorios";
+import Leads from "./pages/Leads";
+import Financeiro from "./pages/Financeiro";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
@@ -96,6 +98,8 @@ const App = () => (
               <Route path="suplementos" element={<Suplementos />} />
               <Route path="templates" element={<Templates />} />
               <Route path="relatorios" element={<Relatorios />} />
+              <Route path="leads" element={<Leads />} />
+              <Route path="financeiro" element={<Financeiro />} />
               <Route path="configuracoes/geral" element={<ConfiguracaoClinica />} />
               <Route path="configuracoes/usuarios" element={<GestaoUsuarios />} />
             </Route>
