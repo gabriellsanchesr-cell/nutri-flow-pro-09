@@ -109,6 +109,13 @@
   .animate-slide-up {
     animation: slideUp 0.5s ease-out;
   }
+  .animate-scale-in {
+    animation: scaleIn 0.35s ease-out;
+  }
+  .animate-stagger-1 { animation-delay: 0.05s; animation-fill-mode: both; }
+  .animate-stagger-2 { animation-delay: 0.1s; animation-fill-mode: both; }
+  .animate-stagger-3 { animation-delay: 0.15s; animation-fill-mode: both; }
+  .animate-stagger-4 { animation-delay: 0.2s; animation-fill-mode: both; }
   @keyframes fadeIn {
     from { opacity: 0; }
     to { opacity: 1; }
@@ -116,5 +123,30 @@
   @keyframes slideUp {
     from { opacity: 0; transform: translateY(16px); }
     to { opacity: 1; transform: translateY(0); }
+  }
+  @keyframes scaleIn {
+    from { opacity: 0; transform: scale(0.95); }
+    to { opacity: 1; transform: scale(1); }
+  }
+  .glass-card {
+    @apply bg-card/70 backdrop-blur-md border border-border/40 shadow-lg;
+  }
+  .glass-card-dark {
+    @apply bg-card/50 backdrop-blur-lg border border-border/30 shadow-xl;
+  }
+  .gradient-border {
+    position: relative;
+  }
+  .gradient-border::before {
+    content: '';
+    position: absolute;
+    inset: 0;
+    border-radius: inherit;
+    padding: 1px;
+    background: linear-gradient(135deg, hsl(var(--primary) / 0.5), hsl(var(--primary) / 0.1));
+    -webkit-mask: linear-gradient(#fff 0 0) content-box, linear-gradient(#fff 0 0);
+    -webkit-mask-composite: xor;
+    mask-composite: exclude;
+    pointer-events: none;
   }
 }
