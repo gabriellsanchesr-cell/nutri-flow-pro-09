@@ -1,71 +1,34 @@
 
 
-# CRM: Gestão de Leads + Financeiro (Receitas + Dashboard)
+# Check-in Financeiro por Paciente
 
-Sistema exclusivo para o painel admin/nutri. Pacientes não terão acesso.
+Criar uma seção "Financeiro" dentro do perfil de cada paciente, que usa a mesma tabela `financeiro_receitas` já existente, filtrada pelo `paciente_id`.
 
-## Novas tabelas (migration)
+## O que muda
 
-### `leads`
-| Coluna | Tipo | Default |
-|--------|------|---------|
-| id | uuid | gen_random_uuid() |
-| user_id | uuid | NOT NULL (nutri owner) |
-| nome | text | NOT NULL |
-| email | text | nullable |
-| telefone | text | nullable |
-| origem | text | 'indicacao' (indicacao, instagram, site, outro) |
-| status | text | 'novo' (novo, em_contato, agendou, converteu, perdido) |
-| valor_estimado | numeric | nullable |
-| anotacoes | text | nullable |
-| created_at | timestamptz | now() |
-| updated_at | timestamptz | now() |
+### 1. Nova seção na sidebar do paciente
+- Adicionar `{ id: "financeiro", label: "Financeiro", icon: DollarSign, group: "outros" }` em `PacienteSidebar.tsx`
 
-RLS: nutri CRUD where `auth.uid() = user_id`
+### 2. Novo componente `src/components/paciente/FinanceiroSection.tsx`
+- Recebe `paciente` como prop
+- Lista todas as receitas do paciente (`financeiro_receitas` filtrado por `paciente_id`)
+- Cards resumo no topo: Total pago, Total pendente, Quantidade de registros
+- Tabela com colunas: Descrição, Valor, Data, Forma pagamento, Status, Categoria, Ações
+- Badges coloridos por status: Pago (verde), Pendente (amarelo), Cancelado (vermelho)
+- Botão "Nova Cobrança" abre modal com formulário (descrição, valor, data, forma pagamento, status, categoria, observações)
+- Editar e excluir inline
+- Troca rápida de status direto na tabela (dropdown que atualiza imediatamente)
+- Tudo salva na tabela `financeiro_receitas` com `paciente_id` preenchido, sincronizando automaticamente com o Financeiro geral
 
-### `financeiro_receitas`
-| Coluna | Tipo | Default |
-|--------|------|---------|
-| id | uuid | gen_random_uuid() |
-| user_id | uuid | NOT NULL |
-| paciente_id | uuid | nullable |
-| descricao | text | NOT NULL |
-| valor | numeric | NOT NULL |
-| data_pagamento | date | CURRENT_DATE |
-| forma_pagamento | text | 'pix' (pix, dinheiro, cartao, transferencia) |
-| status | text | 'pago' (pago, pendente, cancelado) |
-| categoria | text | 'consulta' (consulta, pacote, retorno, outro) |
-| observacoes | text | nullable |
-| created_at | timestamptz | now() |
+### 3. Registrar no `PacienteDetalhe.tsx`
+- Importar `FinanceiroSection`
+- Adicionar case `"financeiro"` no `renderSection()`
 
-RLS: nutri CRUD where `auth.uid() = user_id`
+## Nenhuma migration necessária
+A tabela `financeiro_receitas` já tem `paciente_id` nullable. Basta filtrar por ele.
 
-## Novas páginas
-
-### 1. `src/pages/Leads.tsx` -- Pipeline de leads
-- Kanban board com 5 colunas (novo, em_contato, agendou, converteu, perdido)
-- Drag & drop entre colunas para mudar status
-- Modal para criar/editar lead com todos os campos
-- Filtros por origem e busca por nome
-- Contadores por coluna
-
-### 2. `src/pages/Financeiro.tsx` -- Receitas + Dashboard
-- Duas abas: **Dashboard** e **Receitas**
-- **Aba Dashboard**: cards com faturamento do mês, total recebido, pendentes, ticket médio. Gráfico de barras (Recharts) com faturamento dos últimos 6 meses
-- **Aba Receitas**: tabela com listagem, filtros por status/período, botão adicionar receita (modal com formulário), editar e excluir
-
-## Sidebar
-- Adicionar "Leads" com ícone `UserPlus` (show: isAdmin)
-- Adicionar "Financeiro" com ícone `DollarSign` (show: isAdmin)
-- Posicionar após "Relatórios"
-
-## Rotas (App.tsx)
-- `/leads` e `/financeiro` dentro do layout admin existente (AdminRoute > AppLayout)
-
-## Arquivos criados/modificados
-1. **Migration SQL** -- criar tabelas `leads` e `financeiro_receitas` com RLS
-2. `src/pages/Leads.tsx` -- página do pipeline
-3. `src/pages/Financeiro.tsx` -- página financeira
-4. `src/components/AppSidebar.tsx` -- adicionar itens no menu
-5. `src/App.tsx` -- adicionar rotas
+## Arquivos modificados
+1. `src/components/paciente/PacienteSidebar.tsx` — adicionar item "Financeiro"
+2. `src/components/paciente/FinanceiroSection.tsx` — novo componente
+3. `src/pages/PacienteDetalhe.tsx` — registrar a seção
 
