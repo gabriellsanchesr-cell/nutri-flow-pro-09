@@ -183,14 +183,14 @@ export default function Financeiro() {
             <Card>
               <CardHeader className="flex flex-row items-center justify-between pb-2">
                 <CardTitle className="text-sm font-medium text-muted-foreground">Total Recebido</CardTitle>
-                <TrendingUp className="h-4 w-4 text-green-500" />
+                <TrendingUp className="h-4 w-4 text-primary" />
               </CardHeader>
               <CardContent><p className="text-2xl font-bold">{fmt(totalRecebido)}</p></CardContent>
             </Card>
             <Card>
               <CardHeader className="flex flex-row items-center justify-between pb-2">
                 <CardTitle className="text-sm font-medium text-muted-foreground">Pendentes</CardTitle>
-                <Clock className="h-4 w-4 text-yellow-500" />
+                <Clock className="h-4 w-4 text-accent-foreground" />
               </CardHeader>
               <CardContent><p className="text-2xl font-bold">{fmt(pendentes)}</p></CardContent>
             </Card>
