@@ -1,42 +1,57 @@
 
 
-# Plan: Upgrade TACO Database & Auto-Sync Substitutions
+# Landing Page with Role-Based Login
 
-## Overview
-The current food database has only 75 items. The uploaded SQL file contains 130 well-organized items with complete nutritional data. We'll also add a search keyword system and auto-populate the substitution library so each food group already has common swaps ready.
+## What we're building
+A landing/welcome page at `/login` that presents two login options side by side (like WebDiet's portal selection style):
+- **Sou Paciente** — opens the patient login form
+- **Sou Nutricionista** — disabled/locked, with a tooltip or note saying "Acesso interno"
 
-## Changes
+The patient login card includes a CTA at the bottom: "Ainda não é paciente? Conheça meu trabalho" linking to https://www.gabrielnutri.com.br/
 
-### 1. Populate TACO database with uploaded data
-- Run the uploaded `taco_data.sql` via migration to upsert 130 foods (uses `ON CONFLICT DO NOTHING`)
-- This expands the database from 75 to ~130 items covering all food groups
-
-### 2. Add search keywords column to `alimentos_taco`
-- Add `palavras_chave text[]` column to enable synonym-based search (e.g. searching "batata" also finds "batata-doce", "batata inglesa")
-- Populate keywords for common foods (abbreviations, alternate names)
-
-### 3. Improve food search in `PlanoAlimentarEditor.tsx`
-- Search by `nome` OR `palavras_chave` using `or` filter
-- Show food group badge in search results for easier identification
-- Show fiber info in search results alongside macros
-
-### 4. Auto-populate substitution library
-- Create a migration that inserts ~50+ common substitutions organized by food group (cereais, frutas, carnes, leites, etc.)
-- Each substitution maps an original food to its substitute with optional notes
-- These are seeded per-user on first access or via a "popular substituicoes" button
-
-### 5. Auto-fill substitution suggestions in meal plan editor
-- When adding a food to a meal, auto-query the `substituicoes` table for foods in the same group
-- Auto-populate the "Substituicoes Sugeridas" textarea with matching substitutions from the library
-- Add a button "Sugerir Substituicoes" next to the textarea that fetches from the library
+## Layout
+```text
+┌──────────────────────────────────────────────┐
+│              [Logo]                          │
+│     Gabriel Sanches - Nutrição               │
+│         Individualizada                      │
+│                                              │
+│   ┌─────────────┐   ┌─────────────┐         │
+│   │  🍎 Sou     │   │  🔒 Sou     │         │
+│   │  Paciente   │   │ Nutricionista│         │
+│   │  [Entrar]   │   │  [Bloqueado]│         │
+│   └─────────────┘   └─────────────┘         │
+│                                              │
+│  --- OR when patient card is selected ---    │
+│                                              │
+│   ┌────────────────────────────┐             │
+│   │  Login do Paciente         │             │
+│   │  [email]  [senha]  [Entrar]│             │
+│   │  Esqueci minha senha       │             │
+│   │                            │             │
+│   │  Ainda não é paciente?     │             │
+│   │  Conheça meu trabalho →    │             │
+│   └────────────────────────────┘             │
+└──────────────────────────────────────────────┘
+```
 
 ## Files to modify
-1. **Migration SQL** — insert TACO data + add `palavras_chave` column + seed default substitutions
-2. `src/components/paciente/PlanoAlimentarEditor.tsx` — improved search + auto-fill substitutions
-3. `src/pages/Biblioteca.tsx` — add "Popular com padrões" button to seed default substitutions
 
-## Technical details
-- The TACO SQL uses `ON CONFLICT DO NOTHING` so existing data is preserved
-- Default substitutions will be inserted with the current user's `user_id` so RLS works correctly
-- The substitution auto-fill queries `substituicoes` by matching the food's `grupo` field from `alimentos_taco`
+### 1. `src/pages/Login.tsx`
+- Redesign to show two cards initially: "Sou Paciente" and "Sou Nutricionista"
+- Clicking "Sou Paciente" transitions (animated) to the login form
+- "Sou Nutricionista" card is visually disabled with a lock icon and "Acesso interno" label
+- Add a back button from the login form to return to card selection
+- Add CTA section below login form: "Ainda não é paciente?" with link to gabrielnutri.com.br
+- Keep existing login logic, glassmorphism style, and gradient background
+
+### 2. `src/App.tsx`
+- No routing changes needed — `/login` already exists and `PublicRoute` handles redirects correctly
+
+## Design details
+- Uses existing design system: Plus Jakarta Sans, glassmorphism, rounded-xl, gradient background
+- Two selection cards with hover elevation effect
+- Smooth transition between selection view and login form (animate-fade-in)
+- Disabled nutricionista card: reduced opacity, cursor-not-allowed, lock icon
+- External link opens in new tab with `rel="noopener noreferrer"`
 
