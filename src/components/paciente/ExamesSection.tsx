@@ -87,9 +87,29 @@ export function ExamesSection({ paciente }: Props) {
     loadExames();
   };
 
+  const getSignedUrl = async (path: string) => {
+    const { data } = await supabase.storage.from("exames-laboratoriais").createSignedUrl(path, 3600);
+    return data?.signedUrl || '';
+  };
+
+  const [signedUrls, setSignedUrls] = useState<Record<string, string>>({});
+
+  useEffect(() => {
+    const generateUrls = async () => {
+      const paths = exames.map((e: any) => e.arquivo_path).filter(Boolean);
+      if (paths.length === 0) return;
+      const { data } = await supabase.storage.from("exames-laboratoriais").createSignedUrls(paths, 3600);
+      if (data) {
+        const urlMap: Record<string, string> = {};
+        data.forEach((item) => { if (item.signedUrl) urlMap[item.path!] = item.signedUrl; });
+        setSignedUrls(urlMap);
+      }
+    };
+    generateUrls();
+  }, [exames]);
+
   const getPublicUrl = (path: string) => {
-    const { data } = supabase.storage.from("exames-laboratoriais").getPublicUrl(path);
-    return data.publicUrl;
+    return signedUrls[path] || '';
   };
 
   const handleDownload = (exame: any) => {

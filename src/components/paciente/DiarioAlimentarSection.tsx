@@ -122,9 +122,24 @@ export function DiarioAlimentarSection({ paciente }: { paciente: any }) {
     } finally { setSendingFeedback(null); }
   };
 
+  const [signedPhotoUrls, setSignedPhotoUrls] = useState<Record<string, string>>({});
+
+  useEffect(() => {
+    const generateUrls = async () => {
+      const paths = registros.map((r: any) => r.foto_path).filter(Boolean);
+      if (paths.length === 0) return;
+      const { data } = await supabase.storage.from("diario-fotos").createSignedUrls(paths, 3600);
+      if (data) {
+        const urlMap: Record<string, string> = {};
+        data.forEach((item) => { if (item.signedUrl) urlMap[item.path!] = item.signedUrl; });
+        setSignedPhotoUrls(urlMap);
+      }
+    };
+    generateUrls();
+  }, [registros]);
+
   const getPhotoUrl = (path: string) => {
-    const { data } = supabase.storage.from("diario-fotos").getPublicUrl(path);
-    return data.publicUrl;
+    return signedPhotoUrls[path] || '';
   };
 
   // Config handlers
