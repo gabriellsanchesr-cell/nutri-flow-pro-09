@@ -403,7 +403,47 @@ export function PlanoAlimentarEditor({ pacienteId, planoId, onBack, paciente }: 
                     />
                   </div>
                   <div className="space-y-1">
-                    <Label className="text-xs">Substituições Sugeridas</Label>
+                    <div className="flex items-center justify-between">
+                      <Label className="text-xs">Substituições Sugeridas</Label>
+                      <Button
+                        variant="ghost"
+                        size="sm"
+                        className="h-6 text-[10px] px-2"
+                        onClick={async () => {
+                          // Get food groups present in this meal
+                          const tacoIds = ref.alimentos.filter(a => a.alimento_taco_id).map(a => a.alimento_taco_id!);
+                          if (tacoIds.length === 0) {
+                            toast({ title: "Adicione alimentos da base TACO primeiro" });
+                            return;
+                          }
+                          // Get the groups of foods in this meal
+                          const { data: foods } = await supabase
+                            .from("alimentos_taco")
+                            .select("grupo")
+                            .in("id", tacoIds);
+                          const grupos = [...new Set((foods || []).map(f => f.grupo).filter(Boolean))];
+                          if (grupos.length === 0) return;
+                          // Query substitutions for those groups
+                          const { data: subs } = await supabase
+                            .from("substituicoes")
+                            .select("*")
+                            .in("grupo", grupos);
+                          if (!subs || subs.length === 0) {
+                            toast({ title: "Nenhuma substituição encontrada", description: "Popule sua biblioteca de substituições primeiro." });
+                            return;
+                          }
+                          const text = subs.map(s =>
+                            `${s.alimento_original} → ${s.alimento_substituto}${s.observacoes ? ` (${s.observacoes})` : ""}`
+                          ).join("\n");
+                          updateRefeicao(refIdx, "substituicoes_sugeridas",
+                            ref.substituicoes_sugeridas ? ref.substituicoes_sugeridas + "\n" + text : text
+                          );
+                          toast({ title: `${subs.length} substituições carregadas!` });
+                        }}
+                      >
+                        Sugerir Substituições
+                      </Button>
+                    </div>
                     <Textarea
                       className="text-xs min-h-[60px]"
                       value={ref.substituicoes_sugeridas}
@@ -443,6 +483,21 @@ function MacroBox({ label, value, unit, color }: { label: string; value: string;
   );
 }
 
+const grupoLabelsSearch: Record<string, string> = {
+  cereais: "Cereais", verduras: "Verduras", frutas: "Frutas", leguminosas: "Leguminosas",
+  oleaginosas: "Oleag.", carnes: "Carnes", leites: "Leites", ovos: "Ovos",
+  oleos: "Óleos", acucares: "Açúcares", outros: "Outros",
+};
+
+const grupoColors: Record<string, string> = {
+  cereais: "bg-amber-100 text-amber-800", verduras: "bg-green-100 text-green-800",
+  frutas: "bg-pink-100 text-pink-800", leguminosas: "bg-orange-100 text-orange-800",
+  oleaginosas: "bg-yellow-100 text-yellow-800", carnes: "bg-red-100 text-red-800",
+  leites: "bg-blue-100 text-blue-800", ovos: "bg-indigo-100 text-indigo-800",
+  oleos: "bg-lime-100 text-lime-800", acucares: "bg-purple-100 text-purple-800",
+  outros: "bg-gray-100 text-gray-800",
+};
+
 function AlimentoSearch({ onSelect }: { onSelect: (a: Alimento) => void }) {
   const [query, setQuery] = useState("");
   const [results, setResults] = useState<any[]>([]);
@@ -451,11 +506,12 @@ function AlimentoSearch({ onSelect }: { onSelect: (a: Alimento) => void }) {
   const search = useCallback(async (q: string) => {
     if (q.length < 2) { setResults([]); return; }
     setSearching(true);
+    // Search by nome OR palavras_chave
     const { data } = await supabase
       .from("alimentos_taco")
       .select("*")
-      .ilike("nome", `%${q}%`)
-      .limit(10);
+      .or(`nome.ilike.%${q}%,palavras_chave.cs.{${q.toLowerCase()}}`)
+      .limit(12);
     setResults(data || []);
     setSearching(false);
   }, []);
@@ -477,7 +533,6 @@ function AlimentoSearch({ onSelect }: { onSelect: (a: Alimento) => void }) {
       lipidio_g: item.lipidio_g || 0,
       fibra_g: item.fibra_g || 0,
       alimento_taco_id: item.id,
-      // Armazenar valores base para recálculo automático
       base_energia_kcal: item.energia_kcal || 0,
       base_proteina_g: item.proteina_g || 0,
       base_carboidrato_g: item.carboidrato_g || 0,
@@ -495,7 +550,7 @@ function AlimentoSearch({ onSelect }: { onSelect: (a: Alimento) => void }) {
           <Search className="absolute left-2.5 top-1/2 -translate-y-1/2 h-3.5 w-3.5 text-muted-foreground" />
           <Input
             className="pl-8 h-8 text-xs"
-            placeholder="Buscar alimento na base TACO..."
+            placeholder="Buscar alimento na base TACO (nome ou palavra-chave)..."
             value={query}
             onChange={e => setQuery(e.target.value)}
           />
@@ -516,12 +571,17 @@ function AlimentoSearch({ onSelect }: { onSelect: (a: Alimento) => void }) {
           {results.map(item => (
             <button
               key={item.id}
-              className="w-full text-left px-3 py-2 text-sm hover:bg-muted/50 flex justify-between items-center border-b last:border-0"
+              className="w-full text-left px-3 py-2 text-sm hover:bg-muted/50 flex justify-between items-center border-b last:border-0 gap-2"
               onClick={() => selectAlimento(item)}
             >
-              <span className="truncate flex-1">{item.nome}</span>
-              <span className="text-xs text-muted-foreground ml-2 shrink-0">
-                {Math.round(item.energia_kcal || 0)} kcal | P{Math.round(item.proteina_g || 0)} C{Math.round(item.carboidrato_g || 0)} G{Math.round(item.lipidio_g || 0)}
+              <div className="flex items-center gap-2 min-w-0 flex-1">
+                <span className={`text-[10px] px-1.5 py-0.5 rounded-full shrink-0 ${grupoColors[item.grupo] || grupoColors.outros}`}>
+                  {grupoLabelsSearch[item.grupo] || item.grupo}
+                </span>
+                <span className="truncate">{item.nome}</span>
+              </div>
+              <span className="text-xs text-muted-foreground shrink-0">
+                {Math.round(item.energia_kcal || 0)} kcal · P{Math.round(item.proteina_g || 0)} C{Math.round(item.carboidrato_g || 0)} G{Math.round(item.lipidio_g || 0)} F{Math.round(item.fibra_g || 0)}
               </span>
             </button>
           ))}

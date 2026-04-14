@@ -143,6 +143,7 @@ export type Database = {
           lipidio_g: number | null
           nome: string
           numero: number | null
+          palavras_chave: string[] | null
           proteina_g: number | null
         }
         Insert: {
@@ -154,6 +155,7 @@ export type Database = {
           lipidio_g?: number | null
           nome: string
           numero?: number | null
+          palavras_chave?: string[] | null
           proteina_g?: number | null
         }
         Update: {
@@ -165,6 +167,7 @@ export type Database = {
           lipidio_g?: number | null
           nome?: string
           numero?: number | null
+          palavras_chave?: string[] | null
           proteina_g?: number | null
         }
         Relationships: []
@@ -2131,6 +2134,15 @@ export type Database = {
           qualidade_sono: number
           respondido: boolean
           semana: string
+        }[]
+      }
+      get_default_substitutions: {
+        Args: never
+        Returns: {
+          alimento_original: string
+          alimento_substituto: string
+          grupo: string
+          observacoes: string
         }[]
       }
       get_user_role: {
