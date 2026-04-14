@@ -1,6 +1,6 @@
 import { useEffect, useState } from "react";
 import {
-  LayoutDashboard, Users, Utensils, Activity, Calendar, BookOpen, FileText, LogOut, MessageSquare, Settings, Sparkles, Pill, BarChart3,
+  LayoutDashboard, Users, Utensils, Activity, Calendar, BookOpen, FileText, LogOut, MessageSquare, Settings, Sparkles, Pill, BarChart3, UserPlus, DollarSign,
 } from "lucide-react";
 import { NavLink } from "@/components/NavLink";
 import { useLocation } from "react-router-dom";
@@ -50,6 +50,8 @@ export function AppSidebar() {
     { title: "Suplementos", url: "/suplementos", icon: Pill, show: isAdmin },
     { title: "Relatórios", url: "/relatorios", icon: BarChart3, show: isAdmin },
     { title: "Templates", url: "/templates", icon: FileText, show: isAdmin },
+    { title: "Leads", url: "/leads", icon: UserPlus, show: isAdmin },
+    { title: "Financeiro", url: "/financeiro", icon: DollarSign, show: isAdmin },
   ].filter(i => i.show);
 
   const configItems = [

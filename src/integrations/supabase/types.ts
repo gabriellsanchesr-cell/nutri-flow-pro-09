@@ -1298,6 +1298,98 @@ export type Database = {
           },
         ]
       }
+      financeiro_receitas: {
+        Row: {
+          categoria: string
+          created_at: string
+          data_pagamento: string
+          descricao: string
+          forma_pagamento: string
+          id: string
+          observacoes: string | null
+          paciente_id: string | null
+          status: string
+          user_id: string
+          valor: number
+        }
+        Insert: {
+          categoria?: string
+          created_at?: string
+          data_pagamento?: string
+          descricao: string
+          forma_pagamento?: string
+          id?: string
+          observacoes?: string | null
+          paciente_id?: string | null
+          status?: string
+          user_id: string
+          valor: number
+        }
+        Update: {
+          categoria?: string
+          created_at?: string
+          data_pagamento?: string
+          descricao?: string
+          forma_pagamento?: string
+          id?: string
+          observacoes?: string | null
+          paciente_id?: string | null
+          status?: string
+          user_id?: string
+          valor?: number
+        }
+        Relationships: [
+          {
+            foreignKeyName: "financeiro_receitas_paciente_id_fkey"
+            columns: ["paciente_id"]
+            isOneToOne: false
+            referencedRelation: "pacientes"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      leads: {
+        Row: {
+          anotacoes: string | null
+          created_at: string
+          email: string | null
+          id: string
+          nome: string
+          origem: string
+          status: string
+          telefone: string | null
+          updated_at: string
+          user_id: string
+          valor_estimado: number | null
+        }
+        Insert: {
+          anotacoes?: string | null
+          created_at?: string
+          email?: string | null
+          id?: string
+          nome: string
+          origem?: string
+          status?: string
+          telefone?: string | null
+          updated_at?: string
+          user_id: string
+          valor_estimado?: number | null
+        }
+        Update: {
+          anotacoes?: string | null
+          created_at?: string
+          email?: string | null
+          id?: string
+          nome?: string
+          origem?: string
+          status?: string
+          telefone?: string | null
+          updated_at?: string
+          user_id?: string
+          valor_estimado?: number | null
+        }
+        Relationships: []
+      }
       manipulado_ativos: {
         Row: {
           dose: number | null
