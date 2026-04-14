@@ -1,76 +1,42 @@
 
 
-# Design Modernization & Bug Fix Plan
+# Plan: Upgrade TACO Database & Auto-Sync Substitutions
 
-## Build Errors (Critical — must fix first)
+## Overview
+The current food database has only 75 items. The uploaded SQL file contains 130 well-organized items with complete nutritional data. We'll also add a search keyword system and auto-populate the substitution library so each food group already has common swaps ready.
 
-Both edge functions have `error.message` on an `unknown` type. Fix by casting `error` in the catch blocks:
+## Changes
 
-- `supabase/functions/manage-patient-auth/index.ts` line 176: `(error as Error).message`
-- `supabase/functions/manage-team-auth/index.ts` line 167: `(error as Error).message`
+### 1. Populate TACO database with uploaded data
+- Run the uploaded `taco_data.sql` via migration to upsert 130 foods (uses `ON CONFLICT DO NOTHING`)
+- This expands the database from 75 to ~130 items covering all food groups
 
-## Design Improvements
+### 2. Add search keywords column to `alimentos_taco`
+- Add `palavras_chave text[]` column to enable synonym-based search (e.g. searching "batata" also finds "batata-doce", "batata inglesa")
+- Populate keywords for common foods (abbreviations, alternate names)
 
-### 1. Global CSS & Theme Refinements (`src/index.css`)
-- Add smooth transitions globally for interactive elements
-- Add subtle gradient to the login page background
-- Improve card hover effects with `transition` and `shadow-md` on hover
-- Add `scroll-behavior: smooth` to html
+### 3. Improve food search in `PlanoAlimentarEditor.tsx`
+- Search by `nome` OR `palavras_chave` using `or` filter
+- Show food group badge in search results for easier identification
+- Show fiber info in search results alongside macros
 
-### 2. Login Page (`src/pages/Login.tsx`)
-- Add a subtle gradient background (primary to accent)
-- Add a glass-morphism effect to the login card (`backdrop-blur`, semi-transparent bg)
-- Add entrance animation (fade-in/slide-up)
-- Improve button with loading spinner icon instead of text change
+### 4. Auto-populate substitution library
+- Create a migration that inserts ~50+ common substitutions organized by food group (cereais, frutas, carnes, leites, etc.)
+- Each substitution maps an original food to its substitute with optional notes
+- These are seeded per-user on first access or via a "popular substituicoes" button
 
-### 3. Dashboard (`src/pages/Dashboard.tsx`)
-- Add a welcome greeting with user name and current date
-- Add gradient icon backgrounds on stat cards instead of flat `bg-accent`
-- Add hover elevation effect on cards
-- Add empty state illustrations for lists
-- Format dates more readable (relative: "hoje", "amanhã")
+### 5. Auto-fill substitution suggestions in meal plan editor
+- When adding a food to a meal, auto-query the `substituicoes` table for foods in the same group
+- Auto-populate the "Substituicoes Sugeridas" textarea with matching substitutions from the library
+- Add a button "Sugerir Substituicoes" next to the textarea that fetches from the library
 
-### 4. Sidebar (`src/components/AppSidebar.tsx`)
-- Add subtle gradient to sidebar header area
-- Add user avatar/email in footer before the logout button
-- Add separator between main nav and config section
-- Improve active state with left border accent + subtle bg gradient
+## Files to modify
+1. **Migration SQL** — insert TACO data + add `palavras_chave` column + seed default substitutions
+2. `src/components/paciente/PlanoAlimentarEditor.tsx` — improved search + auto-fill substitutions
+3. `src/pages/Biblioteca.tsx` — add "Popular com padrões" button to seed default substitutions
 
-### 5. Patient List (`src/pages/Pacientes.tsx`)
-- Add avatar initials circle next to patient name in table
-- Improve filter buttons with pill-style design
-- Add hover row highlight with subtle left border accent
-- Add patient count summary text
-
-### 6. Patient Detail Header (`src/components/paciente/PacienteHeader.tsx`)
-- Add subtle gradient background to header
-- Improve avatar with gradient background
-- Better spacing and visual hierarchy
-
-### 7. Patient Sidebar (`src/components/paciente/PacienteSidebar.tsx`)
-- Add subtle section grouping dividers
-- Improve active state animation (smooth transition)
-
-### 8. Cards & Components (Global)
-- Add `hover:shadow-md transition-shadow` to all Card components via CSS
-- Improve border-radius consistency (`rounded-xl` everywhere)
-
-### 9. Notification Center (`src/components/NotificationCenter.tsx`)
-- Add dark mode compatibility for color maps (replace hardcoded bg-blue-50 etc.)
-
-### 10. Portal do Paciente (`src/pages/PortalPaciente.tsx`)
-- Improve bottom navigation bar with more modern pill-style active indicator
-- Add subtle animations on tab switches
-
-## Files to Modify
-1. `supabase/functions/manage-patient-auth/index.ts` — fix TS error
-2. `supabase/functions/manage-team-auth/index.ts` — fix TS error  
-3. `src/index.css` — global style improvements
-4. `src/pages/Login.tsx` — modernize login page
-5. `src/pages/Dashboard.tsx` — improve dashboard design
-6. `src/components/AppSidebar.tsx` — enhance sidebar
-7. `src/pages/Pacientes.tsx` — improve patient list
-8. `src/components/paciente/PacienteHeader.tsx` — modernize header
-9. `src/components/paciente/PacienteSidebar.tsx` — improve nav
-10. `src/components/AppLayout.tsx` — improve header bar
+## Technical details
+- The TACO SQL uses `ON CONFLICT DO NOTHING` so existing data is preserved
+- Default substitutions will be inserted with the current user's `user_id` so RLS works correctly
+- The substitution auto-fill queries `substituicoes` by matching the food's `grupo` field from `alimentos_taco`
 
