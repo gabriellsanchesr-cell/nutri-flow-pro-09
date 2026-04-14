@@ -6,6 +6,7 @@ import { Label } from "@/components/ui/label";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { useToast } from "@/hooks/use-toast";
 import { Link } from "react-router-dom";
+import { Loader2 } from "lucide-react";
 
 export default function Login() {
   const [email, setEmail] = useState("");
@@ -29,10 +30,14 @@ export default function Login() {
   };
 
   return (
-    <div className="min-h-screen flex items-center justify-center bg-background p-4">
-      <Card className="w-full max-w-md shadow-lg border-0">
+    <div className="min-h-screen flex items-center justify-center p-4 bg-gradient-to-br from-primary/5 via-background to-accent/30">
+      <div className="absolute inset-0 overflow-hidden pointer-events-none">
+        <div className="absolute -top-40 -right-40 w-80 h-80 bg-primary/5 rounded-full blur-3xl" />
+        <div className="absolute -bottom-40 -left-40 w-80 h-80 bg-accent/20 rounded-full blur-3xl" />
+      </div>
+      <Card className="w-full max-w-md shadow-xl border-0 backdrop-blur-sm bg-card/95 animate-slide-up rounded-2xl">
         <CardHeader className="text-center space-y-4 pb-2">
-          <img src="/logo.png" alt="Gabriel Sanches" className="h-20 mx-auto" />
+          <img src="/logo.png" alt="Gabriel Sanches" className="h-20 mx-auto drop-shadow-sm" />
           <div>
             <CardTitle className="text-2xl font-bold text-foreground">Entrar</CardTitle>
             <CardDescription className="mt-1">Nutrição Individualizada</CardDescription>
@@ -49,6 +54,7 @@ export default function Login() {
                 onChange={(e) => setEmail(e.target.value)}
                 placeholder="seu@email.com"
                 required
+                className="h-11 rounded-xl"
               />
             </div>
             <div className="space-y-2">
@@ -61,14 +67,15 @@ export default function Login() {
                 placeholder="••••••••"
                 required
                 minLength={6}
+                className="h-11 rounded-xl"
               />
             </div>
-            <Button type="submit" className="w-full" disabled={loading}>
-              {loading ? "Carregando..." : "Entrar"}
+            <Button type="submit" className="w-full h-11 rounded-xl font-semibold" disabled={loading}>
+              {loading ? <><Loader2 className="h-4 w-4 mr-2 animate-spin" /> Entrando...</> : "Entrar"}
             </Button>
           </form>
           <div className="mt-4 text-center">
-            <Link to="/esqueci-senha" className="text-sm text-muted-foreground hover:underline">
+            <Link to="/esqueci-senha" className="text-sm text-muted-foreground hover:text-primary transition-colors hover:underline">
               Esqueci minha senha
             </Link>
           </div>

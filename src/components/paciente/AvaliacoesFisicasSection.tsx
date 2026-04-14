@@ -302,7 +302,7 @@ export function AvaliacoesFisicasSection({ paciente }: Props) {
       delete payload.id; delete payload.created_at; delete payload.updated_at;
 
       if (editId) {
-        const { error } = await supabase.from("avaliacoes_fisicas").update(payload).eq("id", editId);
+        const { error } = await supabase.from("avaliacoes_fisicas").update(payload as any).eq("id", editId);
         if (error) throw error;
       } else {
         payload.paciente_id = paciente.id;
