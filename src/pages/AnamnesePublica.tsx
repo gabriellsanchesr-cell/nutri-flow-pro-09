@@ -4,7 +4,6 @@ import { supabase } from "@/integrations/supabase/client";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
-import { Label } from "@/components/ui/label";
 import { Loader2, CheckCircle } from "lucide-react";
 
 const SECTIONS = [
@@ -21,7 +20,6 @@ type SectionKey = typeof SECTIONS[number]["key"];
 
 export default function AnamnesePublica() {
   const { token } = useParams();
-  const [anamnese, setAnamnese] = useState<any>(null);
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [saved, setSaved] = useState(false);
@@ -41,37 +39,32 @@ export default function AnamnesePublica() {
   }, [token]);
 
   const loadAnamnese = async () => {
-    const { data, error } = await supabase
-      .from("anamneses")
-      .select("*")
-      .eq("token", token)
-      .maybeSingle();
-    if (!data || error) {
+    const { data, error } = await supabase.rpc("get_anamnese_by_token", {
+      p_token: token!,
+    });
+    if (error || !data || data.length === 0) {
       setNotFound(true);
-    } else if (data.respondido) {
+    } else if (data[0].respondido) {
       setSaved(true);
-      setAnamnese(data);
-    } else {
-      setAnamnese(data);
     }
     setLoading(false);
   };
 
   const handleSubmit = async () => {
-    if (!anamnese) return;
+    if (!token) return;
     setSaving(true);
-    const { error } = await supabase
-      .from("anamneses")
-      .update({
-        ...formData,
-        respondido: true,
-        preenchido_por: "paciente",
-        updated_at: new Date().toISOString(),
-      })
-      .eq("token", token)
-      .eq("respondido", false);
+    const { data, error } = await supabase.rpc("submit_anamnese", {
+      p_token: token,
+      p_objetivos_motivacoes: formData.objetivos_motivacoes,
+      p_historico_treino: formData.historico_treino,
+      p_historico_alimentar: formData.historico_alimentar,
+      p_saude_intestinal: formData.saude_intestinal,
+      p_sono_estresse: formData.sono_estresse,
+      p_historico_medico: formData.historico_medico,
+      p_espaco_livre: formData.espaco_livre,
+    });
     setSaving(false);
-    if (!error) setSaved(true);
+    if (!error && data) setSaved(true);
   };
 
   if (loading) {

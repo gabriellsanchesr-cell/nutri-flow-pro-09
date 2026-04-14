@@ -2104,6 +2104,21 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
+      get_anamnese_by_token: {
+        Args: { p_token: string }
+        Returns: {
+          espaco_livre: string
+          historico_alimentar: string
+          historico_medico: string
+          historico_treino: string
+          id: string
+          objetivos_motivacoes: string
+          paciente_id: string
+          respondido: boolean
+          saude_intestinal: string
+          sono_estresse: string
+        }[]
+      }
       get_user_role: {
         Args: { _user_id: string }
         Returns: Database["public"]["Enums"]["app_role"]
@@ -2112,6 +2127,19 @@ export type Database = {
         Args: {
           _role: Database["public"]["Enums"]["app_role"]
           _user_id: string
+        }
+        Returns: boolean
+      }
+      submit_anamnese: {
+        Args: {
+          p_espaco_livre?: string
+          p_historico_alimentar?: string
+          p_historico_medico?: string
+          p_historico_treino?: string
+          p_objetivos_motivacoes?: string
+          p_saude_intestinal?: string
+          p_sono_estresse?: string
+          p_token: string
         }
         Returns: boolean
       }

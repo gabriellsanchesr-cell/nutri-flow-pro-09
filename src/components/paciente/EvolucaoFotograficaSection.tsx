@@ -52,9 +52,24 @@ export function EvolucaoFotograficaSection({ paciente }: Props) {
     setLoading(false);
   };
 
+  const [signedUrls, setSignedUrls] = useState<Record<string, string>>({});
+
+  useEffect(() => {
+    const generateUrls = async () => {
+      const paths = fotos.map(f => f.foto_path).filter(Boolean);
+      if (paths.length === 0) return;
+      const { data } = await supabase.storage.from(BUCKET).createSignedUrls(paths, 3600);
+      if (data) {
+        const urlMap: Record<string, string> = {};
+        data.forEach((item) => { if (item.signedUrl) urlMap[item.path!] = item.signedUrl; });
+        setSignedUrls(urlMap);
+      }
+    };
+    generateUrls();
+  }, [fotos]);
+
   const getPublicUrl = (path: string) => {
-    const { data } = supabase.storage.from(BUCKET).getPublicUrl(path);
-    return data.publicUrl;
+    return signedUrls[path] || '';
   };
 
   const handleUpload = async () => {
