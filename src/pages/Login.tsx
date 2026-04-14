@@ -43,8 +43,8 @@ export default function Login() {
         <div className="w-full max-w-2xl animate-fade-in">
           <div className="text-center mb-8">
             <img src="/logo.png" alt="Gabriel Sanches" className="h-20 mx-auto drop-shadow-sm mb-4" />
-            <h1 className="text-2xl font-bold text-foreground">Gabriel Sanches</h1>
-            <p className="text-muted-foreground mt-1">Nutrição Individualizada</p>
+            <h1 className="text-2xl font-bold text-foreground">Bem-vindos!</h1>
+            <p className="text-muted-foreground mt-1">Acesse aqui tudo sobre seu acompanhamento nutricional e evolução!</p>
           </div>
 
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
