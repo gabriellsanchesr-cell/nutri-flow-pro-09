@@ -1,57 +1,59 @@
 
 
-# Landing Page with Role-Based Login
+# Redesign: Mini Landing Page + Login
 
-## What we're building
-A landing/welcome page at `/login` that presents two login options side by side (like WebDiet's portal selection style):
-- **Sou Paciente** — opens the patient login form
-- **Sou Nutricionista** — disabled/locked, with a tooltip or note saying "Acesso interno"
+## What's changing
 
-The patient login card includes a CTA at the bottom: "Ainda não é paciente? Conheça meu trabalho" linking to https://www.gabrielnutri.com.br/
+The current page has a two-card selection (Paciente / Nutricionista) that doesn't match the intent. Instead, we'll build a single-page mini landing page that scrolls naturally into the login form -- no view toggling needed.
 
 ## Layout
+
 ```text
-┌──────────────────────────────────────────────┐
-│              [Logo]                          │
-│     Gabriel Sanches - Nutrição               │
-│         Individualizada                      │
-│                                              │
-│   ┌─────────────┐   ┌─────────────┐         │
-│   │  🍎 Sou     │   │  🔒 Sou     │         │
-│   │  Paciente   │   │ Nutricionista│         │
-│   │  [Entrar]   │   │  [Bloqueado]│         │
-│   └─────────────┘   └─────────────┘         │
-│                                              │
-│  --- OR when patient card is selected ---    │
-│                                              │
-│   ┌────────────────────────────┐             │
-│   │  Login do Paciente         │             │
-│   │  [email]  [senha]  [Entrar]│             │
-│   │  Esqueci minha senha       │             │
-│   │                            │             │
-│   │  Ainda não é paciente?     │             │
-│   │  Conheça meu trabalho →    │             │
-│   └────────────────────────────┘             │
-└──────────────────────────────────────────────┘
+┌─────────────────────────────────────────────┐
+│  [gradient bg + decorative blurs]           │
+│                                             │
+│  HERO SECTION                               │
+│  ┌─────────────────────────────────────┐    │
+│  │         [Logo]                      │    │
+│  │    "Bem-vindos!"                    │    │
+│  │    "Acesse aqui tudo sobre seu      │    │
+│  │     acompanhamento nutricional..."  │    │
+│  │                                     │    │
+│  │  ✓ Plano alimentar personalizado    │    │
+│  │  ✓ Evolução e resultados           │    │
+│  │  ✓ Diário alimentar                │    │
+│  │  ✓ Receitas e orientações          │    │
+│  │                                     │    │
+│  │  [Acessar meu portal ↓]            │    │
+│  └─────────────────────────────────────┘    │
+│                                             │
+│  LOGIN CARD                                 │
+│  ┌─────────────────────────────────────┐    │
+│  │  "Acesse seu portal"               │    │
+│  │  [email]  [senha]  [Entrar]        │    │
+│  │  Esqueci minha senha               │    │
+│  └─────────────────────────────────────┘    │
+│                                             │
+│  FOOTER CTA                                │
+│  "Ainda não é paciente?"                    │
+│  "Conheça meu trabalho →"                   │
+│  → gabrielnutri.com.br                      │
+│                                             │
+└─────────────────────────────────────────────┘
 ```
 
-## Files to modify
+## Changes to `src/pages/Login.tsx`
 
-### 1. `src/pages/Login.tsx`
-- Redesign to show two cards initially: "Sou Paciente" and "Sou Nutricionista"
-- Clicking "Sou Paciente" transitions (animated) to the login form
-- "Sou Nutricionista" card is visually disabled with a lock icon and "Acesso interno" label
-- Add a back button from the login form to return to card selection
-- Add CTA section below login form: "Ainda não é paciente?" with link to gabrielnutri.com.br
-- Keep existing login logic, glassmorphism style, and gradient background
+- Remove the `view` state and the two-card selection grid entirely
+- Remove the "Sou Nutricionista" card completely
+- Build a single scrollable page with three sections:
+  1. **Hero** -- Logo, welcome text, 4 feature bullet points (with check icons), and a CTA button that smooth-scrolls to the login card
+  2. **Login card** -- The existing email/password form (glassmorphism card), with "Esqueci minha senha" link
+  3. **Footer CTA** -- "Ainda não é paciente?" with the external link to gabrielnutri.com.br
+- Keep all existing auth logic unchanged
+- Use the existing design tokens (primary blue, glassmorphism, rounded-xl, Plus Jakarta Sans)
+- Feature bullets use `CheckCircle` icons from lucide-react
+- Responsive: stacks vertically, max-w-md for the login card
 
-### 2. `src/App.tsx`
-- No routing changes needed — `/login` already exists and `PublicRoute` handles redirects correctly
-
-## Design details
-- Uses existing design system: Plus Jakarta Sans, glassmorphism, rounded-xl, gradient background
-- Two selection cards with hover elevation effect
-- Smooth transition between selection view and login form (animate-fade-in)
-- Disabled nutricionista card: reduced opacity, cursor-not-allowed, lock icon
-- External link opens in new tab with `rel="noopener noreferrer"`
+No other files need changes.
 
