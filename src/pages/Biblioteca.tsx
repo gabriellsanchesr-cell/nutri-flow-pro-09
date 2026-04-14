@@ -8,7 +8,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Badge } from "@/components/ui/badge";
-import { Plus, ArrowRightLeft, Trash2 } from "lucide-react";
+import { Plus, ArrowRightLeft, Trash2, Sparkles, Search } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 
 const grupoLabels: Record<string, string> = {
@@ -22,6 +22,8 @@ export default function Biblioteca() {
   const { toast } = useToast();
   const [subs, setSubs] = useState<any[]>([]);
   const [dialogOpen, setDialogOpen] = useState(false);
+  const [seeding, setSeeding] = useState(false);
+  const [searchQuery, setSearchQuery] = useState("");
   const [form, setForm] = useState({ grupo: "cereais", alimento_original: "", alimento_substituto: "", observacoes: "" });
 
   useEffect(() => {
@@ -57,49 +59,120 @@ export default function Biblioteca() {
     loadSubs();
   };
 
-  const grouped = subs.reduce((acc, s) => {
+  const seedDefaults = async () => {
+    if (!user) return;
+    setSeeding(true);
+    try {
+      // Call the database function to get default substitutions
+      const { data: defaults, error } = await supabase.rpc("get_default_substitutions");
+      if (error) throw error;
+      if (!defaults || defaults.length === 0) {
+        toast({ title: "Nenhuma substituição padrão encontrada" });
+        return;
+      }
+
+      // Insert only substitutions that don't already exist for this user
+      const existing = subs.map(s => `${s.grupo}|${s.alimento_original}|${s.alimento_substituto}`);
+      const newSubs = (defaults as any[]).filter(d =>
+        !existing.includes(`${d.grupo}|${d.alimento_original}|${d.alimento_substituto}`)
+      );
+
+      if (newSubs.length === 0) {
+        toast({ title: "Todas as substituições padrão já estão na sua biblioteca!" });
+        return;
+      }
+
+      const { error: insertError } = await supabase.from("substituicoes").insert(
+        newSubs.map(d => ({
+          user_id: user.id,
+          grupo: d.grupo as any,
+          alimento_original: d.alimento_original,
+          alimento_substituto: d.alimento_substituto,
+          observacoes: d.observacoes || null,
+        }))
+      );
+      if (insertError) throw insertError;
+
+      toast({ title: `${newSubs.length} substituições adicionadas com sucesso!` });
+      loadSubs();
+    } catch (err: any) {
+      toast({ title: "Erro ao popular", description: err.message, variant: "destructive" });
+    } finally {
+      setSeeding(false);
+    }
+  };
+
+  const filtered = searchQuery
+    ? subs.filter(s =>
+        s.alimento_original.toLowerCase().includes(searchQuery.toLowerCase()) ||
+        s.alimento_substituto.toLowerCase().includes(searchQuery.toLowerCase()) ||
+        (grupoLabels[s.grupo] || s.grupo).toLowerCase().includes(searchQuery.toLowerCase())
+      )
+    : subs;
+
+  const grouped = filtered.reduce((acc, s) => {
     (acc[s.grupo] = acc[s.grupo] || []).push(s);
     return acc;
   }, {} as Record<string, any[]>);
 
   return (
     <div className="space-y-6">
-      <div className="flex items-center justify-between">
-        <h1 className="text-2xl font-bold">Biblioteca de Substituições</h1>
-        <Dialog open={dialogOpen} onOpenChange={setDialogOpen}>
-          <DialogTrigger asChild>
-            <Button><Plus className="h-4 w-4 mr-2" /> Nova Substituição</Button>
-          </DialogTrigger>
-          <DialogContent>
-            <DialogHeader><DialogTitle>Adicionar Substituição</DialogTitle></DialogHeader>
-            <div className="space-y-4">
-              <div className="space-y-2">
-                <Label>Grupo Alimentar</Label>
-                <Select value={form.grupo} onValueChange={(v) => setForm((f) => ({ ...f, grupo: v }))}>
-                  <SelectTrigger><SelectValue /></SelectTrigger>
-                  <SelectContent>
-                    {Object.entries(grupoLabels).map(([k, v]) => (
-                      <SelectItem key={k} value={k}>{v}</SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
+      <div className="flex items-center justify-between flex-wrap gap-3">
+        <div>
+          <h1 className="text-2xl font-bold">Biblioteca de Substituições</h1>
+          <p className="text-sm text-muted-foreground">{subs.length} substituições cadastradas</p>
+        </div>
+        <div className="flex items-center gap-2">
+          <Button variant="outline" onClick={seedDefaults} disabled={seeding}>
+            <Sparkles className="h-4 w-4 mr-2" />
+            {seeding ? "Populando..." : "Popular com Padrões"}
+          </Button>
+          <Dialog open={dialogOpen} onOpenChange={setDialogOpen}>
+            <DialogTrigger asChild>
+              <Button><Plus className="h-4 w-4 mr-2" /> Nova Substituição</Button>
+            </DialogTrigger>
+            <DialogContent>
+              <DialogHeader><DialogTitle>Adicionar Substituição</DialogTitle></DialogHeader>
+              <div className="space-y-4">
+                <div className="space-y-2">
+                  <Label>Grupo Alimentar</Label>
+                  <Select value={form.grupo} onValueChange={(v) => setForm((f) => ({ ...f, grupo: v }))}>
+                    <SelectTrigger><SelectValue /></SelectTrigger>
+                    <SelectContent>
+                      {Object.entries(grupoLabels).map(([k, v]) => (
+                        <SelectItem key={k} value={k}>{v}</SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </div>
+                <div className="space-y-2">
+                  <Label>Alimento Original *</Label>
+                  <Input value={form.alimento_original} onChange={(e) => setForm((f) => ({ ...f, alimento_original: e.target.value }))} required />
+                </div>
+                <div className="space-y-2">
+                  <Label>Substituto *</Label>
+                  <Input value={form.alimento_substituto} onChange={(e) => setForm((f) => ({ ...f, alimento_substituto: e.target.value }))} required />
+                </div>
+                <div className="space-y-2">
+                  <Label>Observações</Label>
+                  <Input value={form.observacoes} onChange={(e) => setForm((f) => ({ ...f, observacoes: e.target.value }))} />
+                </div>
+                <Button onClick={createSub} className="w-full">Adicionar</Button>
               </div>
-              <div className="space-y-2">
-                <Label>Alimento Original *</Label>
-                <Input value={form.alimento_original} onChange={(e) => setForm((f) => ({ ...f, alimento_original: e.target.value }))} required />
-              </div>
-              <div className="space-y-2">
-                <Label>Substituto *</Label>
-                <Input value={form.alimento_substituto} onChange={(e) => setForm((f) => ({ ...f, alimento_substituto: e.target.value }))} required />
-              </div>
-              <div className="space-y-2">
-                <Label>Observações</Label>
-                <Input value={form.observacoes} onChange={(e) => setForm((f) => ({ ...f, observacoes: e.target.value }))} />
-              </div>
-              <Button onClick={createSub} className="w-full">Adicionar</Button>
-            </div>
-          </DialogContent>
-        </Dialog>
+            </DialogContent>
+          </Dialog>
+        </div>
+      </div>
+
+      {/* Search */}
+      <div className="relative">
+        <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+        <Input
+          className="pl-9"
+          placeholder="Buscar substituição por alimento ou grupo..."
+          value={searchQuery}
+          onChange={e => setSearchQuery(e.target.value)}
+        />
       </div>
 
       {Object.entries(grouped).map(([grupo, items]) => (
@@ -130,8 +203,18 @@ export default function Biblioteca() {
         </Card>
       ))}
 
-      {subs.length === 0 && (
-        <p className="text-muted-foreground text-center py-8">Nenhuma substituição cadastrada ainda</p>
+      {filtered.length === 0 && (
+        <div className="text-center py-12 space-y-3">
+          <p className="text-muted-foreground">
+            {searchQuery ? "Nenhuma substituição encontrada para essa busca" : "Nenhuma substituição cadastrada ainda"}
+          </p>
+          {!searchQuery && (
+            <Button variant="outline" onClick={seedDefaults} disabled={seeding}>
+              <Sparkles className="h-4 w-4 mr-2" />
+              Popular com substituições padrão
+            </Button>
+          )}
+        </div>
       )}
     </div>
   );
