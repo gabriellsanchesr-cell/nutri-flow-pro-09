@@ -1,8 +1,7 @@
 import { useMemo } from "react";
 import { useNavigate } from "react-router-dom";
-import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import { ArrowLeft, KeyRound, UserX, UserCheck, Trash2, Pencil } from "lucide-react";
+import { ArrowLeft, KeyRound, UserX, UserCheck, Trash2, Pencil, MoreVertical } from "lucide-react";
 import {
   Breadcrumb,
   BreadcrumbList,
@@ -11,6 +10,13 @@ import {
   BreadcrumbSeparator,
   BreadcrumbPage,
 } from "@/components/ui/breadcrumb";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+  DropdownMenuSeparator,
+} from "@/components/ui/dropdown-menu";
 
 const faseLabels: Record<string, { label: string; color: string }> = {
   rotina: { label: "Rotina", color: "bg-primary/10 text-primary border-primary/20" },
@@ -73,7 +79,7 @@ export function PacienteHeader({
 
   return (
     <div className="bg-gradient-to-r from-card to-card/80 border-b border-border">
-      <div className="px-6 pt-4 pb-2">
+      <div className="px-4 md:px-6 pt-3 md:pt-4 pb-2">
         <Breadcrumb>
           <BreadcrumbList>
             <BreadcrumbItem>
@@ -81,48 +87,49 @@ export function PacienteHeader({
                 Pacientes
               </BreadcrumbLink>
             </BreadcrumbItem>
-            <BreadcrumbSeparator />
-            <BreadcrumbItem>
-              <BreadcrumbLink href="#" onClick={(e) => e.preventDefault()}>
+            <BreadcrumbSeparator className="hidden sm:block" />
+            <BreadcrumbItem className="hidden sm:flex">
+              <BreadcrumbLink href="#" onClick={(e) => e.preventDefault()} className="max-w-[200px] truncate">
                 {paciente.nome_completo}
               </BreadcrumbLink>
             </BreadcrumbItem>
             <BreadcrumbSeparator />
             <BreadcrumbItem>
-              <BreadcrumbPage>{sectionLabel}</BreadcrumbPage>
+              <BreadcrumbPage className="truncate max-w-[140px] sm:max-w-none">{sectionLabel}</BreadcrumbPage>
             </BreadcrumbItem>
           </BreadcrumbList>
         </Breadcrumb>
       </div>
 
-      <div className="px-6 pb-4 flex items-center gap-4 flex-wrap">
-        <Button variant="ghost" size="icon" onClick={() => navigate("/pacientes")} className="shrink-0">
+      <div className="px-4 md:px-6 pb-3 md:pb-4 flex items-center gap-3 md:gap-4">
+        <Button variant="ghost" size="icon" onClick={() => navigate("/pacientes")} className="shrink-0 h-9 w-9">
           <ArrowLeft className="h-4 w-4" />
         </Button>
 
-        <div className="h-12 w-12 rounded-full bg-gradient-to-br from-primary to-primary/70 flex items-center justify-center text-primary-foreground font-bold text-lg shrink-0 shadow-md">
+        <div className="h-10 w-10 md:h-12 md:w-12 rounded-full bg-gradient-to-br from-primary to-primary/70 flex items-center justify-center text-primary-foreground font-bold text-base md:text-lg shrink-0 shadow-md">
           {getInitials(paciente.nome_completo)}
         </div>
 
         <div className="flex-1 min-w-0">
           <div className="flex items-center gap-2 flex-wrap">
-            <h1 className="text-xl font-bold text-foreground truncate">{paciente.nome_completo}</h1>
-            {age !== null && <span className="text-sm text-muted-foreground">{age} anos</span>}
+            <h1 className="text-base md:text-xl font-bold text-foreground truncate">{paciente.nome_completo}</h1>
+            {age !== null && <span className="text-xs md:text-sm text-muted-foreground shrink-0">{age} anos</span>}
           </div>
-          <div className="flex gap-2 mt-1.5 flex-wrap">
-            <span className={`inline-flex items-center rounded-full border px-2.5 py-0.5 text-xs font-semibold transition-colors ${faseCfg.color}`}>
+          <div className="flex gap-1.5 mt-1 md:mt-1.5 flex-wrap">
+            <span className={`inline-flex items-center rounded-full border px-2 md:px-2.5 py-0.5 text-[10px] md:text-xs font-semibold transition-colors ${faseCfg.color}`}>
               {faseCfg.label}
             </span>
-            <span className={`inline-flex items-center rounded-full border px-2.5 py-0.5 text-xs font-semibold ${statusCfg.color}`}>
+            <span className={`inline-flex items-center rounded-full border px-2 md:px-2.5 py-0.5 text-[10px] md:text-xs font-semibold ${statusCfg.color}`}>
               {statusCfg.label}
             </span>
-            <span className={`inline-flex items-center rounded-full border px-2.5 py-0.5 text-xs font-semibold ${accessCfg.color}`}>
+            <span className={`hidden sm:inline-flex items-center rounded-full border px-2.5 py-0.5 text-xs font-semibold ${accessCfg.color}`}>
               {accessCfg.label}
             </span>
           </div>
         </div>
 
-        <div className="flex gap-2 flex-wrap shrink-0">
+        {/* Desktop actions */}
+        <div className="hidden md:flex gap-2 flex-wrap shrink-0">
           <Button size="sm" variant="outline" onClick={onEdit} className="rounded-lg">
             <Pencil className="h-3.5 w-3.5 mr-1" /> Editar
           </Button>
@@ -144,6 +151,41 @@ export function PacienteHeader({
           <Button size="sm" variant="destructive" onClick={onDelete} className="rounded-lg">
             <Trash2 className="h-3.5 w-3.5 mr-1" /> Excluir
           </Button>
+        </div>
+
+        {/* Mobile actions: dropdown */}
+        <div className="md:hidden shrink-0">
+          <DropdownMenu>
+            <DropdownMenuTrigger asChild>
+              <Button variant="outline" size="icon" className="h-9 w-9 rounded-lg">
+                <MoreVertical className="h-4 w-4" />
+              </Button>
+            </DropdownMenuTrigger>
+            <DropdownMenuContent align="end" className="w-52">
+              <DropdownMenuItem onClick={onEdit}>
+                <Pencil className="h-4 w-4 mr-2" /> Editar
+              </DropdownMenuItem>
+              {status === "sem_conta" && (
+                <DropdownMenuItem onClick={onCreateAccess}>
+                  <KeyRound className="h-4 w-4 mr-2" /> Criar Acesso
+                </DropdownMenuItem>
+              )}
+              {status === "ativo" && (
+                <DropdownMenuItem onClick={onDeactivate} disabled={actionLoading}>
+                  <UserX className="h-4 w-4 mr-2" /> Desativar Acesso
+                </DropdownMenuItem>
+              )}
+              {status === "desativado" && (
+                <DropdownMenuItem onClick={onReactivate} disabled={actionLoading}>
+                  <UserCheck className="h-4 w-4 mr-2" /> Reativar Acesso
+                </DropdownMenuItem>
+              )}
+              <DropdownMenuSeparator />
+              <DropdownMenuItem onClick={onDelete} className="text-destructive focus:text-destructive">
+                <Trash2 className="h-4 w-4 mr-2" /> Excluir
+              </DropdownMenuItem>
+            </DropdownMenuContent>
+          </DropdownMenu>
         </div>
       </div>
     </div>

@@ -157,7 +157,7 @@ export default function Financeiro() {
   const fmt = (v: number) => `R$ ${v.toLocaleString("pt-BR", { minimumFractionDigits: 2 })}`;
 
   return (
-    <div className="space-y-6 p-6">
+    <div className="space-y-6 p-4 md:p-6">
       <div className="flex items-center justify-between">
         <div>
           <h1 className="text-2xl font-bold text-foreground">Financeiro</h1>
@@ -220,7 +220,7 @@ export default function Financeiro() {
         </TabsContent>
 
         <TabsContent value="receitas" className="space-y-4">
-          <div className="flex items-center justify-between">
+          <div className="flex items-center justify-between gap-2 flex-wrap">
             <Select value={filtroStatus} onValueChange={setFiltroStatus}>
               <SelectTrigger className="w-40"><SelectValue /></SelectTrigger>
               <SelectContent>
@@ -232,6 +232,7 @@ export default function Financeiro() {
           </div>
 
           <Card>
+            <div className="overflow-x-auto">
             <Table>
               <TableHeader>
                 <TableRow>
@@ -273,6 +274,7 @@ export default function Financeiro() {
                 ))}
               </TableBody>
             </Table>
+            </div>
           </Card>
         </TabsContent>
       </Tabs>

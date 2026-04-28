@@ -127,37 +127,38 @@ export default function Pacientes() {
       </div>
 
       <div className="border rounded-xl overflow-hidden shadow-sm bg-card">
-        <Table>
-          <TableHeader>
-            <TableRow className="bg-muted/30 hover:bg-muted/30">
-              <TableHead>Nome</TableHead>
-              <TableHead>E-mail</TableHead>
-              <TableHead>Status</TableHead>
-              <TableHead>Cadastro</TableHead>
-              <TableHead className="w-[60px]">Ações</TableHead>
-            </TableRow>
-          </TableHeader>
-          <TableBody>
-            {filtered.map((p) => {
-              const status = p.account_status || "sem_conta";
-              const cfg = statusConfig[status] || statusConfig.sem_conta;
-              return (
-                <TableRow key={p.id} className="cursor-pointer hover:bg-muted/30 transition-colors" onClick={() => navigate(`/pacientes/${p.id}`)}>
-                  <TableCell>
-                    <div className="flex items-center gap-3">
-                      <div className="h-8 w-8 rounded-full bg-primary/10 flex items-center justify-center text-primary text-xs font-bold shrink-0">
-                        {getInitials(p.nome_completo)}
+        <div className="overflow-x-auto">
+          <Table>
+            <TableHeader>
+              <TableRow className="bg-muted/30 hover:bg-muted/30">
+                <TableHead>Nome</TableHead>
+                <TableHead className="hidden md:table-cell">E-mail</TableHead>
+                <TableHead>Status</TableHead>
+                <TableHead className="hidden sm:table-cell">Cadastro</TableHead>
+                <TableHead className="w-[60px]">Ações</TableHead>
+              </TableRow>
+            </TableHeader>
+            <TableBody>
+              {filtered.map((p) => {
+                const status = p.account_status || "sem_conta";
+                const cfg = statusConfig[status] || statusConfig.sem_conta;
+                return (
+                  <TableRow key={p.id} className="cursor-pointer hover:bg-muted/30 transition-colors" onClick={() => navigate(`/pacientes/${p.id}`)}>
+                    <TableCell>
+                      <div className="flex items-center gap-3 min-w-0">
+                        <div className="h-8 w-8 rounded-full bg-primary/10 flex items-center justify-center text-primary text-xs font-bold shrink-0">
+                          {getInitials(p.nome_completo)}
+                        </div>
+                        <span className="font-medium text-foreground truncate">{p.nome_completo}</span>
                       </div>
-                      <span className="font-medium text-foreground">{p.nome_completo}</span>
-                    </div>
-                  </TableCell>
-                  <TableCell className="text-muted-foreground">{p.email || "—"}</TableCell>
-                  <TableCell>
-                    <Badge variant={cfg.variant} className="rounded-full">{cfg.label}</Badge>
-                  </TableCell>
-                  <TableCell className="text-muted-foreground text-sm">
-                    {p.created_at ? format(new Date(p.created_at), "dd/MM/yyyy") : "—"}
-                  </TableCell>
+                    </TableCell>
+                    <TableCell className="text-muted-foreground hidden md:table-cell">{p.email || "—"}</TableCell>
+                    <TableCell>
+                      <Badge variant={cfg.variant} className="rounded-full whitespace-nowrap">{cfg.label}</Badge>
+                    </TableCell>
+                    <TableCell className="text-muted-foreground text-sm hidden sm:table-cell">
+                      {p.created_at ? format(new Date(p.created_at), "dd/MM/yyyy") : "—"}
+                    </TableCell>
                   <TableCell onClick={(e) => e.stopPropagation()}>
                     <DropdownMenu>
                       <DropdownMenuTrigger asChild>
@@ -203,8 +204,9 @@ export default function Pacientes() {
                 </TableCell>
               </TableRow>
             )}
-          </TableBody>
-        </Table>
+            </TableBody>
+          </Table>
+        </div>
       </div>
 
       {accessModal.paciente && (

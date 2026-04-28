@@ -334,9 +334,12 @@ export default function Agenda() {
         <div className="lg:col-span-3">
           {/* Month View */}
           {view === "month" && (
-            <div className="grid grid-cols-7 gap-1">
+            <div className="grid grid-cols-7 gap-0.5 md:gap-1">
               {["Dom", "Seg", "Ter", "Qua", "Qui", "Sex", "Sáb"].map(d => (
-                <div key={d} className="text-center text-xs font-medium text-muted-foreground py-2">{d}</div>
+                <div key={d} className="text-center text-[10px] md:text-xs font-medium text-muted-foreground py-1.5 md:py-2">
+                  <span className="md:hidden">{d.charAt(0)}</span>
+                  <span className="hidden md:inline">{d}</span>
+                </div>
               ))}
               {monthDays.map(day => {
                 const dc = dayConsultas(day);
@@ -345,16 +348,16 @@ export default function Agenda() {
                 return (
                   <div
                     key={day.toISOString()}
-                    className={`min-h-[80px] p-1 border rounded-md cursor-pointer hover:bg-accent/50 transition-colors ${isCurrentMonth ? "bg-card" : "bg-muted/30"} ${today ? "ring-2 ring-primary" : ""}`}
+                    className={`min-h-[56px] md:min-h-[80px] p-0.5 md:p-1 border rounded-md cursor-pointer hover:bg-accent/50 transition-colors ${isCurrentMonth ? "bg-card" : "bg-muted/30"} ${today ? "ring-2 ring-primary" : ""}`}
                     onClick={() => { setSelectedDay(day); setView("day"); setCurrentDate(day); }}
                   >
-                    <p className={`text-xs font-medium mb-1 ${today ? "text-primary font-bold" : isCurrentMonth ? "" : "text-muted-foreground"}`}>{day.getDate()}</p>
+                    <p className={`text-[10px] md:text-xs font-medium mb-0.5 md:mb-1 ${today ? "text-primary font-bold" : isCurrentMonth ? "" : "text-muted-foreground"}`}>{day.getDate()}</p>
                     {dc.slice(0, 2).map(c => (
-                      <div key={c.id} className={`text-xs truncate mb-0.5 px-1 rounded ${c.anotacoes?.startsWith("🚫") ? "bg-muted text-muted-foreground" : "bg-primary/10 text-primary"}`}>
-                        {format(new Date(c.data_hora), "HH:mm")} {c.pacientes?.nome_completo?.split(" ")[0]}
+                      <div key={c.id} className={`text-[9px] md:text-xs truncate mb-0.5 px-1 rounded ${c.anotacoes?.startsWith("🚫") ? "bg-muted text-muted-foreground" : "bg-primary/10 text-primary"}`}>
+                        <span className="hidden md:inline">{format(new Date(c.data_hora), "HH:mm")} </span>{c.pacientes?.nome_completo?.split(" ")[0]}
                       </div>
                     ))}
-                    {dc.length > 2 && <p className="text-xs text-muted-foreground">+{dc.length - 2}</p>}
+                    {dc.length > 2 && <p className="text-[9px] md:text-xs text-muted-foreground">+{dc.length - 2}</p>}
                   </div>
                 );
               })}
