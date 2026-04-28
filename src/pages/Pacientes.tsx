@@ -204,8 +204,9 @@ export default function Pacientes() {
                 </TableCell>
               </TableRow>
             )}
-          </TableBody>
-        </Table>
+            </TableBody>
+          </Table>
+        </div>
       </div>
 
       {accessModal.paciente && (
