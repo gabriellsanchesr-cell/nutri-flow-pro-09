@@ -274,6 +274,7 @@ export default function Financeiro() {
                 ))}
               </TableBody>
             </Table>
+            </div>
           </Card>
         </TabsContent>
       </Tabs>
