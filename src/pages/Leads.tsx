@@ -144,8 +144,8 @@ export default function Leads() {
         <Button onClick={openCreate}><Plus className="h-4 w-4 mr-2" />Novo Lead</Button>
       </div>
 
-      <div className="flex gap-3 items-center">
-        <div className="relative flex-1 max-w-xs">
+      <div className="flex gap-3 items-center flex-wrap">
+        <div className="relative flex-1 min-w-[180px] sm:max-w-xs">
           <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
           <Input placeholder="Buscar por nome..." value={search} onChange={e => setSearch(e.target.value)} className="pl-9" />
         </div>
@@ -161,13 +161,13 @@ export default function Leads() {
       {loading ? (
         <p className="text-muted-foreground">Carregando...</p>
       ) : (
-        <div className="grid grid-cols-5 gap-4 overflow-x-auto">
+        <div className="flex md:grid md:grid-cols-5 gap-4 overflow-x-auto pb-2 -mx-4 px-4 md:mx-0 md:px-0 snap-x snap-mandatory md:snap-none">
           {STATUS_COLUMNS.map(col => {
             const colLeads = filtered.filter(l => l.status === col.key);
             return (
               <div
                 key={col.key}
-                className="min-w-[220px]"
+                className="w-[260px] shrink-0 snap-start md:w-auto md:min-w-0 md:shrink"
                 onDragOver={e => e.preventDefault()}
                 onDrop={() => handleDrop(col.key)}
               >
