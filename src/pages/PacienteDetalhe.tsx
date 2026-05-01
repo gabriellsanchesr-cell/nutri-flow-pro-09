@@ -130,9 +130,9 @@ export default function PacienteDetalhe() {
         actionLoading={actionLoading}
       />
 
-      <div className="flex flex-1 overflow-hidden">
+      <div className="flex flex-col md:flex-row flex-1 overflow-hidden">
         <PacienteSidebar active={activeSection} onSelect={setActiveSection} />
-        <main className="flex-1 overflow-y-auto bg-background p-4 md:p-6 min-w-0">
+        <main className="flex-1 overflow-y-auto bg-background p-4 md:p-6 min-w-0 w-full">
           {renderSection()}
         </main>
       </div>
