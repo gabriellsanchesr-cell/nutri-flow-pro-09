@@ -138,12 +138,16 @@ export default function Templates() {
 
   return (
     <div className="space-y-6">
-      <div className="flex items-center justify-between">
+      <div className="flex items-center justify-between flex-wrap gap-2">
         <h1 className="text-2xl font-bold">Templates de Plano</h1>
-        <Dialog open={dialogOpen} onOpenChange={setDialogOpen}>
-          <DialogTrigger asChild>
-            <Button><Plus className="h-4 w-4 mr-2" /> Novo Template</Button>
-          </DialogTrigger>
+        <div className="flex items-center gap-2">
+          <Button variant="outline" onClick={() => setImportOpen(true)}>
+            <FileUp className="h-4 w-4 mr-2" /> Importar PDF
+          </Button>
+          <Dialog open={dialogOpen} onOpenChange={setDialogOpen}>
+            <DialogTrigger asChild>
+              <Button><Plus className="h-4 w-4 mr-2" /> Novo Template</Button>
+            </DialogTrigger>
           <DialogContent>
             <DialogHeader><DialogTitle>Criar Template</DialogTitle></DialogHeader>
             <div className="space-y-4">
