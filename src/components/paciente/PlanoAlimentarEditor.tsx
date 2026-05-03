@@ -210,10 +210,12 @@ export function PlanoAlimentarEditor({ pacienteId, planoId, onBack, paciente, in
       const planoPayload: any = {
         nome: plano.nome, observacoes: plano.observacoes || null,
         status: finalStatus,
-        data_inicio: plano.data_inicio || null,
-        data_fim: plano.data_fim || null,
+        data_inicio: isTemplate ? null : (plano.data_inicio || null),
+        data_fim: isTemplate ? null : (plano.data_fim || null),
         objetivo_template: plano.objetivo_template || null,
-        paciente_id: pacienteId, user_id: user.id, is_template: false,
+        paciente_id: isTemplate ? null : pacienteId,
+        user_id: user.id,
+        is_template: isTemplate,
       };
       if (savedPlanoId) {
         const { error } = await supabase.from("planos_alimentares").update(planoPayload).eq("id", savedPlanoId);
