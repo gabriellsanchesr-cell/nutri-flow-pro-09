@@ -258,6 +258,16 @@ export function PlanoAlimentarSection({ paciente }: Props) {
           planoData={exportPlano}
         />
       )}
+
+      <ImportarPlanoPdfModal
+        open={importOpen}
+        onOpenChange={setImportOpen}
+        pacienteId={paciente.id}
+        onImported={(draft) => {
+          setImportedDraft(draft);
+          setEditingPlanoId("new");
+        }}
+      />
     </div>
   );
 }
