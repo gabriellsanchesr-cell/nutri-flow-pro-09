@@ -71,8 +71,12 @@ Deno.serve(async (req) => {
     const body = await req.json();
     const pacienteId: string | undefined = body?.paciente_id;
     const pdfBase64: string | undefined = body?.pdf_base64;
-    if (!pacienteId || !pdfBase64) {
-      return json({ error: "paciente_id e pdf_base64 são obrigatórios" }, 400);
+    const mode: string = body?.mode || "paciente"; // "paciente" | "template"
+    if (!pdfBase64) {
+      return json({ error: "pdf_base64 é obrigatório" }, 400);
+    }
+    if (mode === "paciente" && !pacienteId) {
+      return json({ error: "paciente_id é obrigatório no modo paciente" }, 400);
     }
 
     // Decode PDF
