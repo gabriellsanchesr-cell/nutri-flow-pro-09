@@ -172,8 +172,9 @@ export default function Templates() {
               </div>
               <Button onClick={createTemplate} className="w-full">Criar Template</Button>
             </div>
-          </DialogContent>
-        </Dialog>
+            </DialogContent>
+          </Dialog>
+        </div>
       </div>
 
       <Dialog open={duplicateDialogOpen} onOpenChange={setDuplicateDialogOpen}>
