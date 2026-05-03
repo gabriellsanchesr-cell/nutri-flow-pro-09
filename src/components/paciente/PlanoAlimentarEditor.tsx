@@ -87,14 +87,15 @@ interface InitialDraft {
 }
 
 interface Props {
-  pacienteId: string;
+  pacienteId?: string;
   planoId?: string;
   onBack: () => void;
   paciente?: any;
   initialData?: InitialDraft | null;
+  isTemplate?: boolean;
 }
 
-export function PlanoAlimentarEditor({ pacienteId, planoId, onBack, paciente, initialData }: Props) {
+export function PlanoAlimentarEditor({ pacienteId, planoId, onBack, paciente, initialData, isTemplate = false }: Props) {
   const { user } = useAuth();
   const { toast } = useToast();
   const [saving, setSaving] = useState(false);
