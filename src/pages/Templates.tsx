@@ -91,6 +91,51 @@ export default function Templates() {
     }
   };
 
+  const handleImported = async (draft: { nome: string; observacoes: string; refeicoes: any[] }) => {
+    if (!user) return;
+    try {
+      const { data: tpl, error } = await supabase.from("planos_alimentares").insert({
+        user_id: user.id,
+        nome: draft.nome || "Template Importado",
+        observacoes: draft.observacoes || null,
+        is_template: true,
+        objetivo_template: "outro" as any,
+        status: "rascunho",
+      }).select("id").single();
+      if (error) throw error;
+
+      for (const ref of draft.refeicoes || []) {
+        const { data: savedRef, error: refErr } = await supabase.from("refeicoes").insert({
+          plano_id: tpl.id, tipo: ref.tipo as any, ordem: ref.ordem || 1,
+          observacoes: ref.observacoes || null,
+          substituicoes_sugeridas: ref.substituicoes_sugeridas || null,
+        }).select("id").single();
+        if (refErr) throw refErr;
+        if (ref.alimentos?.length) {
+          await supabase.from("alimentos_plano").insert(
+            ref.alimentos.map((a: any) => ({
+              refeicao_id: savedRef.id,
+              nome_alimento: a.nome_alimento,
+              quantidade: a.quantidade,
+              medida_caseira: a.medida_caseira,
+              energia_kcal: a.energia_kcal,
+              proteina_g: a.proteina_g,
+              carboidrato_g: a.carboidrato_g,
+              lipidio_g: a.lipidio_g,
+              fibra_g: a.fibra_g,
+              alimento_taco_id: a.alimento_taco_id,
+            }))
+          );
+        }
+      }
+
+      toast({ title: "Template importado!", description: "Refeições e alimentos foram salvos." });
+      loadTemplates();
+    } catch (err: any) {
+      toast({ title: "Erro ao importar", description: err.message, variant: "destructive" });
+    }
+  };
+
   return (
     <div className="space-y-6">
       <div className="flex items-center justify-between">
