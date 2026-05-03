@@ -10,6 +10,8 @@ import {
 } from "lucide-react";
 import { PlanoAlimentarEditor } from "./PlanoAlimentarEditor";
 import { ExportPdfModal } from "@/components/pdf/ExportPdfModal";
+import { ImportarPlanoPdfModal } from "./ImportarPlanoPdfModal";
+import { FileUp } from "lucide-react";
 import {
   AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent,
   AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle,
@@ -41,6 +43,8 @@ export function PlanoAlimentarSection({ paciente }: Props) {
   const [deleteId, setDeleteId] = useState<string | null>(null);
   const [exportPlano, setExportPlano] = useState<any>(null);
   const [exportType, setExportType] = useState<"plano_alimentar" | "plano_simplificado">("plano_alimentar");
+  const [importOpen, setImportOpen] = useState(false);
+  const [importedDraft, setImportedDraft] = useState<any>(null);
 
   useEffect(() => { loadPlanos(); }, [paciente.id]);
 
@@ -127,8 +131,9 @@ export function PlanoAlimentarSection({ paciente }: Props) {
       <PlanoAlimentarEditor
         pacienteId={paciente.id}
         planoId={editingPlanoId === "new" ? undefined : editingPlanoId}
-        onBack={() => { setEditingPlanoId(null); loadPlanos(); }}
+        onBack={() => { setEditingPlanoId(null); setImportedDraft(null); loadPlanos(); }}
         paciente={paciente}
+        initialData={importedDraft}
       />
     );
   }
@@ -139,11 +144,16 @@ export function PlanoAlimentarSection({ paciente }: Props) {
 
   return (
     <div className="space-y-4">
-      <div className="flex justify-between items-center">
+      <div className="flex justify-between items-center flex-wrap gap-2">
         <h3 className="text-lg font-semibold text-foreground">Planos Alimentares</h3>
-        <Button size="sm" onClick={() => setEditingPlanoId("new")}>
-          <Plus className="h-3.5 w-3.5 mr-1" /> Novo Plano
-        </Button>
+        <div className="flex items-center gap-2">
+          <Button size="sm" variant="outline" onClick={() => setImportOpen(true)}>
+            <FileUp className="h-3.5 w-3.5 mr-1" /> Importar PDF
+          </Button>
+          <Button size="sm" onClick={() => { setImportedDraft(null); setEditingPlanoId("new"); }}>
+            <Plus className="h-3.5 w-3.5 mr-1" /> Novo Plano
+          </Button>
+        </div>
       </div>
 
       {planos.length === 0 ? (
@@ -248,6 +258,16 @@ export function PlanoAlimentarSection({ paciente }: Props) {
           planoData={exportPlano}
         />
       )}
+
+      <ImportarPlanoPdfModal
+        open={importOpen}
+        onOpenChange={setImportOpen}
+        pacienteId={paciente.id}
+        onImported={(draft) => {
+          setImportedDraft(draft);
+          setEditingPlanoId("new");
+        }}
+      />
     </div>
   );
 }
