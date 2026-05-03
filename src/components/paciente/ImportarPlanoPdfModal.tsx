@@ -25,7 +25,7 @@ const STAGES = [
   "Calculando macros...",
 ];
 
-export function ImportarPlanoPdfModal({ open, onOpenChange, pacienteId, onImported }: Props) {
+export function ImportarPlanoPdfModal({ open, onOpenChange, pacienteId, mode = "paciente", onImported }: Props) {
   const { toast } = useToast();
   const [file, setFile] = useState<File | null>(null);
   const [nome, setNome] = useState("Plano Importado");
