@@ -8,8 +8,14 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Textarea } from "@/components/ui/textarea";
-import { Plus, Copy, FileText, FileUp } from "lucide-react";
+import { Plus, Copy, FileText, FileUp, Pencil, Trash2, FileDown } from "lucide-react";
 import { ImportarPlanoPdfModal } from "@/components/paciente/ImportarPlanoPdfModal";
+import { PlanoAlimentarEditor } from "@/components/paciente/PlanoAlimentarEditor";
+import { ExportPdfModal } from "@/components/pdf/ExportPdfModal";
+import {
+  AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent,
+  AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
 import { useToast } from "@/hooks/use-toast";
 import { format } from "date-fns";
 
@@ -33,6 +39,10 @@ export default function Templates() {
   const [selectedPaciente, setSelectedPaciente] = useState("");
   const [form, setForm] = useState({ nome: "", objetivo_template: "emagrecimento", observacoes: "" });
   const [importOpen, setImportOpen] = useState(false);
+  const [editingId, setEditingId] = useState<string | null | "new">(null);
+  const [importedDraft, setImportedDraft] = useState<any>(null);
+  const [deleteId, setDeleteId] = useState<string | null>(null);
+  const [exportTemplate, setExportTemplate] = useState<any>(null);
 
   useEffect(() => {
     if (user) {
@@ -76,65 +86,74 @@ export default function Templates() {
 
   const duplicateForPaciente = async () => {
     if (!user || !selectedTemplate || !selectedPaciente) return;
-    const { error } = await supabase.from("planos_alimentares").insert({
-      user_id: user.id,
-      paciente_id: selectedPaciente,
-      nome: selectedTemplate.nome,
-      observacoes: selectedTemplate.observacoes,
-      is_template: false,
-    });
-    if (error) {
-      toast({ title: "Erro", description: error.message, variant: "destructive" });
-    } else {
-      toast({ title: "Plano duplicado para o paciente!" });
-      setDuplicateDialogOpen(false);
-    }
-  };
-
-  const handleImported = async (draft: { nome: string; observacoes: string; refeicoes: any[] }) => {
-    if (!user) return;
     try {
-      const { data: tpl, error } = await supabase.from("planos_alimentares").insert({
+      const { data: novo, error } = await supabase.from("planos_alimentares").insert({
         user_id: user.id,
-        nome: draft.nome || "Template Importado",
-        observacoes: draft.observacoes || null,
-        is_template: true,
-        objetivo_template: "outro" as any,
+        paciente_id: selectedPaciente,
+        nome: selectedTemplate.nome,
+        observacoes: selectedTemplate.observacoes,
+        is_template: false,
         status: "rascunho",
       }).select("id").single();
       if (error) throw error;
 
-      for (const ref of draft.refeicoes || []) {
-        const { data: savedRef, error: refErr } = await supabase.from("refeicoes").insert({
-          plano_id: tpl.id, tipo: ref.tipo as any, ordem: ref.ordem || 1,
-          observacoes: ref.observacoes || null,
-          substituicoes_sugeridas: ref.substituicoes_sugeridas || null,
-        }).select("id").single();
-        if (refErr) throw refErr;
-        if (ref.alimentos?.length) {
-          await supabase.from("alimentos_plano").insert(
-            ref.alimentos.map((a: any) => ({
-              refeicao_id: savedRef.id,
-              nome_alimento: a.nome_alimento,
-              quantidade: a.quantidade,
-              medida_caseira: a.medida_caseira,
-              energia_kcal: a.energia_kcal,
-              proteina_g: a.proteina_g,
-              carboidrato_g: a.carboidrato_g,
-              lipidio_g: a.lipidio_g,
-              fibra_g: a.fibra_g,
-              alimento_taco_id: a.alimento_taco_id,
-            }))
-          );
+      // copia refeições e alimentos
+      const { data: refs } = await supabase.from("refeicoes")
+        .select("*, alimentos_plano(*)").eq("plano_id", selectedTemplate.id);
+      if (refs) {
+        for (const ref of refs) {
+          const { data: newRef } = await supabase.from("refeicoes").insert({
+            plano_id: novo.id, tipo: ref.tipo, ordem: ref.ordem,
+            observacoes: ref.observacoes, substituicoes_sugeridas: ref.substituicoes_sugeridas,
+          }).select("id").single();
+          if (newRef && ref.alimentos_plano?.length) {
+            await supabase.from("alimentos_plano").insert(
+              ref.alimentos_plano.map((a: any) => ({
+                refeicao_id: newRef.id, nome_alimento: a.nome_alimento,
+                quantidade: a.quantidade, medida_caseira: a.medida_caseira,
+                energia_kcal: a.energia_kcal, proteina_g: a.proteina_g,
+                carboidrato_g: a.carboidrato_g, lipidio_g: a.lipidio_g,
+                fibra_g: a.fibra_g, alimento_taco_id: a.alimento_taco_id,
+              }))
+            );
+          }
         }
       }
-
-      toast({ title: "Template importado!", description: "Refeições e alimentos foram salvos." });
-      loadTemplates();
+      toast({ title: "Plano duplicado para o paciente!" });
+      setDuplicateDialogOpen(false);
+      setSelectedPaciente("");
     } catch (err: any) {
-      toast({ title: "Erro ao importar", description: err.message, variant: "destructive" });
+      toast({ title: "Erro", description: err.message, variant: "destructive" });
     }
   };
+
+  const deleteTemplate = async () => {
+    if (!deleteId) return;
+    const { error } = await supabase.from("planos_alimentares").delete().eq("id", deleteId);
+    if (error) {
+      toast({ title: "Erro ao excluir", description: error.message, variant: "destructive" });
+    } else {
+      toast({ title: "Template excluído." });
+    }
+    setDeleteId(null);
+    loadTemplates();
+  };
+
+  const handleImported = async (draft: { nome: string; observacoes: string; refeicoes: any[] }) => {
+    setImportedDraft(draft);
+    setEditingId("new");
+  };
+
+  if (editingId !== null) {
+    return (
+      <PlanoAlimentarEditor
+        planoId={editingId === "new" ? undefined : editingId}
+        isTemplate
+        initialData={importedDraft}
+        onBack={() => { setEditingId(null); setImportedDraft(null); loadTemplates(); }}
+      />
+    );
+  }
 
   return (
     <div className="space-y-6">
@@ -191,7 +210,7 @@ export default function Templates() {
                 </SelectContent>
               </Select>
             </div>
-            <Button onClick={duplicateForPaciente} className="w-full">Duplicar</Button>
+            <Button onClick={duplicateForPaciente} className="w-full" disabled={!selectedPaciente}>Duplicar</Button>
           </div>
         </DialogContent>
       </Dialog>
@@ -201,21 +220,29 @@ export default function Templates() {
           <Card key={t.id}>
             <CardHeader className="pb-2">
               <CardTitle className="text-base flex items-center gap-2">
-                <FileText className="h-4 w-4 text-primary" />
-                {t.nome}
+                <FileText className="h-4 w-4 text-primary shrink-0" />
+                <span className="truncate">{t.nome}</span>
               </CardTitle>
             </CardHeader>
-            <CardContent className="text-sm text-muted-foreground space-y-2">
-              <p className="capitalize">{objetivoLabels[t.objetivo_template] || "—"}</p>
-              <p>{format(new Date(t.created_at), "dd/MM/yyyy")}</p>
-              <Button
-                variant="outline"
-                size="sm"
-                className="w-full mt-2"
-                onClick={() => { setSelectedTemplate(t); setDuplicateDialogOpen(true); }}
-              >
-                <Copy className="h-3 w-3 mr-2" /> Duplicar para Paciente
-              </Button>
+            <CardContent className="text-sm text-muted-foreground space-y-3">
+              <div className="flex items-center justify-between">
+                <span className="capitalize">{objetivoLabels[t.objetivo_template] || "—"}</span>
+                <span className="text-xs">{format(new Date(t.created_at), "dd/MM/yyyy")}</span>
+              </div>
+              <div className="flex flex-wrap gap-1">
+                <Button variant="outline" size="sm" className="flex-1 min-w-[100px]" onClick={() => setEditingId(t.id)}>
+                  <Pencil className="h-3 w-3 mr-1" /> Editar
+                </Button>
+                <Button variant="outline" size="sm" className="flex-1 min-w-[100px]" onClick={() => { setSelectedTemplate(t); setDuplicateDialogOpen(true); }}>
+                  <Copy className="h-3 w-3 mr-1" /> Duplicar
+                </Button>
+                <Button variant="outline" size="sm" onClick={() => setExportTemplate(t)} title="Exportar PDF">
+                  <FileDown className="h-3 w-3" />
+                </Button>
+                <Button variant="outline" size="sm" className="text-destructive hover:text-destructive" onClick={() => setDeleteId(t.id)} title="Excluir">
+                  <Trash2 className="h-3 w-3" />
+                </Button>
+              </div>
             </CardContent>
           </Card>
         ))}
@@ -223,6 +250,29 @@ export default function Templates() {
           <p className="text-muted-foreground col-span-full text-center py-8">Nenhum template criado ainda</p>
         )}
       </div>
+
+      <AlertDialog open={!!deleteId} onOpenChange={() => setDeleteId(null)}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Excluir template?</AlertDialogTitle>
+            <AlertDialogDescription>Esta ação não pode ser desfeita. Todas as refeições e alimentos deste template serão removidos.</AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Cancelar</AlertDialogCancel>
+            <AlertDialogAction onClick={deleteTemplate} className="bg-destructive text-destructive-foreground">Excluir</AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
+
+      {exportTemplate && (
+        <ExportPdfModal
+          open={!!exportTemplate}
+          onOpenChange={(open) => { if (!open) setExportTemplate(null); }}
+          type="plano_alimentar"
+          paciente={{ nome_completo: "Template", id: "" }}
+          planoData={exportTemplate}
+        />
+      )}
 
       <ImportarPlanoPdfModal
         open={importOpen}
