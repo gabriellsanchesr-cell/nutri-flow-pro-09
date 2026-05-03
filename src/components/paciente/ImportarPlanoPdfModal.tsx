@@ -108,7 +108,7 @@ export function ImportarPlanoPdfModal({ open, onOpenChange, pacienteId, mode = "
               {file && <p className="text-xs text-muted-foreground">{file.name} • {(file.size / 1024).toFixed(0)} KB</p>}
             </div>
             <p className="text-xs text-muted-foreground">
-              Funciona melhor com PDFs com texto selecionável. PDFs escaneados (apenas imagem) podem não ser lidos.
+              Suporta PDFs com texto selecionável e também PDFs escaneados (OCR automático).
             </p>
           </div>
         ) : (
