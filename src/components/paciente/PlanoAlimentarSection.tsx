@@ -144,11 +144,16 @@ export function PlanoAlimentarSection({ paciente }: Props) {
 
   return (
     <div className="space-y-4">
-      <div className="flex justify-between items-center">
+      <div className="flex justify-between items-center flex-wrap gap-2">
         <h3 className="text-lg font-semibold text-foreground">Planos Alimentares</h3>
-        <Button size="sm" onClick={() => setEditingPlanoId("new")}>
-          <Plus className="h-3.5 w-3.5 mr-1" /> Novo Plano
-        </Button>
+        <div className="flex items-center gap-2">
+          <Button size="sm" variant="outline" onClick={() => setImportOpen(true)}>
+            <FileUp className="h-3.5 w-3.5 mr-1" /> Importar PDF
+          </Button>
+          <Button size="sm" onClick={() => { setImportedDraft(null); setEditingPlanoId("new"); }}>
+            <Plus className="h-3.5 w-3.5 mr-1" /> Novo Plano
+          </Button>
+        </div>
       </div>
 
       {planos.length === 0 ? (
