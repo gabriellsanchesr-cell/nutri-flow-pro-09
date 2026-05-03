@@ -174,8 +174,15 @@ export default function Templates() {
             </div>
           </DialogContent>
         </Dialog>
-        </div>
       </div>
+
+      <ImportarPlanoPdfModal
+        open={importOpen}
+        onOpenChange={setImportOpen}
+        mode="template"
+        onImported={handleImported}
+      />
+    </div>
 
       <Dialog open={duplicateDialogOpen} onOpenChange={setDuplicateDialogOpen}>
         <DialogContent>
