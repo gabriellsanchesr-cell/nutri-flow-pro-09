@@ -55,7 +55,7 @@ export function ImportarPlanoPdfModal({ open, onOpenChange, pacienteId, mode = "
       });
 
       const { data, error } = await supabase.functions.invoke("import-plano-pdf", {
-        body: { paciente_id: pacienteId, pdf_base64: base64 },
+        body: { paciente_id: pacienteId, pdf_base64: base64, mode },
       });
 
       clearInterval(interval);
