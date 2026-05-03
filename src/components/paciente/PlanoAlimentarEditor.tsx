@@ -200,14 +200,15 @@ export function PlanoAlimentarEditor({ pacienteId, planoId, onBack, paciente, in
     return { kcal: Math.round(kcal), prot: Math.round(prot), carb: Math.round(carb), lip: Math.round(lip), fib: Math.round(fib) };
   }, [refeicoes]);
 
-  const handleSave = async () => {
+  const handleSave = async (overrideStatus?: string) => {
     if (!user) return;
     setSaving(true);
     try {
       let savedPlanoId = plano.id;
+      const finalStatus = overrideStatus || plano.status;
       const planoPayload: any = {
         nome: plano.nome, observacoes: plano.observacoes || null,
-        status: plano.status,
+        status: finalStatus,
         data_inicio: plano.data_inicio || null,
         data_fim: plano.data_fim || null,
         objetivo_template: plano.objetivo_template || null,
@@ -220,11 +221,11 @@ export function PlanoAlimentarEditor({ pacienteId, planoId, onBack, paciente, in
         const { data, error } = await supabase.from("planos_alimentares").insert(planoPayload).select("id").single();
         if (error) throw error;
         savedPlanoId = data.id;
-        setPlano(p => ({ ...p, id: savedPlanoId }));
+        setPlano(p => ({ ...p, id: savedPlanoId, status: finalStatus }));
       }
 
       // Delete existing refeicoes (cascade deletes alimentos_plano)
-      if (planoId) {
+      if (planoId || savedPlanoId) {
         await supabase.from("refeicoes").delete().eq("plano_id", savedPlanoId!);
       }
 
@@ -251,7 +252,13 @@ export function PlanoAlimentarEditor({ pacienteId, planoId, onBack, paciente, in
         }
       }
 
-      toast({ title: "Plano salvo com sucesso!" });
+      if (overrideStatus === "ativo") {
+        setPlano(p => ({ ...p, status: "ativo" }));
+        setImportedBanner(false);
+        toast({ title: "Plano ativado!", description: "O plano importado está ativo para o paciente." });
+      } else {
+        toast({ title: "Plano salvo com sucesso!" });
+      }
     } catch (err: any) {
       toast({ title: "Erro ao salvar", description: err.message, variant: "destructive" });
     } finally { setSaving(false); }
