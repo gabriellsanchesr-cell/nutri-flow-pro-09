@@ -32,6 +32,7 @@ export default function Templates() {
   const [selectedTemplate, setSelectedTemplate] = useState<any>(null);
   const [selectedPaciente, setSelectedPaciente] = useState("");
   const [form, setForm] = useState({ nome: "", objetivo_template: "emagrecimento", observacoes: "" });
+  const [importOpen, setImportOpen] = useState(false);
 
   useEffect(() => {
     if (user) {
