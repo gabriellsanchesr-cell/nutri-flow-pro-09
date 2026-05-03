@@ -207,9 +207,9 @@ export default function Agenda() {
   return (
     <div className="space-y-6">
       {/* Header */}
-      <div className="flex items-center justify-between">
-        <h1 className="text-2xl font-bold">Agenda</h1>
-        <div className="flex gap-2">
+      <div className="flex flex-wrap items-center justify-between gap-3">
+        <h1 className="text-xl md:text-2xl font-bold">Agenda</h1>
+        <div className="flex flex-wrap gap-2">
           <div className="flex border rounded-lg overflow-hidden">
             {(["month", "week", "day"] as ViewType[]).map(v => (
               <Button

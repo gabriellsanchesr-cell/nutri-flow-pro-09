@@ -70,8 +70,8 @@ export default function Planos() {
 
   return (
     <div className="space-y-6">
-      <div className="flex items-center justify-between">
-        <h1 className="text-2xl font-bold">Planos Alimentares</h1>
+      <div className="flex flex-wrap items-center justify-between gap-3">
+        <h1 className="text-xl md:text-2xl font-bold">Planos Alimentares</h1>
         <Dialog open={dialogOpen} onOpenChange={setDialogOpen}>
           <DialogTrigger asChild>
             <Button><Plus className="h-4 w-4 mr-2" /> Novo Plano</Button>
