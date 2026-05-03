@@ -223,6 +223,13 @@ export default function Templates() {
           <p className="text-muted-foreground col-span-full text-center py-8">Nenhum template criado ainda</p>
         )}
       </div>
+
+      <ImportarPlanoPdfModal
+        open={importOpen}
+        onOpenChange={setImportOpen}
+        mode="template"
+        onImported={handleImported}
+      />
     </div>
   );
 }
