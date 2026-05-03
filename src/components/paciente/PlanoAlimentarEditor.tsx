@@ -318,6 +318,15 @@ export function PlanoAlimentarEditor({ pacienteId, planoId, onBack, paciente, in
         </div>
       </div>
 
+      {importedBanner && (
+        <div className="bg-amber-50 dark:bg-amber-950/30 border border-amber-200 dark:border-amber-800 rounded-xl p-3 text-sm text-amber-900 dark:text-amber-100 flex items-start justify-between gap-3">
+          <div>
+            <strong>Plano importado de PDF.</strong> Revise refeições e quantidades antes de ativar. Alimentos não encontrados na base TACO ficaram com macros zerados — preencha manualmente ou substitua pela busca.
+          </div>
+          <Button variant="ghost" size="sm" onClick={() => setImportedBanner(false)}>Ok</Button>
+        </div>
+      )}
+
       {/* Plan header */}
       <Card className="border-border rounded-xl">
         <CardContent className="p-4 space-y-4">
