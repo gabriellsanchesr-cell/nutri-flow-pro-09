@@ -136,7 +136,7 @@ export function AcompanhamentoSection({ paciente }: Props) {
 
       {chartData.length > 1 && (
         <Card className="border-border rounded-xl">
-          <CardContent className="p-4">
+          <CardContent className="p-2 sm:p-4 overflow-hidden">
             <ResponsiveContainer width="100%" height={280}>
               <LineChart data={chartData}>
                 <CartesianGrid strokeDasharray="3 3" stroke="hsl(var(--border))" />

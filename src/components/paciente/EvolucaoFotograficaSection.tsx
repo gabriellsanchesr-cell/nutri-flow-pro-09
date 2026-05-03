@@ -120,9 +120,9 @@ export function EvolucaoFotograficaSection({ paciente }: Props) {
 
   return (
     <div className="space-y-6">
-      <div className="flex items-center justify-between">
-        <h2 className="text-xl font-semibold text-[#1A1F3C]">Evolução Fotográfica</h2>
-        <div className="flex gap-2">
+      <div className="flex items-center justify-between flex-wrap gap-2">
+        <h2 className="text-lg md:text-xl font-semibold text-[#1A1F3C]">Evolução Fotográfica</h2>
+        <div className="flex gap-2 flex-wrap">
           {dates.length >= 2 && (
             <Button variant="outline" size="sm" onClick={() => setCompareMode(!compareMode)} className="border-[#2B3990] text-[#2B3990]">
               <ArrowLeftRight className="h-4 w-4 mr-1" /> {compareMode ? "Fechar comparação" : "Comparar"}
@@ -137,7 +137,7 @@ export function EvolucaoFotograficaSection({ paciente }: Props) {
       {compareMode && (
         <Card className="border-[#E2E5F0] rounded-xl">
           <CardContent className="pt-6 space-y-4">
-            <div className="grid grid-cols-2 gap-4">
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
               <div>
                 <Label>Data 1</Label>
                 <Select value={compareDate1} onValueChange={setCompareDate1}>
@@ -233,7 +233,7 @@ export function EvolucaoFotograficaSection({ paciente }: Props) {
                 type="file"
                 accept="image/*"
                 multiple
-                className="mt-1 block w-full text-sm"
+                className="mt-1 block w-full max-w-full text-sm file:mr-2 file:py-1 file:px-2 file:rounded file:border-0 file:bg-muted file:text-foreground"
                 onChange={e => setSelectedFiles(Array.from(e.target.files || []))}
               />
               {selectedFiles.length > 0 && (
