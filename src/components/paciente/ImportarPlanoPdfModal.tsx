@@ -12,12 +12,14 @@ import { FileUp, Loader2 } from "lucide-react";
 interface Props {
   open: boolean;
   onOpenChange: (open: boolean) => void;
-  pacienteId: string;
+  pacienteId?: string;
+  mode?: "paciente" | "template";
   onImported: (data: { nome: string; observacoes: string; refeicoes: any[] }) => void;
 }
 
 const STAGES = [
   "Lendo PDF...",
+  "Tentando OCR se necessário...",
   "Interpretando refeições...",
   "Identificando alimentos...",
   "Calculando macros...",
