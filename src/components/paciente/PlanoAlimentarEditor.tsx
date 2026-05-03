@@ -306,8 +306,13 @@ export function PlanoAlimentarEditor({ pacienteId, planoId, onBack, paciente, in
             <h3 className="font-semibold text-foreground">Editor de Plano Alimentar</h3>
           </div>
           <div className="flex items-center gap-2">
-            <Button onClick={handleSave} disabled={saving} size="sm">
-              <Save className="h-4 w-4 mr-1" /> {saving ? "Salvando..." : "Salvar Plano"}
+            {importedBanner && (
+              <Button onClick={() => handleSave("ativo")} disabled={saving} size="sm" variant="default" className="bg-green-600 hover:bg-green-700">
+                <Save className="h-4 w-4 mr-1" /> Ativar plano importado
+              </Button>
+            )}
+            <Button onClick={() => handleSave()} disabled={saving} size="sm" variant={importedBanner ? "outline" : "default"}>
+              <Save className="h-4 w-4 mr-1" /> {saving ? "Salvando..." : "Salvar Rascunho"}
             </Button>
             {planoId && (
               <Button variant="outline" size="sm" onClick={() => setShowExport(true)}>
