@@ -10,6 +10,8 @@ import {
 } from "lucide-react";
 import { PlanoAlimentarEditor } from "./PlanoAlimentarEditor";
 import { ExportPdfModal } from "@/components/pdf/ExportPdfModal";
+import { ImportarPlanoPdfModal } from "./ImportarPlanoPdfModal";
+import { FileUp } from "lucide-react";
 import {
   AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent,
   AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle,
