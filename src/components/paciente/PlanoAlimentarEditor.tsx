@@ -63,28 +63,85 @@ interface PlanoData {
   objetivo_template: string;
 }
 
+interface InitialDraft {
+  nome?: string;
+  observacoes?: string;
+  refeicoes?: Array<{
+    tipo: string;
+    ordem?: number;
+    observacoes?: string;
+    substituicoes_sugeridas?: string;
+    alimentos: Array<{
+      nome_alimento: string;
+      quantidade: number;
+      medida_caseira: string;
+      energia_kcal: number;
+      proteina_g: number;
+      carboidrato_g: number;
+      lipidio_g: number;
+      fibra_g: number;
+      alimento_taco_id: number | null;
+      precisa_revisao?: boolean;
+    }>;
+  }>;
+}
+
 interface Props {
   pacienteId: string;
   planoId?: string;
   onBack: () => void;
   paciente?: any;
+  initialData?: InitialDraft | null;
 }
 
-export function PlanoAlimentarEditor({ pacienteId, planoId, onBack, paciente }: Props) {
+export function PlanoAlimentarEditor({ pacienteId, planoId, onBack, paciente, initialData }: Props) {
   const { user } = useAuth();
   const { toast } = useToast();
   const [saving, setSaving] = useState(false);
   const [showExport, setShowExport] = useState(false);
+  const [importedBanner, setImportedBanner] = useState(!!initialData);
   const [plano, setPlano] = useState<PlanoData>({
-    nome: "Plano Alimentar", observacoes: "", status: "rascunho",
+    nome: initialData?.nome || "Plano Alimentar",
+    observacoes: initialData?.observacoes || "",
+    status: "rascunho",
     data_inicio: "", data_fim: "", objetivo_template: "",
   });
-  const [refeicoes, setRefeicoes] = useState<Refeicao[]>(
-    REFEICAO_TIPOS.map(r => ({
+  const [refeicoes, setRefeicoes] = useState<Refeicao[]>(() => {
+    // Build base 6 refeicoes
+    const base = REFEICAO_TIPOS.map(r => ({
       tipo: r.value, ordem: r.ordem, horario_sugerido: "", observacoes: "",
-      substituicoes_sugeridas: "", alimentos: [], expanded: true,
-    }))
-  );
+      substituicoes_sugeridas: "", alimentos: [] as Alimento[], expanded: true,
+    }));
+    if (initialData?.refeicoes?.length) {
+      initialData.refeicoes.forEach((imp) => {
+        const idx = base.findIndex((b) => b.tipo === imp.tipo);
+        if (idx >= 0) {
+          base[idx].observacoes = imp.observacoes || "";
+          base[idx].substituicoes_sugeridas = imp.substituicoes_sugeridas || "";
+          base[idx].alimentos = imp.alimentos.map((a) => {
+            const baseRatio = a.alimento_taco_id && a.quantidade > 0 ? 100 / a.quantidade : null;
+            return {
+              nome_alimento: a.nome_alimento,
+              quantidade: a.quantidade,
+              medida_caseira: a.medida_caseira,
+              energia_kcal: a.energia_kcal,
+              proteina_g: a.proteina_g,
+              carboidrato_g: a.carboidrato_g,
+              lipidio_g: a.lipidio_g,
+              fibra_g: a.fibra_g,
+              alimento_taco_id: a.alimento_taco_id,
+              base_energia_kcal: baseRatio ? a.energia_kcal * baseRatio : undefined,
+              base_proteina_g: baseRatio ? a.proteina_g * baseRatio : undefined,
+              base_carboidrato_g: baseRatio ? a.carboidrato_g * baseRatio : undefined,
+              base_lipidio_g: baseRatio ? a.lipidio_g * baseRatio : undefined,
+              base_fibra_g: baseRatio ? a.fibra_g * baseRatio : undefined,
+            };
+          });
+        }
+      });
+    }
+    return base;
+  });
 
   useEffect(() => {
     if (planoId) loadPlano();
