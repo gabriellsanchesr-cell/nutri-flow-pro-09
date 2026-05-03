@@ -43,6 +43,8 @@ export function PlanoAlimentarSection({ paciente }: Props) {
   const [deleteId, setDeleteId] = useState<string | null>(null);
   const [exportPlano, setExportPlano] = useState<any>(null);
   const [exportType, setExportType] = useState<"plano_alimentar" | "plano_simplificado">("plano_alimentar");
+  const [importOpen, setImportOpen] = useState(false);
+  const [importedDraft, setImportedDraft] = useState<any>(null);
 
   useEffect(() => { loadPlanos(); }, [paciente.id]);
 
