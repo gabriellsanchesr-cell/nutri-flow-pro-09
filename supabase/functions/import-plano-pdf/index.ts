@@ -71,8 +71,12 @@ Deno.serve(async (req) => {
     const body = await req.json();
     const pacienteId: string | undefined = body?.paciente_id;
     const pdfBase64: string | undefined = body?.pdf_base64;
-    if (!pacienteId || !pdfBase64) {
-      return json({ error: "paciente_id e pdf_base64 são obrigatórios" }, 400);
+    const mode: string = body?.mode || "paciente"; // "paciente" | "template"
+    if (!pdfBase64) {
+      return json({ error: "pdf_base64 é obrigatório" }, 400);
+    }
+    if (mode === "paciente" && !pacienteId) {
+      return json({ error: "paciente_id é obrigatório no modo paciente" }, 400);
     }
 
     // Decode PDF
@@ -80,24 +84,39 @@ Deno.serve(async (req) => {
     const bytes = new Uint8Array(binaryStr.length);
     for (let i = 0; i < binaryStr.length; i++) bytes[i] = binaryStr.charCodeAt(i);
 
-    // Extract text
+    // Extract text (texto selecionável)
     let pdfText = "";
     try {
       const pdf = await getDocumentProxy(bytes);
       const { text } = await extractText(pdf, { mergePages: true });
       pdfText = (Array.isArray(text) ? text.join("\n") : text).trim();
     } catch (e) {
-      console.error("PDF parse error:", e);
-      return json({ error: "Não foi possível ler o PDF. Verifique se não é uma imagem escaneada." }, 422);
-    }
-
-    if (pdfText.length < 30) {
-      return json({ error: "PDF parece estar vazio ou ser apenas imagem (sem texto extraível). Tente um PDF com texto selecionável." }, 422);
+      console.warn("PDF text parse failed, will try OCR:", e);
     }
 
     // Truncate if too large
     const MAX_CHARS = 40000;
     if (pdfText.length > MAX_CHARS) pdfText = pdfText.slice(0, MAX_CHARS);
+
+    const useOcr = pdfText.length < 30;
+    if (useOcr) {
+      console.log("PDF sem texto selecionável — enviando para OCR multimodal");
+    }
+
+    // Tamanho do PDF para OCR (limite ~15MB base64)
+    if (useOcr && pdfBase64.length > 15 * 1024 * 1024) {
+      return json({ error: "PDF muito grande para OCR (máx ~10 MB). Tente reduzir o arquivo." }, 413);
+    }
+
+    const userMessage: any = useOcr
+      ? {
+          role: "user",
+          content: [
+            { type: "text", text: "Este PDF é um plano alimentar (provavelmente escaneado/imagem). Faça OCR e extraia a estrutura conforme o schema da tool." },
+            { type: "image_url", image_url: { url: `data:application/pdf;base64,${pdfBase64}` } },
+          ],
+        }
+      : { role: "user", content: `Conteúdo do PDF:\n\n${pdfText}` };
 
     // Call AI gateway with tool calling for structured output
     const aiResp = await fetch("https://ai.gateway.lovable.dev/v1/chat/completions", {
@@ -110,7 +129,7 @@ Deno.serve(async (req) => {
         model: "google/gemini-2.5-pro",
         messages: [
           { role: "system", content: SYSTEM_PROMPT },
-          { role: "user", content: `Conteúdo do PDF:\n\n${pdfText}` },
+          userMessage,
         ],
         tools: [
           {

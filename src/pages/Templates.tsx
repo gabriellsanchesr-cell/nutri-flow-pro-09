@@ -8,7 +8,8 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Textarea } from "@/components/ui/textarea";
-import { Plus, Copy, FileText } from "lucide-react";
+import { Plus, Copy, FileText, FileUp } from "lucide-react";
+import { ImportarPlanoPdfModal } from "@/components/paciente/ImportarPlanoPdfModal";
 import { useToast } from "@/hooks/use-toast";
 import { format } from "date-fns";
 
@@ -31,6 +32,7 @@ export default function Templates() {
   const [selectedTemplate, setSelectedTemplate] = useState<any>(null);
   const [selectedPaciente, setSelectedPaciente] = useState("");
   const [form, setForm] = useState({ nome: "", objetivo_template: "emagrecimento", observacoes: "" });
+  const [importOpen, setImportOpen] = useState(false);
 
   useEffect(() => {
     if (user) {
@@ -89,14 +91,63 @@ export default function Templates() {
     }
   };
 
+  const handleImported = async (draft: { nome: string; observacoes: string; refeicoes: any[] }) => {
+    if (!user) return;
+    try {
+      const { data: tpl, error } = await supabase.from("planos_alimentares").insert({
+        user_id: user.id,
+        nome: draft.nome || "Template Importado",
+        observacoes: draft.observacoes || null,
+        is_template: true,
+        objetivo_template: "outro" as any,
+        status: "rascunho",
+      }).select("id").single();
+      if (error) throw error;
+
+      for (const ref of draft.refeicoes || []) {
+        const { data: savedRef, error: refErr } = await supabase.from("refeicoes").insert({
+          plano_id: tpl.id, tipo: ref.tipo as any, ordem: ref.ordem || 1,
+          observacoes: ref.observacoes || null,
+          substituicoes_sugeridas: ref.substituicoes_sugeridas || null,
+        }).select("id").single();
+        if (refErr) throw refErr;
+        if (ref.alimentos?.length) {
+          await supabase.from("alimentos_plano").insert(
+            ref.alimentos.map((a: any) => ({
+              refeicao_id: savedRef.id,
+              nome_alimento: a.nome_alimento,
+              quantidade: a.quantidade,
+              medida_caseira: a.medida_caseira,
+              energia_kcal: a.energia_kcal,
+              proteina_g: a.proteina_g,
+              carboidrato_g: a.carboidrato_g,
+              lipidio_g: a.lipidio_g,
+              fibra_g: a.fibra_g,
+              alimento_taco_id: a.alimento_taco_id,
+            }))
+          );
+        }
+      }
+
+      toast({ title: "Template importado!", description: "Refeições e alimentos foram salvos." });
+      loadTemplates();
+    } catch (err: any) {
+      toast({ title: "Erro ao importar", description: err.message, variant: "destructive" });
+    }
+  };
+
   return (
     <div className="space-y-6">
-      <div className="flex items-center justify-between">
+      <div className="flex items-center justify-between flex-wrap gap-2">
         <h1 className="text-2xl font-bold">Templates de Plano</h1>
-        <Dialog open={dialogOpen} onOpenChange={setDialogOpen}>
-          <DialogTrigger asChild>
-            <Button><Plus className="h-4 w-4 mr-2" /> Novo Template</Button>
-          </DialogTrigger>
+        <div className="flex items-center gap-2">
+          <Button variant="outline" onClick={() => setImportOpen(true)}>
+            <FileUp className="h-4 w-4 mr-2" /> Importar PDF
+          </Button>
+          <Dialog open={dialogOpen} onOpenChange={setDialogOpen}>
+            <DialogTrigger asChild>
+              <Button><Plus className="h-4 w-4 mr-2" /> Novo Template</Button>
+            </DialogTrigger>
           <DialogContent>
             <DialogHeader><DialogTitle>Criar Template</DialogTitle></DialogHeader>
             <div className="space-y-4">
@@ -121,8 +172,9 @@ export default function Templates() {
               </div>
               <Button onClick={createTemplate} className="w-full">Criar Template</Button>
             </div>
-          </DialogContent>
-        </Dialog>
+            </DialogContent>
+          </Dialog>
+        </div>
       </div>
 
       <Dialog open={duplicateDialogOpen} onOpenChange={setDuplicateDialogOpen}>
@@ -171,6 +223,13 @@ export default function Templates() {
           <p className="text-muted-foreground col-span-full text-center py-8">Nenhum template criado ainda</p>
         )}
       </div>
+
+      <ImportarPlanoPdfModal
+        open={importOpen}
+        onOpenChange={setImportOpen}
+        mode="template"
+        onImported={handleImported}
+      />
     </div>
   );
 }

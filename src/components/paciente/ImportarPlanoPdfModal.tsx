@@ -12,18 +12,20 @@ import { FileUp, Loader2 } from "lucide-react";
 interface Props {
   open: boolean;
   onOpenChange: (open: boolean) => void;
-  pacienteId: string;
+  pacienteId?: string;
+  mode?: "paciente" | "template";
   onImported: (data: { nome: string; observacoes: string; refeicoes: any[] }) => void;
 }
 
 const STAGES = [
   "Lendo PDF...",
+  "Tentando OCR se necessário...",
   "Interpretando refeições...",
   "Identificando alimentos...",
   "Calculando macros...",
 ];
 
-export function ImportarPlanoPdfModal({ open, onOpenChange, pacienteId, onImported }: Props) {
+export function ImportarPlanoPdfModal({ open, onOpenChange, pacienteId, mode = "paciente", onImported }: Props) {
   const { toast } = useToast();
   const [file, setFile] = useState<File | null>(null);
   const [nome, setNome] = useState("Plano Importado");
@@ -53,7 +55,7 @@ export function ImportarPlanoPdfModal({ open, onOpenChange, pacienteId, onImport
       });
 
       const { data, error } = await supabase.functions.invoke("import-plano-pdf", {
-        body: { paciente_id: pacienteId, pdf_base64: base64 },
+        body: { paciente_id: pacienteId, pdf_base64: base64, mode },
       });
 
       clearInterval(interval);
@@ -106,7 +108,7 @@ export function ImportarPlanoPdfModal({ open, onOpenChange, pacienteId, onImport
               {file && <p className="text-xs text-muted-foreground">{file.name} • {(file.size / 1024).toFixed(0)} KB</p>}
             </div>
             <p className="text-xs text-muted-foreground">
-              Funciona melhor com PDFs com texto selecionável. PDFs escaneados (apenas imagem) podem não ser lidos.
+              Suporta PDFs com texto selecionável e também PDFs escaneados (OCR automático).
             </p>
           </div>
         ) : (
