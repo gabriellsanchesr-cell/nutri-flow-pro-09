@@ -131,8 +131,9 @@ export function PlanoAlimentarSection({ paciente }: Props) {
       <PlanoAlimentarEditor
         pacienteId={paciente.id}
         planoId={editingPlanoId === "new" ? undefined : editingPlanoId}
-        onBack={() => { setEditingPlanoId(null); loadPlanos(); }}
+        onBack={() => { setEditingPlanoId(null); setImportedDraft(null); loadPlanos(); }}
         paciente={paciente}
+        initialData={importedDraft}
       />
     );
   }
