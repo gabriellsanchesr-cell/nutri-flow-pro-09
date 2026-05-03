@@ -174,6 +174,7 @@ export default function Templates() {
             </div>
           </DialogContent>
         </Dialog>
+        </div>
       </div>
 
       <Dialog open={duplicateDialogOpen} onOpenChange={setDuplicateDialogOpen}>
