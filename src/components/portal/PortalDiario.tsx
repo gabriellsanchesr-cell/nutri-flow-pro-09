@@ -48,6 +48,7 @@ export function PortalDiario({ paciente }: { paciente: any }) {
   const [selectedDate, setSelectedDate] = useState(new Date().toISOString().split("T")[0]);
   const [saving, setSaving] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
+  const cameraInputRef = useRef<HTMLInputElement>(null);
 
   // Form state
   const [formTipo, setFormTipo] = useState("almoco");
@@ -212,6 +213,13 @@ export function PortalDiario({ paciente }: { paciente: any }) {
                 ref={fileInputRef}
                 type="file"
                 accept="image/*"
+                className="hidden"
+                onChange={handlePhotoSelect}
+              />
+              <input
+                ref={cameraInputRef}
+                type="file"
+                accept="image/*"
                 capture="environment"
                 className="hidden"
                 onChange={handlePhotoSelect}
@@ -229,12 +237,20 @@ export function PortalDiario({ paciente }: { paciente: any }) {
                   </Button>
                 </div>
               ) : (
-                <Button variant="outline" className="w-full rounded-xl h-20 border-dashed" onClick={() => fileInputRef.current?.click()}>
-                  <div className="flex flex-col items-center gap-1">
-                    <Camera className="h-5 w-5 text-muted-foreground" />
-                    <span className="text-xs text-muted-foreground">Tirar foto ou escolher da galeria</span>
-                  </div>
-                </Button>
+                <div className="grid grid-cols-2 gap-2">
+                  <Button variant="outline" className="rounded-xl h-20 border-dashed" onClick={() => cameraInputRef.current?.click()}>
+                    <div className="flex flex-col items-center gap-1">
+                      <Camera className="h-5 w-5 text-muted-foreground" />
+                      <span className="text-xs text-muted-foreground">Tirar foto</span>
+                    </div>
+                  </Button>
+                  <Button variant="outline" className="rounded-xl h-20 border-dashed" onClick={() => fileInputRef.current?.click()}>
+                    <div className="flex flex-col items-center gap-1">
+                      <ImageIcon className="h-5 w-5 text-muted-foreground" />
+                      <span className="text-xs text-muted-foreground">Galeria / Arquivos</span>
+                    </div>
+                  </Button>
+                </div>
               )}
             </div>
 
