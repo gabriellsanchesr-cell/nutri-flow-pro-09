@@ -212,6 +212,13 @@ export function PortalDiario({ paciente }: { paciente: any }) {
                 ref={fileInputRef}
                 type="file"
                 accept="image/*"
+                className="hidden"
+                onChange={handlePhotoSelect}
+              />
+              <input
+                ref={cameraInputRef}
+                type="file"
+                accept="image/*"
                 capture="environment"
                 className="hidden"
                 onChange={handlePhotoSelect}
