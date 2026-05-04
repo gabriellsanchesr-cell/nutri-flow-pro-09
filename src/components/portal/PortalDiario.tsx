@@ -48,6 +48,7 @@ export function PortalDiario({ paciente }: { paciente: any }) {
   const [selectedDate, setSelectedDate] = useState(new Date().toISOString().split("T")[0]);
   const [saving, setSaving] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
+  const cameraInputRef = useRef<HTMLInputElement>(null);
 
   // Form state
   const [formTipo, setFormTipo] = useState("almoco");
