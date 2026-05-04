@@ -1,29 +1,64 @@
-## Diagnóstico
+## Novo painel: Diários Alimentares (visão do nutricionista)
 
-No `src/components/portal/PortalDiario.tsx`, linha 60:
+Painel central onde o nutri vê **todos os registros de diário alimentar de todas as pacientes** em um só lugar, com filtros, fotos, tags e ação rápida de feedback.
 
-```tsx
-useState(() => { loadRegistros(); });
-```
+### 1. Nova rota e item de menu
 
-Isso é um **bug**: foi usado `useState` no lugar de `useEffect`. Consequências:
+- Nova página: `src/pages/DiariosAlimentares.tsx` registrada em `src/App.tsx` na rota `/diarios` dentro do `AdminRoute`.
+- Novo item no `src/components/AppSidebar.tsx`: **"Diários Alimentares"** com ícone `BookMarked`, posicionado logo após "Acompanhamento". Visível para `isAdmin` (e via `hasPermission` se aplicável).
 
-1. O initializer do `useState` roda **durante a renderização**, não como efeito. Disparar uma chamada assíncrona que faz `setLoading(false)` durante a render pode gerar warnings/comportamento instável no React 18 (StrictMode dispara duas vezes).
-2. Se `loadRegistros()` lançar erro (ex.: RLS bloqueia, paciente.id ainda não disponível, falha de rede), **não há try/catch** → `setLoading(false)` nunca é chamado → componente fica travado em `"Carregando..."` → usuário vê tela branca/em branco.
-3. Não há dependência de `paciente?.id`. Se `paciente` chegar como `null` na primeira render, a query roda com `paciente_id=eq.undefined` e silenciosamente falha.
+### 2. Estrutura da página
 
-Os erros nas pacientes (não em todas) batem com esse padrão: depende de timing de carregamento da sessão/paciente e do retorno da query.
+**Cabeçalho**
+- Título + subtítulo.
+- Badges de resumo (lado direito): total de registros filtrados, quantos "novos" (não vistos) e quantos sem feedback.
 
-## Correções em `src/components/portal/PortalDiario.tsx`
+**Barra de filtros (5 colunas em desktop, empilhada em mobile)**
+- Busca textual (descrição, sentimento, nome da paciente).
+- Paciente (lista única extraída dos registros).
+- Tipo de refeição (café, almoço, lanche, jantar, ceia, outro).
+- Período (Hoje / 7 / 30 / 90 dias / Tudo) — padrão 7 dias.
+- Status: Todos / Não vistos / Sem feedback.
 
-1. Substituir `useState(() => { loadRegistros(); })` por um `useEffect` adequado, dependente de `paciente?.id`.
-2. Envolver `loadRegistros` em try/catch/finally para garantir que `setLoading(false)` sempre seja executado, mesmo em erro.
-3. Guardar contra `paciente?.id` ausente (early return + setLoading false).
-4. Mostrar toast amigável caso a carga falhe (em vez de tela presa).
-5. Garantir que `useEffect` que gera signed URLs também não quebre (já tem fallback ok, apenas adicionar try/catch defensivo).
+**Lista agrupada por dia**
+- Cada dia renderiza um cabeçalho com data por extenso e contagem.
+- Cards em grid responsivo (1 / 2 / 3 colunas).
+- Cada card mostra:
+  - Nome da paciente (link para `/pacientes/:id`).
+  - Tag da refeição + horário + badge "Novo" se `visto_nutri = false`.
+  - Foto do registro (signed URL do bucket `diario-fotos`, altura fixa, `object-cover`).
+  - Descrição (linha-clamp 3) e sentimento (se houver).
+  - Caixa azul com feedback enviado (se já houver).
+  - Botões: **Marcar visto** (se ainda não visto) e **Enviar/Editar feedback**.
 
-## Resultado
+**Modal de feedback**
+- Mostra contexto resumido (paciente, refeição, dia, descrição) e textarea.
+- Salva em `diario_registros.feedback_nutri` + `feedback_data = now()` e marca `visto_nutri = true`.
 
-- Diário abre normalmente para todas as pacientes.
-- Em caso de erro de rede/RLS, a tela mostra estado vazio + toast em vez de ficar branca.
-- Sem mudanças de schema/backend; somente correção no componente.
+### 3. Integração com o banco (sem alterações de schema)
+
+A tabela `diario_registros` já existe com:
+- `paciente_id`, `data_registro`, `tipo_refeicao`, `horario`, `descricao`, `foto_path`, `sentimento`, `feedback_nutri`, `feedback_data`, `visto_nutri`.
+
+E as RLS já permitem ao nutri:
+- `Nutri can view patient diario` (SELECT) e `Nutri can update patient diario` (UPDATE).
+
+Operações usadas:
+- `select("*, pacientes(id, nome_completo)")` ordenado por `data_registro desc, horario desc`, limit 500.
+- `supabase.storage.from("diario-fotos").createSignedUrls(paths, 3600)` para imagens.
+- `update({ visto_nutri, feedback_nutri, feedback_data })`.
+- Realtime: subscribe em `postgres_changes` na tabela para atualizar a lista quando pacientes registrarem novas refeições.
+
+### 4. Design
+
+- Plus Jakarta Sans, `rounded-xl` (14px), tokens semânticos (`primary`, `muted`, `warning`).
+- Cards "novos" recebem borda `border-primary/40` e fundo `bg-primary/[0.02]` para destaque.
+- Mobile-first: filtros empilham, grid colapsa para 1 coluna.
+
+### 5. Arquivos alterados/criados
+
+- **Criar**: `src/pages/DiariosAlimentares.tsx`
+- **Editar**: `src/App.tsx` (importar página + rota `diarios`)
+- **Editar**: `src/components/AppSidebar.tsx` (item de menu "Diários Alimentares")
+
+Sem migrações, edge functions ou alterações de RLS.
