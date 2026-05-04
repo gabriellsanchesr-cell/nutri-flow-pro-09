@@ -140,7 +140,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       loading,
       role,
       isNutri: role === "nutri",
-      isAdmin: role === "nutri" || role === "equipe",
+      isAdmin: role === "nutri",
       isEquipe: role === "equipe",
       isPaciente: role === "paciente",
       equipePermissoes,
