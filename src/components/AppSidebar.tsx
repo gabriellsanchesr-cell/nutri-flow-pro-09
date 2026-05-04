@@ -1,6 +1,6 @@
 import { useEffect, useState } from "react";
 import {
-  LayoutDashboard, Users, Utensils, Activity, Calendar, BookOpen, FileText, LogOut, MessageSquare, Settings, Sparkles, Pill, BarChart3, UserPlus, DollarSign,
+  LayoutDashboard, Users, Utensils, Activity, Calendar, BookOpen, FileText, LogOut, MessageSquare, Settings, Sparkles, Pill, BarChart3, UserPlus, DollarSign, BookMarked,
 } from "lucide-react";
 import { NavLink } from "@/components/NavLink";
 import { useLocation } from "react-router-dom";
