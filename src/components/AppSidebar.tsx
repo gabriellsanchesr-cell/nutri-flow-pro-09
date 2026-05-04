@@ -44,6 +44,7 @@ export function AppSidebar() {
     { title: "Chat", url: "/chat", icon: MessageSquare, show: hasPermission("comunicacao", "ver_chat") },
     { title: "Planos Alimentares", url: "/planos", icon: Utensils, show: hasPermission("planos", "ver") },
     { title: "Acompanhamento", url: "/acompanhamento", icon: Activity, show: hasPermission("avaliacoes", "ver_acompanhamento") },
+    { title: "Diários Alimentares", url: "/diarios", icon: BookMarked, show: isAdmin },
     { title: "Agenda", url: "/agenda", icon: Calendar, show: hasPermission("consultas", "ver_agenda") },
     { title: "Biblioteca", url: "/biblioteca", icon: BookOpen, show: true },
     { title: "Conteúdo R.E.A.L.", url: "/conteudo-real", icon: Sparkles, show: isAdmin },
