@@ -16,6 +16,7 @@ import AnamnesePublica from "./pages/AnamnesePublica";
 import QuestionarioPublico from "./pages/QuestionarioPublico";
 import Planos from "./pages/Planos";
 import Acompanhamento from "./pages/Acompanhamento";
+import DiariosAlimentares from "./pages/DiariosAlimentares";
 import Agenda from "./pages/Agenda";
 import Biblioteca from "./pages/Biblioteca";
 import Templates from "./pages/Templates";
