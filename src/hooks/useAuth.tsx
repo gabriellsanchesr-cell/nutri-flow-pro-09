@@ -130,7 +130,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const hasPermission = (modulo: string, permissao: string): boolean => {
     if (role === "nutri") return true;
     if (role !== "equipe") return false;
-    return !!equipePermissoes?.[modulo]?.[permissao];
+    // Assistente (equipe) tem o mesmo painel do nutri principal
+    return true;
   };
 
   return (
@@ -140,7 +141,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       loading,
       role,
       isNutri: role === "nutri",
-      isAdmin: role === "nutri",
+      isAdmin: role === "nutri" || role === "equipe",
       isEquipe: role === "equipe",
       isPaciente: role === "paciente",
       equipePermissoes,
