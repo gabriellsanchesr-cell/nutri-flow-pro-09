@@ -44,15 +44,15 @@ export function AppSidebar() {
     { title: "Chat", url: "/chat", icon: MessageSquare, show: hasPermission("comunicacao", "ver_chat") },
     { title: "Planos Alimentares", url: "/planos", icon: Utensils, show: hasPermission("planos", "ver") },
     { title: "Acompanhamento", url: "/acompanhamento", icon: Activity, show: hasPermission("avaliacoes", "ver_acompanhamento") },
-    { title: "Diários Alimentares", url: "/diarios", icon: BookMarked, show: isAdmin },
+    { title: "Diários Alimentares", url: "/diarios", icon: BookMarked, show: hasPermission("avaliacoes", "ver_acompanhamento") },
     { title: "Agenda", url: "/agenda", icon: Calendar, show: hasPermission("consultas", "ver_agenda") },
     { title: "Biblioteca", url: "/biblioteca", icon: BookOpen, show: true },
-    { title: "Conteúdo R.E.A.L.", url: "/conteudo-real", icon: Sparkles, show: isAdmin },
-    { title: "Suplementos", url: "/suplementos", icon: Pill, show: isAdmin },
+    { title: "Conteúdo R.E.A.L.", url: "/conteudo-real", icon: Sparkles, show: isAdmin || hasPermission("planos", "ver") },
+    { title: "Suplementos", url: "/suplementos", icon: Pill, show: isAdmin || hasPermission("planos", "ver") },
     { title: "Relatórios", url: "/relatorios", icon: BarChart3, show: isAdmin },
-    { title: "Templates", url: "/templates", icon: FileText, show: isAdmin },
+    { title: "Templates", url: "/templates", icon: FileText, show: isAdmin || hasPermission("planos", "criar") },
     { title: "Leads", url: "/leads", icon: UserPlus, show: isAdmin },
-    { title: "Financeiro", url: "/financeiro", icon: DollarSign, show: isAdmin },
+    { title: "Financeiro", url: "/financeiro", icon: DollarSign, show: isAdmin || hasPermission("financeiro", "ver") },
   ].filter(i => i.show);
 
   const configItems = [
