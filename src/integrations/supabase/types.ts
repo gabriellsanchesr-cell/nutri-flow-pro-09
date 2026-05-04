@@ -2199,6 +2199,11 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
+      can_access_nutri_data: { Args: { _nutri_id: string }; Returns: boolean }
+      equipe_can_access_paciente: {
+        Args: { _paciente_id: string }
+        Returns: boolean
+      }
       get_anamnese_by_token: {
         Args: { p_token: string }
         Returns: {
