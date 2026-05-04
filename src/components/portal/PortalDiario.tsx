@@ -57,17 +57,36 @@ export function PortalDiario({ paciente }: { paciente: any }) {
   const [formFoto, setFormFoto] = useState<File | null>(null);
   const [formFotoPreview, setFormFotoPreview] = useState<string | null>(null);
 
-  useState(() => { loadRegistros(); });
+  useEffect(() => {
+    if (!paciente?.id) {
+      setLoading(false);
+      return;
+    }
+    loadRegistros();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [paciente?.id]);
 
   async function loadRegistros() {
-    const { data } = await supabase
-      .from("diario_registros")
-      .select("*")
-      .eq("paciente_id", paciente.id)
-      .order("data_registro", { ascending: false })
-      .order("created_at", { ascending: false });
-    setRegistros((data as any) || []);
-    setLoading(false);
+    if (!paciente?.id) {
+      setLoading(false);
+      return;
+    }
+    try {
+      const { data, error } = await supabase
+        .from("diario_registros")
+        .select("*")
+        .eq("paciente_id", paciente.id)
+        .order("data_registro", { ascending: false })
+        .order("created_at", { ascending: false });
+      if (error) throw error;
+      setRegistros((data as any) || []);
+    } catch (err: any) {
+      console.error("[PortalDiario] loadRegistros error:", err);
+      toast({ title: "Não foi possível carregar o diário", description: err?.message || "Tente novamente.", variant: "destructive" });
+      setRegistros([]);
+    } finally {
+      setLoading(false);
+    }
   }
 
   const todayRegistros = registros.filter(r => r.data_registro === selectedDate);
