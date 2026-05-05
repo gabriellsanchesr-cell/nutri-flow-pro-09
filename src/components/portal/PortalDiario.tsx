@@ -180,14 +180,15 @@ export function PortalDiario({ paciente }: { paciente: any }) {
           <CardContent className="p-4 space-y-4">
             <div className="space-y-1">
               <Label className="text-xs text-muted-foreground">Qual refeição?</Label>
-              <Select value={formTipo} onValueChange={setFormTipo}>
-                <SelectTrigger className="h-9"><SelectValue /></SelectTrigger>
-                <SelectContent>
-                  {Object.entries(tipoLabels).map(([k, v]) => (
-                    <SelectItem key={k} value={k}>{v}</SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
+              <select
+                value={formTipo}
+                onChange={e => setFormTipo(e.target.value)}
+                className="flex h-10 w-full items-center rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2"
+              >
+                {Object.entries(tipoLabels).map(([k, v]) => (
+                  <option key={k} value={k}>{v}</option>
+                ))}
+              </select>
             </div>
 
             <div className="space-y-1">
