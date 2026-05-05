@@ -1,64 +1,40 @@
-## Novo painel: Diários Alimentares (visão do nutricionista)
+Vou corrigir o diário alimentar do portal do paciente com foco em evitar tela branca e tornar o registro mais resiliente em dispositivos diferentes.
 
-Painel central onde o nutri vê **todos os registros de diário alimentar de todas as pacientes** em um só lugar, com filtros, fotos, tags e ação rápida de feedback.
+Diagnóstico encontrado:
+- As pacientes Welika/Wellica e Evelyn existem, estão ativas, têm role de paciente e auth_user_id vinculado corretamente.
+- Ambas já conseguiram registrar refeições anteriormente, inclusive com foto, então não parece ser ausência de cadastro, permissão geral ou bloqueio da conta.
+- Não há erros registrados no console da sessão atual nem logs claros no backend.
+- O ponto mais provável é uma falha de renderização no formulário do diário em algum navegador/dispositivo específico, especialmente ao abrir o formulário de registro. O formulário atual usa um componente customizado de seleção para “Qual refeição?” e inputs de arquivo/câmera; em alguns ambientes móveis, um erro de UI pode deixar a tela branca sem gerar registro no banco.
+- Também identifiquei que o portal usa `.single()` em buscas onde pode não existir plano/configuração, o que não deveria quebrar sempre, mas é melhor tornar isso tolerante para evitar telas travadas ou comportamento instável.
 
-### 1. Nova rota e item de menu
+Plano de correção:
 
-- Nova página: `src/pages/DiariosAlimentares.tsx` registrada em `src/App.tsx` na rota `/diarios` dentro do `AdminRoute`.
-- Novo item no `src/components/AppSidebar.tsx`: **"Diários Alimentares"** com ícone `BookMarked`, posicionado logo após "Acompanhamento". Visível para `isAdmin` (e via `hasPermission` se aplicável).
+1. Tornar o carregamento do portal mais seguro
+- Trocar consultas `.single()` que podem não retornar linha por `.maybeSingle()` na página do portal do paciente.
+- Adicionar tratamento de erro no carregamento principal do portal para nunca deixar uma tela em branco; se algo falhar, mostrar uma mensagem amigável e manter o acesso ao diário quando o perfil do paciente existir.
 
-### 2. Estrutura da página
+2. Reforçar o componente `PortalDiario`
+- Envolver o carregamento e renderização do diário em estados seguros.
+- Garantir que erros ao carregar registros ou gerar URLs assinadas de fotos não derrubem a tela.
+- Se uma foto antiga não carregar, o card continua aparecendo com descrição/horário e um aviso visual, em vez de quebrar a página.
 
-**Cabeçalho**
-- Título + subtítulo.
-- Badges de resumo (lado direito): total de registros filtrados, quantos "novos" (não vistos) e quantos sem feedback.
+3. Simplificar o formulário de registro para máxima compatibilidade mobile
+- Substituir o seletor customizado de refeição no formulário por um `<select>` nativo estilizado, mais estável em celulares Android/iOS antigos e navegadores embutidos.
+- Manter as opções: Café da Manhã, Lanche da Manhã, Almoço, Lanche da Tarde, Jantar, Ceia e Outro Momento.
+- Preservar os dois botões de foto: “Tirar foto” e “Galeria / Arquivos”.
 
-**Barra de filtros (5 colunas em desktop, empilhada em mobile)**
-- Busca textual (descrição, sentimento, nome da paciente).
-- Paciente (lista única extraída dos registros).
-- Tipo de refeição (café, almoço, lanche, jantar, ceia, outro).
-- Período (Hoje / 7 / 30 / 90 dias / Tudo) — padrão 7 dias.
-- Status: Todos / Não vistos / Sem feedback.
+4. Melhorar upload de fotos
+- Validar tipo de arquivo (`image/*`) antes de tentar upload.
+- Limpar corretamente o preview da foto ao cancelar/trocar arquivo.
+- Usar nome de arquivo mais seguro e preservar extensão quando possível.
+- Exibir erro amigável caso o upload falhe, sem deixar tela branca.
 
-**Lista agrupada por dia**
-- Cada dia renderiza um cabeçalho com data por extenso e contagem.
-- Cards em grid responsivo (1 / 2 / 3 colunas).
-- Cada card mostra:
-  - Nome da paciente (link para `/pacientes/:id`).
-  - Tag da refeição + horário + badge "Novo" se `visto_nutri = false`.
-  - Foto do registro (signed URL do bucket `diario-fotos`, altura fixa, `object-cover`).
-  - Descrição (linha-clamp 3) e sentimento (se houver).
-  - Caixa azul com feedback enviado (se já houver).
-  - Botões: **Marcar visto** (se ainda não visto) e **Enviar/Editar feedback**.
+5. Adicionar proteção contra erro de tela branca
+- Criar/usar um limite de erro local no diário ou no portal para mostrar uma mensagem do tipo “Não foi possível carregar esta área” com botão para tentar novamente, ao invés de tela vazia.
 
-**Modal de feedback**
-- Mostra contexto resumido (paciente, refeição, dia, descrição) e textarea.
-- Salva em `diario_registros.feedback_nutri` + `feedback_data = now()` e marca `visto_nutri = true`.
+6. Validar no preview
+- Testar o fluxo mobile: abrir portal, clicar em Diário, clicar em Registrar Refeição, confirmar que o formulário carrega.
+- Verificar que os campos aparecem e que os botões de câmera/galeria continuam disponíveis.
 
-### 3. Integração com o banco (sem alterações de schema)
-
-A tabela `diario_registros` já existe com:
-- `paciente_id`, `data_registro`, `tipo_refeicao`, `horario`, `descricao`, `foto_path`, `sentimento`, `feedback_nutri`, `feedback_data`, `visto_nutri`.
-
-E as RLS já permitem ao nutri:
-- `Nutri can view patient diario` (SELECT) e `Nutri can update patient diario` (UPDATE).
-
-Operações usadas:
-- `select("*, pacientes(id, nome_completo)")` ordenado por `data_registro desc, horario desc`, limit 500.
-- `supabase.storage.from("diario-fotos").createSignedUrls(paths, 3600)` para imagens.
-- `update({ visto_nutri, feedback_nutri, feedback_data })`.
-- Realtime: subscribe em `postgres_changes` na tabela para atualizar a lista quando pacientes registrarem novas refeições.
-
-### 4. Design
-
-- Plus Jakarta Sans, `rounded-xl` (14px), tokens semânticos (`primary`, `muted`, `warning`).
-- Cards "novos" recebem borda `border-primary/40` e fundo `bg-primary/[0.02]` para destaque.
-- Mobile-first: filtros empilham, grid colapsa para 1 coluna.
-
-### 5. Arquivos alterados/criados
-
-- **Criar**: `src/pages/DiariosAlimentares.tsx`
-- **Editar**: `src/App.tsx` (importar página + rota `diarios`)
-- **Editar**: `src/components/AppSidebar.tsx` (item de menu "Diários Alimentares")
-
-Sem migrações, edge functions ou alterações de RLS.
+Observação importante:
+Como não temos login/senha dessas pacientes no preview, não vou entrar como elas. A correção será feita para eliminar as causas prováveis de tela branca do lado do app e reforçar o tratamento de erros para todos os pacientes, incluindo Welika/Wellica e Evelyn.

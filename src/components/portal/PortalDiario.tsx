@@ -8,10 +8,9 @@ import { Badge } from "@/components/ui/badge";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import {
   BookMarked, Plus, ArrowLeft, Camera, ChevronLeft, ChevronRight,
-  Clock, MessageSquare, Image as ImageIcon, Send, X,
+  Clock, MessageSquare, Image as ImageIcon, Send, X, AlertCircle,
 } from "lucide-react";
 import { format, addDays, subDays, parseISO } from "date-fns";
 import { ptBR } from "date-fns/locale";
@@ -94,10 +93,18 @@ export function PortalDiario({ paciente }: { paciente: any }) {
 
   const handlePhotoSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
-    if (file) {
-      setFormFoto(file);
-      setFormFotoPreview(URL.createObjectURL(file));
+    if (!file) return;
+    if (!file.type.startsWith("image/")) {
+      toast({ title: "Arquivo inválido", description: "Selecione uma imagem.", variant: "destructive" });
+      e.target.value = "";
+      return;
     }
+    if (formFotoPreview) {
+      try { URL.revokeObjectURL(formFotoPreview); } catch {}
+    }
+    setFormFoto(file);
+    setFormFotoPreview(URL.createObjectURL(file));
+    e.target.value = "";
   };
 
   const resetForm = () => {
@@ -105,6 +112,9 @@ export function PortalDiario({ paciente }: { paciente: any }) {
     setFormHorario(format(new Date(), "HH:mm"));
     setFormDescricao("");
     setFormSentimento("");
+    if (formFotoPreview) {
+      try { URL.revokeObjectURL(formFotoPreview); } catch {}
+    }
     setFormFoto(null);
     setFormFotoPreview(null);
   };
@@ -118,11 +128,23 @@ export function PortalDiario({ paciente }: { paciente: any }) {
     try {
       let fotoPath: string | null = null;
       if (formFoto) {
-        const ext = formFoto.name.split(".").pop() || "jpg";
-        const path = `${paciente.id}/${Date.now()}.${ext}`;
-        const { error: upErr } = await supabase.storage.from("diario-fotos").upload(path, formFoto);
-        if (upErr) throw upErr;
-        fotoPath = path;
+        try {
+          const rawExt = (formFoto.name.split(".").pop() || "jpg").toLowerCase().replace(/[^a-z0-9]/g, "");
+          const ext = rawExt && rawExt.length <= 5 ? rawExt : "jpg";
+          const path = `${paciente.id}/${Date.now()}-${Math.random().toString(36).slice(2, 8)}.${ext}`;
+          const { error: upErr } = await supabase.storage
+            .from("diario-fotos")
+            .upload(path, formFoto, { contentType: formFoto.type || "image/jpeg", upsert: false });
+          if (upErr) throw upErr;
+          fotoPath = path;
+        } catch (upErr: any) {
+          console.error("[PortalDiario] upload error:", upErr);
+          toast({
+            title: "Não foi possível enviar a foto",
+            description: "Vamos salvar o registro sem a imagem. Tente reenviar a foto depois.",
+            variant: "destructive",
+          });
+        }
       }
 
       const { error } = await supabase.from("diario_registros").insert({
@@ -142,7 +164,8 @@ export function PortalDiario({ paciente }: { paciente: any }) {
       await loadRegistros();
       setView("home");
     } catch (err: any) {
-      toast({ title: "Erro", description: err.message, variant: "destructive" });
+      console.error("[PortalDiario] save error:", err);
+      toast({ title: "Erro ao salvar", description: err?.message || "Tente novamente.", variant: "destructive" });
     } finally { setSaving(false); }
   };
 
@@ -181,14 +204,15 @@ export function PortalDiario({ paciente }: { paciente: any }) {
           <CardContent className="p-4 space-y-4">
             <div className="space-y-1">
               <Label className="text-xs text-muted-foreground">Qual refeição?</Label>
-              <Select value={formTipo} onValueChange={setFormTipo}>
-                <SelectTrigger className="h-9"><SelectValue /></SelectTrigger>
-                <SelectContent>
-                  {Object.entries(tipoLabels).map(([k, v]) => (
-                    <SelectItem key={k} value={k}>{v}</SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
+              <select
+                value={formTipo}
+                onChange={e => setFormTipo(e.target.value)}
+                className="flex h-10 w-full items-center rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2"
+              >
+                {Object.entries(tipoLabels).map(([k, v]) => (
+                  <option key={k} value={k}>{v}</option>
+                ))}
+              </select>
             </div>
 
             <div className="space-y-1">
@@ -301,7 +325,7 @@ export function PortalDiario({ paciente }: { paciente: any }) {
                         {reg.horario && <span className="text-xs text-muted-foreground">{reg.horario.slice(0, 5)}</span>}
                       </div>
                       {reg.foto_path && (
-                        <img src={getPhotoUrl(reg.foto_path)} alt="Refeição" className="rounded-xl w-full max-w-xs h-auto" />
+                        <img src={getPhotoUrl(reg.foto_path)} alt="Refeição" loading="lazy" className="rounded-xl w-full max-w-xs h-auto" onError={(e) => { (e.currentTarget as HTMLImageElement).style.display = "none"; }} />
                       )}
                       <p className="text-sm text-foreground">{reg.descricao}</p>
                       {reg.sentimento && <p className="text-xs text-muted-foreground">💭 {reg.sentimento}</p>}
@@ -376,7 +400,7 @@ export function PortalDiario({ paciente }: { paciente: any }) {
                   )}
                 </div>
                 {reg.foto_path && (
-                  <img src={getPhotoUrl(reg.foto_path)} alt="Refeição" className="rounded-xl w-full max-w-xs h-auto" />
+                  <img src={getPhotoUrl(reg.foto_path)} alt="Refeição" loading="lazy" className="rounded-xl w-full max-w-xs h-auto" onError={(e) => { (e.currentTarget as HTMLImageElement).style.display = "none"; }} />
                 )}
                 <p className="text-sm text-foreground">{reg.descricao}</p>
                 {reg.sentimento && <p className="text-xs text-muted-foreground">💭 {reg.sentimento}</p>}
