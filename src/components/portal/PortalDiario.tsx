@@ -325,7 +325,7 @@ export function PortalDiario({ paciente }: { paciente: any }) {
                         {reg.horario && <span className="text-xs text-muted-foreground">{reg.horario.slice(0, 5)}</span>}
                       </div>
                       {reg.foto_path && (
-                        <img src={getPhotoUrl(reg.foto_path)} alt="Refeição" className="rounded-xl w-full max-w-xs h-auto" />
+                        <img src={getPhotoUrl(reg.foto_path)} alt="Refeição" loading="lazy" className="rounded-xl w-full max-w-xs h-auto" onError={(e) => { (e.currentTarget as HTMLImageElement).style.display = "none"; }} />
                       )}
                       <p className="text-sm text-foreground">{reg.descricao}</p>
                       {reg.sentimento && <p className="text-xs text-muted-foreground">💭 {reg.sentimento}</p>}
@@ -400,7 +400,7 @@ export function PortalDiario({ paciente }: { paciente: any }) {
                   )}
                 </div>
                 {reg.foto_path && (
-                  <img src={getPhotoUrl(reg.foto_path)} alt="Refeição" className="rounded-xl w-full max-w-xs h-auto" />
+                  <img src={getPhotoUrl(reg.foto_path)} alt="Refeição" loading="lazy" className="rounded-xl w-full max-w-xs h-auto" onError={(e) => { (e.currentTarget as HTMLImageElement).style.display = "none"; }} />
                 )}
                 <p className="text-sm text-foreground">{reg.descricao}</p>
                 {reg.sentimento && <p className="text-xs text-muted-foreground">💭 {reg.sentimento}</p>}
