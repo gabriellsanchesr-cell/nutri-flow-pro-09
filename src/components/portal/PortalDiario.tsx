@@ -93,10 +93,18 @@ export function PortalDiario({ paciente }: { paciente: any }) {
 
   const handlePhotoSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
-    if (file) {
-      setFormFoto(file);
-      setFormFotoPreview(URL.createObjectURL(file));
+    if (!file) return;
+    if (!file.type.startsWith("image/")) {
+      toast({ title: "Arquivo inválido", description: "Selecione uma imagem.", variant: "destructive" });
+      e.target.value = "";
+      return;
     }
+    if (formFotoPreview) {
+      try { URL.revokeObjectURL(formFotoPreview); } catch {}
+    }
+    setFormFoto(file);
+    setFormFotoPreview(URL.createObjectURL(file));
+    e.target.value = "";
   };
 
   const resetForm = () => {
@@ -104,6 +112,9 @@ export function PortalDiario({ paciente }: { paciente: any }) {
     setFormHorario(format(new Date(), "HH:mm"));
     setFormDescricao("");
     setFormSentimento("");
+    if (formFotoPreview) {
+      try { URL.revokeObjectURL(formFotoPreview); } catch {}
+    }
     setFormFoto(null);
     setFormFotoPreview(null);
   };
@@ -117,11 +128,23 @@ export function PortalDiario({ paciente }: { paciente: any }) {
     try {
       let fotoPath: string | null = null;
       if (formFoto) {
-        const ext = formFoto.name.split(".").pop() || "jpg";
-        const path = `${paciente.id}/${Date.now()}.${ext}`;
-        const { error: upErr } = await supabase.storage.from("diario-fotos").upload(path, formFoto);
-        if (upErr) throw upErr;
-        fotoPath = path;
+        try {
+          const rawExt = (formFoto.name.split(".").pop() || "jpg").toLowerCase().replace(/[^a-z0-9]/g, "");
+          const ext = rawExt && rawExt.length <= 5 ? rawExt : "jpg";
+          const path = `${paciente.id}/${Date.now()}-${Math.random().toString(36).slice(2, 8)}.${ext}`;
+          const { error: upErr } = await supabase.storage
+            .from("diario-fotos")
+            .upload(path, formFoto, { contentType: formFoto.type || "image/jpeg", upsert: false });
+          if (upErr) throw upErr;
+          fotoPath = path;
+        } catch (upErr: any) {
+          console.error("[PortalDiario] upload error:", upErr);
+          toast({
+            title: "Não foi possível enviar a foto",
+            description: "Vamos salvar o registro sem a imagem. Tente reenviar a foto depois.",
+            variant: "destructive",
+          });
+        }
       }
 
       const { error } = await supabase.from("diario_registros").insert({
@@ -141,7 +164,8 @@ export function PortalDiario({ paciente }: { paciente: any }) {
       await loadRegistros();
       setView("home");
     } catch (err: any) {
-      toast({ title: "Erro", description: err.message, variant: "destructive" });
+      console.error("[PortalDiario] save error:", err);
+      toast({ title: "Erro ao salvar", description: err?.message || "Tente novamente.", variant: "destructive" });
     } finally { setSaving(false); }
   };
 
