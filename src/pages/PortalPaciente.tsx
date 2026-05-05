@@ -78,64 +78,69 @@ export default function PortalPaciente() {
   useEffect(() => { if (user) loadData(); }, [user]);
 
   const loadData = async () => {
-    const { data: pac } = await supabase
-      .from("pacientes").select("*").eq("auth_user_id", user!.id).single();
-    setPaciente(pac);
-    if (pac) {
-      const { data: planoData } = await supabase
-        .from("planos_alimentares")
-        .select("*, refeicoes(*, alimentos_plano(*))")
-        .eq("paciente_id", pac.id)
-        .eq("status", "ativo")
-        .order("created_at", { ascending: false })
-        .limit(1)
-        .single();
-      setPlano(planoData);
+    try {
+      const { data: pac } = await supabase
+        .from("pacientes").select("*").eq("auth_user_id", user!.id).maybeSingle();
+      setPaciente(pac);
+      if (pac) {
+        const { data: planoData } = await supabase
+          .from("planos_alimentares")
+          .select("*, refeicoes(*, alimentos_plano(*))")
+          .eq("paciente_id", pac.id)
+          .eq("status", "ativo")
+          .order("created_at", { ascending: false })
+          .limit(1)
+          .maybeSingle();
+        setPlano(planoData);
 
-      const { data: avData } = await supabase
-        .from("avaliacoes_fisicas")
-        .select("*")
-        .eq("paciente_id", pac.id)
-        .order("data_avaliacao", { ascending: false });
-      setAvaliacoes((avData as any) || []);
+        const { data: avData } = await supabase
+          .from("avaliacoes_fisicas")
+          .select("*")
+          .eq("paciente_id", pac.id)
+          .order("data_avaliacao", { ascending: false });
+        setAvaliacoes((avData as any) || []);
 
-      // Load next consultation
-      const now = new Date().toISOString();
-      const { data: consultaData } = await supabase
-        .from("consultas")
-        .select("*")
-        .eq("paciente_id", pac.id)
-        .gte("data_hora", now)
-        .order("data_hora", { ascending: true })
-        .limit(1);
-      if (consultaData && consultaData.length > 0) setProximaConsulta(consultaData[0]);
+        // Load next consultation
+        const now = new Date().toISOString();
+        const { data: consultaData } = await supabase
+          .from("consultas")
+          .select("*")
+          .eq("paciente_id", pac.id)
+          .gte("data_hora", now)
+          .order("data_hora", { ascending: true })
+          .limit(1);
+        if (consultaData && consultaData.length > 0) setProximaConsulta(consultaData[0]);
 
-      // Load diary streak
-      const { data: diarioData } = await supabase
-        .from("diario_registros")
-        .select("data_registro")
-        .eq("paciente_id", pac.id)
-        .order("data_registro", { ascending: false })
-        .limit(30);
-      if (diarioData) {
-        const uniqueDates = [...new Set(diarioData.map(d => d.data_registro))];
-        let streak = 0;
-        const today = new Date();
-        for (let i = 0; i < uniqueDates.length; i++) {
-          const expected = format(addDays(today, -i), "yyyy-MM-dd");
-          if (uniqueDates.includes(expected)) streak++;
-          else break;
+        // Load diary streak
+        const { data: diarioData } = await supabase
+          .from("diario_registros")
+          .select("data_registro")
+          .eq("paciente_id", pac.id)
+          .order("data_registro", { ascending: false })
+          .limit(30);
+        if (diarioData) {
+          const uniqueDates = [...new Set(diarioData.map(d => d.data_registro))];
+          let streak = 0;
+          const today = new Date();
+          for (let i = 0; i < uniqueDates.length; i++) {
+            const expected = format(addDays(today, -i), "yyyy-MM-dd");
+            if (uniqueDates.includes(expected)) streak++;
+            else break;
+          }
+          setDiaryStreak(streak);
+
+          // Weekly progress
+          const weekStart = format(startOfWeek(today, { weekStartsOn: 1 }), "yyyy-MM-dd");
+          const weekEnd = format(endOfWeek(today, { weekStartsOn: 1 }), "yyyy-MM-dd");
+          const weekDays = uniqueDates.filter(d => d >= weekStart && d <= weekEnd);
+          setWeeklyProgress({ done: weekDays.length, total: 7 });
         }
-        setDiaryStreak(streak);
-
-        // Weekly progress
-        const weekStart = format(startOfWeek(today, { weekStartsOn: 1 }), "yyyy-MM-dd");
-        const weekEnd = format(endOfWeek(today, { weekStartsOn: 1 }), "yyyy-MM-dd");
-        const weekDays = uniqueDates.filter(d => d >= weekStart && d <= weekEnd);
-        setWeeklyProgress({ done: weekDays.length, total: 7 });
       }
+    } catch (err) {
+      console.error("[PortalPaciente] loadData error:", err);
+    } finally {
+      setLoading(false);
     }
-    setLoading(false);
   };
 
   // Loading skeleton
