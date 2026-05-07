@@ -436,39 +436,54 @@ export function PlanoAlimentarEditor({ pacienteId, planoId, onBack, paciente, in
                       <span>Kcal</span><span>P</span><span>C</span><span>G</span><span></span>
                     </div>
                     {ref.alimentos.map((ali, aliIdx) => (
-                      <div key={aliIdx} className="grid grid-cols-[1fr,80px,100px,70px,70px,70px,70px,40px] gap-1 px-3 py-1.5 border-t items-center text-sm">
-                        <span className="truncate">{ali.nome_alimento}</span>
-                        <Input
-                          className="h-7 text-xs"
-                          type="number"
-                          value={ali.quantidade}
-                          onChange={e => {
-                            const qty = parseFloat(e.target.value) || 0;
-                            updateAlimento(refIdx, aliIdx, "quantidade", qty);
-                            
-                            // Recalcular macros automaticamente se for alimento da TACO
-                            if (ali.alimento_taco_id && ali.base_energia_kcal !== undefined) {
-                              const ratio = qty / 100;
-                              updateAlimento(refIdx, aliIdx, "energia_kcal", ali.base_energia_kcal * ratio);
-                              updateAlimento(refIdx, aliIdx, "proteina_g", (ali.base_proteina_g || 0) * ratio);
-                              updateAlimento(refIdx, aliIdx, "carboidrato_g", (ali.base_carboidrato_g || 0) * ratio);
-                              updateAlimento(refIdx, aliIdx, "lipidio_g", (ali.base_lipidio_g || 0) * ratio);
-                              updateAlimento(refIdx, aliIdx, "fibra_g", (ali.base_fibra_g || 0) * ratio);
-                            }
+                      <div key={aliIdx} className="border-t">
+                        <div className="grid grid-cols-[1fr,80px,100px,70px,70px,70px,70px,40px] gap-1 px-3 py-1.5 items-center text-sm">
+                          <span className="truncate" title={ali.nome_alimento}>{ali.nome_alimento}</span>
+                          <Input
+                            className="h-7 text-xs"
+                            type="number"
+                            value={ali.quantidade}
+                            onChange={e => {
+                              const qty = parseFloat(e.target.value) || 0;
+                              updateAlimento(refIdx, aliIdx, "quantidade", qty);
+                              if (ali.base_energia_kcal !== undefined) {
+                                const ratio = qty / 100;
+                                updateAlimento(refIdx, aliIdx, "energia_kcal", ali.base_energia_kcal * ratio);
+                                updateAlimento(refIdx, aliIdx, "proteina_g", (ali.base_proteina_g || 0) * ratio);
+                                updateAlimento(refIdx, aliIdx, "carboidrato_g", (ali.base_carboidrato_g || 0) * ratio);
+                                updateAlimento(refIdx, aliIdx, "lipidio_g", (ali.base_lipidio_g || 0) * ratio);
+                                updateAlimento(refIdx, aliIdx, "fibra_g", (ali.base_fibra_g || 0) * ratio);
+                              }
+                            }}
+                          />
+                          <Input
+                            className="h-7 text-xs"
+                            value={ali.medida_caseira}
+                            onChange={e => updateAlimento(refIdx, aliIdx, "medida_caseira", e.target.value)}
+                          />
+                          <span className="text-xs text-center">{Math.round(ali.energia_kcal)}</span>
+                          <span className="text-xs text-center">{Math.round(ali.proteina_g)}</span>
+                          <span className="text-xs text-center">{Math.round(ali.carboidrato_g)}</span>
+                          <span className="text-xs text-center">{Math.round(ali.lipidio_g)}</span>
+                          <Button variant="ghost" size="icon" className="h-7 w-7" onClick={() => removeAlimento(refIdx, aliIdx)}>
+                            <Trash2 className="h-3.5 w-3.5 text-destructive" />
+                          </Button>
+                        </div>
+                        <SubstituicoesInline
+                          alimento={ali}
+                          onReplace={(novo) => {
+                            setRefeicoes(prev => prev.map((r, i) =>
+                              i === refIdx ? {
+                                ...r, alimentos: r.alimentos.map((a, j) => j === aliIdx ? novo : a)
+                              } : r
+                            ));
+                          }}
+                          onAddNote={(linha) => {
+                            updateRefeicao(refIdx, "substituicoes_sugeridas",
+                              ref.substituicoes_sugeridas ? ref.substituicoes_sugeridas + "\n" + linha : linha
+                            );
                           }}
                         />
-                        <Input
-                          className="h-7 text-xs"
-                          value={ali.medida_caseira}
-                          onChange={e => updateAlimento(refIdx, aliIdx, "medida_caseira", e.target.value)}
-                        />
-                        <span className="text-xs text-center">{Math.round(ali.energia_kcal)}</span>
-                        <span className="text-xs text-center">{Math.round(ali.proteina_g)}</span>
-                        <span className="text-xs text-center">{Math.round(ali.carboidrato_g)}</span>
-                        <span className="text-xs text-center">{Math.round(ali.lipidio_g)}</span>
-                        <Button variant="ghost" size="icon" className="h-7 w-7" onClick={() => removeAlimento(refIdx, aliIdx)}>
-                          <Trash2 className="h-3.5 w-3.5 text-destructive" />
-                        </Button>
                       </div>
                     ))}
                   </div>
