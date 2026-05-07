@@ -73,6 +73,54 @@ export type Database = {
           },
         ]
       }
+      alimentos_personalizados: {
+        Row: {
+          carboidrato_g: number
+          created_at: string
+          energia_kcal: number
+          fibra_g: number
+          grupo: Database["public"]["Enums"]["grupo_alimentar"]
+          id: string
+          lipidio_g: number
+          medida_caseira: string | null
+          nome: string
+          proteina_g: number
+          quantidade_base: number
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          carboidrato_g?: number
+          created_at?: string
+          energia_kcal?: number
+          fibra_g?: number
+          grupo?: Database["public"]["Enums"]["grupo_alimentar"]
+          id?: string
+          lipidio_g?: number
+          medida_caseira?: string | null
+          nome: string
+          proteina_g?: number
+          quantidade_base?: number
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          carboidrato_g?: number
+          created_at?: string
+          energia_kcal?: number
+          fibra_g?: number
+          grupo?: Database["public"]["Enums"]["grupo_alimentar"]
+          id?: string
+          lipidio_g?: number
+          medida_caseira?: string | null
+          nome?: string
+          proteina_g?: number
+          quantidade_base?: number
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
       alimentos_plano: {
         Row: {
           alimento_taco_id: number | null
