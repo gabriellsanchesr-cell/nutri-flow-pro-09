@@ -36,6 +36,7 @@ interface Alimento {
   lipidio_g: number;
   fibra_g: number;
   alimento_taco_id: number | null;
+  grupo?: string | null;
   // Valores base por 100g para recálculo automático
   base_energia_kcal?: number;
   base_proteina_g?: number;
