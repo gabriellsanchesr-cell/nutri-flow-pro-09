@@ -9,8 +9,10 @@ import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Badge } from "@/components/ui/badge";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog";
+import { Checkbox } from "@/components/ui/checkbox";
 import {
-  Save, ArrowLeft, Plus, Trash2, Search, Clock, ChevronDown, ChevronUp, FileDown,
+  Save, ArrowLeft, Plus, Trash2, Search, Clock, ChevronDown, ChevronUp, FileDown, ArrowRightLeft, Sparkles,
 } from "lucide-react";
 import { ExportPdfModal } from "@/components/pdf/ExportPdfModal";
 
