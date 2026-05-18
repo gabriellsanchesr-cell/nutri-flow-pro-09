@@ -435,6 +435,20 @@ export function AvaliacoesFisicasSection({ paciente }: Props) {
             ) : <p className="text-center text-sm text-muted-foreground py-8">Sem dados para exibir.</p>}
           </DialogContent>
         </Dialog>
+
+        <ImportarAvaliacaoModal
+          open={showImport}
+          onOpenChange={setShowImport}
+          onExtracted={(data) => {
+            setForm({
+              data_avaliacao: data.data_avaliacao || new Date().toISOString().split("T")[0],
+              protocolo_dobras: null,
+              ...data,
+            });
+            setEditId(null);
+            setView("form");
+          }}
+        />
       </div>
     );
   }
