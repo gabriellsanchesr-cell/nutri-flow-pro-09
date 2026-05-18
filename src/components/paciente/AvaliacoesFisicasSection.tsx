@@ -358,7 +358,7 @@ export function AvaliacoesFisicasSection({ paciente }: Props) {
               <BarChart3 className="h-4 w-4 mr-1" /> Evolução
             </Button>
             <Button variant="outline" size="sm" onClick={() => setShowImport(true)}>
-              <Sparkles className="h-4 w-4 mr-1" /> Importar por IA
+              <Upload className="h-4 w-4 mr-1" /> Importar histórico
             </Button>
             <Button size="sm" onClick={newForm} className="bg-primary text-primary-foreground">
               <Plus className="h-4 w-4 mr-1" /> Nova Avaliação
