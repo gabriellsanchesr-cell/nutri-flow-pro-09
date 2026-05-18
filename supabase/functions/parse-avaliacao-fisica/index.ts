@@ -2,13 +2,27 @@
 import { corsHeaders } from 'npm:@supabase/supabase-js@2/cors';
 
 const FIELD_SPEC = `
-Campos a extrair (use null se ausente). Unidades: peso/massas em kg, altura em cm, dobras em mm, circunferências em cm, percentuais em %.
+CAMPOS ACEITOS (use null se ausente; unidades: peso/massas em kg, altura em cm, dobras em mm, circunferências em cm, percentuais em %).
 
-Básicos: peso, altura, imc
+Básicos: peso, altura, imc, classificacao_imc, relacao_cintura_quadril
 Dobras (mm): dobra_triceps, dobra_biceps, dobra_abdominal, dobra_subescapular, dobra_axilar_media, dobra_coxa, dobra_toracica, dobra_suprailiaca, dobra_panturrilha, dobra_supraespinhal, dobra_peitoral
-Circunferências (cm): circ_pescoco, circ_torax, circ_ombro, circ_cintura, circ_quadril, circ_abdomen, circ_braco_dir, circ_braco_esq, circ_braco_contraido, circ_antebraco, circ_coxa_dir, circ_coxa_esq, circ_panturrilha
+Circunferências (cm): circ_pescoco, circ_torax, circ_ombro, circ_cintura, circ_quadril, circ_abdomen, circ_braco_dir, circ_braco_esq, circ_braco_contraido, circ_antebraco, circ_coxa_dir, circ_coxa_esq, circ_coxa_proximal, circ_coxa_medial, circ_coxa_distal, circ_panturrilha
 Bioimpedância: bio_percentual_gordura, bio_percentual_ideal, bio_massa_gorda, bio_percentual_massa_muscular, bio_massa_muscular, bio_agua_corporal, bio_peso_osseo, bio_massa_livre_gordura, bio_gordura_visceral, bio_idade_metabolica, bio_metabolismo_basal
-Outros: protocolo_dobras (um destes ou null: pollock3, pollock7, petroski, guedes, durnin, faulkner), percentual_gordura_dobras, massa_gorda_kg, massa_magra_kg, observacoes (resumo textual de qualquer informação relevante encontrada que não se encaixa nos campos acima, máx 500 chars)
+Composição corporal calculada: percentual_gordura_dobras, massa_gorda_kg, massa_magra_kg, protocolo_dobras (um de: pollock3, pollock7, petroski, guedes, durnin, faulkner)
+Outros: observacoes (texto livre com classificações, somatório de dobras, densidade corporal, risco metabólico, software de origem, etc — máx 600 chars)
+
+MAPEAMENTO de termos comuns:
+- "Circ. Musc. do Braço" / "CMB" → ignorar (é calculado)
+- "Circunf. do Braço Relaxado" → circ_braco_dir
+- "Circunf. do Braço Contraído" → circ_braco_contraido
+- "Circ. Proximal/Medial/Distal da Coxa" → circ_coxa_proximal/medial/distal
+- "Dobra Tricipital" → dobra_triceps; "Bicipital" → dobra_biceps
+- "Massa Muscular (Kg)" (bioimpedância) → bio_massa_muscular
+- "Água Corporal Total" → bio_agua_corporal (em kg, manter o valor)
+- "Massa Óssea" → bio_peso_osseo
+- "Idade Metabólica" → bio_idade_metabolica
+- "Índice de Gordura Visceral" → bio_gordura_visceral
+- "Massa livre de gordura" da bioimpedância → bio_massa_livre_gordura
 `;
 
 Deno.serve(async (req) => {
@@ -38,21 +52,33 @@ Deno.serve(async (req) => {
 
     const dataUrl = `data:${mimeType};base64,${fileBase64}`;
 
-    const systemPrompt = `Você é um assistente que extrai dados de avaliações físicas/antropométricas de documentos (PDF, imagens) gerados por diversos softwares e bioimpedâncias (InBody, Tanita, Body Metrix, planilhas manuais, etc).
+    const systemPrompt = `Você é um assistente que extrai HISTÓRICO de avaliações físicas/antropométricas de documentos (PDF, imagens) gerados por softwares como WebDiet, Dietbox, InBody, Tanita, Body Metrix, planilhas, etc.
 
-Sua tarefa: ler o documento e retornar APENAS um JSON válido com os campos abaixo. Não escreva explicações fora do JSON.
+Documentos de EVOLUÇÃO geralmente têm UMA TABELA com VÁRIAS COLUNAS DE DATA — cada coluna é uma avaliação diferente. Sua tarefa é detectar TODAS as datas e retornar UMA avaliação por data.
 
-${FIELD_SPEC}
+Retorne APENAS um JSON válido no formato:
+{
+  "avaliacoes": [
+    { "data_avaliacao": "YYYY-MM-DD", ...campos },
+    ...
+  ]
+}
 
-Regras:
-- Se um campo não estiver presente, retorne null (não invente valores).
-- Converta unidades quando necessário (libras→kg, polegadas→cm).
-- Para dobras cutâneas, use mm.
-- Para protocolo_dobras, identifique pelo nome ou pelas dobras coletadas.
-- Em "observacoes" inclua: nome do software/equipamento, qualquer dado adicional (TMB, classificações, recomendações curtas).`;
+REGRAS:
+- Converta datas de qualquer formato (dd/MM/yyyy, "20 dez 2025", etc) para YYYY-MM-DD.
+- Para cada célula numérica, pegue APENAS o número — ignore setas ↑↓, variações entre parênteses como "(+2.1)", classificações textuais como "Adequado".
+- As classificações textuais ("Sobrepeso", "Alta II", "Muito alto", "Adequado") devem ir para "observacoes" daquela coluna, formatadas como "Classif. IMC: Sobrepeso; Class. %GC: Alta II".
+- Coluna de BIOIMPEDÂNCIA sem data explícita: associe à data mais próxima (geralmente a primeira). Se não houver datas, crie uma avaliação única.
+- Se o mesmo campo aparece em duas seções (ex: "% Gordura" em dobras e em bioimpedância), use percentual_gordura_dobras para dobras e bio_percentual_gordura para bioimpedância.
+- Omita campos sem valor (não inclua null no JSON).
+- Se a coluna não tiver NENHUM dado numérico além da data, NÃO inclua essa avaliação.
+- Converta unidades quando necessário (lb→kg, in→cm).
+- Inclua no observacoes: nome do software/equipamento se detectado, somatório de dobras, densidade corporal, qualquer dado relevante.
+
+${FIELD_SPEC}`;
 
     const userContent: any[] = [
-      { type: 'text', text: 'Extraia os dados desta avaliação física e retorne o JSON solicitado.' },
+      { type: 'text', text: 'Extraia TODAS as avaliações deste documento (uma por coluna de data detectada) e retorne o JSON solicitado.' },
       { type: 'image_url', image_url: { url: dataUrl } },
     ];
 
@@ -92,34 +118,52 @@ Regras:
 
     const aiJson = await aiRes.json();
     const content = aiJson?.choices?.[0]?.message?.content ?? '{}';
-    let extracted: Record<string, any> = {};
+    let parsed: any = {};
     try {
-      extracted = typeof content === 'string' ? JSON.parse(content) : content;
+      parsed = typeof content === 'string' ? JSON.parse(content) : content;
     } catch (e) {
       console.error('JSON parse error', e, content);
-      extracted = {};
+      parsed = {};
     }
 
-    // Sanitize: remove null/undefined keys, coerce numbers
+    let avaliacoesRaw: any[] = [];
+    if (Array.isArray(parsed?.avaliacoes)) {
+      avaliacoesRaw = parsed.avaliacoes;
+    } else if (parsed && typeof parsed === 'object') {
+      // fallback: single avaliação
+      avaliacoesRaw = [parsed];
+    }
+
     const NUM_KEYS = new Set([
-      'peso','altura','imc',
+      'peso','altura','imc','relacao_cintura_quadril',
       'dobra_triceps','dobra_biceps','dobra_abdominal','dobra_subescapular','dobra_axilar_media','dobra_coxa','dobra_toracica','dobra_suprailiaca','dobra_panturrilha','dobra_supraespinhal','dobra_peitoral',
-      'circ_pescoco','circ_torax','circ_ombro','circ_cintura','circ_quadril','circ_abdomen','circ_braco_dir','circ_braco_esq','circ_braco_contraido','circ_antebraco','circ_coxa_dir','circ_coxa_esq','circ_panturrilha',
+      'circ_pescoco','circ_torax','circ_ombro','circ_cintura','circ_quadril','circ_abdomen','circ_braco_dir','circ_braco_esq','circ_braco_contraido','circ_antebraco','circ_coxa_dir','circ_coxa_esq','circ_coxa_proximal','circ_coxa_medial','circ_coxa_distal','circ_panturrilha',
       'bio_percentual_gordura','bio_percentual_ideal','bio_massa_gorda','bio_percentual_massa_muscular','bio_massa_muscular','bio_agua_corporal','bio_peso_osseo','bio_massa_livre_gordura','bio_gordura_visceral','bio_idade_metabolica','bio_metabolismo_basal',
       'percentual_gordura_dobras','massa_gorda_kg','massa_magra_kg',
     ]);
-    const clean: Record<string, any> = {};
-    for (const [k, v] of Object.entries(extracted)) {
-      if (v === null || v === undefined || v === '') continue;
-      if (NUM_KEYS.has(k)) {
-        const n = typeof v === 'number' ? v : parseFloat(String(v).replace(',', '.'));
-        if (!isNaN(n)) clean[k] = n;
-      } else {
-        clean[k] = v;
-      }
-    }
 
-    return new Response(JSON.stringify({ extracted: clean }), {
+    const avaliacoes = avaliacoesRaw
+      .map((av) => {
+        const clean: Record<string, any> = {};
+        for (const [k, v] of Object.entries(av || {})) {
+          if (v === null || v === undefined || v === '' || v === '-') continue;
+          if (NUM_KEYS.has(k)) {
+            const n = typeof v === 'number' ? v : parseFloat(String(v).replace(/[^\d.,-]/g, '').replace(',', '.'));
+            if (!isNaN(n)) clean[k] = n;
+          } else {
+            clean[k] = v;
+          }
+        }
+        return clean;
+      })
+      .filter((av) => {
+        // must have a date and at least one numeric field
+        if (!av.data_avaliacao) return false;
+        const hasData = Object.keys(av).some((k) => NUM_KEYS.has(k));
+        return hasData;
+      });
+
+    return new Response(JSON.stringify({ avaliacoes }), {
       headers: { ...corsHeaders, 'Content-Type': 'application/json' },
     });
   } catch (e: any) {

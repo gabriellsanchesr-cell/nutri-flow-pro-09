@@ -376,6 +376,8 @@ export type Database = {
           observacoes: string | null
           origem: string
           paciente_id: string
+          pdf_origem_nome: string | null
+          pdf_origem_url: string | null
           percentual_gordura_dobras: number | null
           peso: number | null
           protocolo_dobras: string | null
@@ -440,6 +442,8 @@ export type Database = {
           observacoes?: string | null
           origem?: string
           paciente_id: string
+          pdf_origem_nome?: string | null
+          pdf_origem_url?: string | null
           percentual_gordura_dobras?: number | null
           peso?: number | null
           protocolo_dobras?: string | null
@@ -504,6 +508,8 @@ export type Database = {
           observacoes?: string | null
           origem?: string
           paciente_id?: string
+          pdf_origem_nome?: string | null
+          pdf_origem_url?: string | null
           percentual_gordura_dobras?: number | null
           peso?: number | null
           protocolo_dobras?: string | null
