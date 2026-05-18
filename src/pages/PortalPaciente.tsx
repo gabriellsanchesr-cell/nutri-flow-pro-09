@@ -4,6 +4,8 @@ import { PortalDiario } from "@/components/portal/PortalDiario";
 import { PortalJornada } from "@/components/portal/PortalJornada";
 import { PortalReceitas } from "@/components/portal/PortalReceitas";
 import { PortalChat } from "@/components/portal/PortalChat";
+import { PortalMetas } from "@/components/portal/PortalMetas";
+import { PortalMateriais } from "@/components/portal/PortalMateriais";
 import { useAuth } from "@/hooks/useAuth";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
