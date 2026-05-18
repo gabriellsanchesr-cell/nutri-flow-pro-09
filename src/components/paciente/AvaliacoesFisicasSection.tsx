@@ -439,14 +439,9 @@ export function AvaliacoesFisicasSection({ paciente }: Props) {
         <ImportarAvaliacaoModal
           open={showImport}
           onOpenChange={setShowImport}
-          onExtracted={(data) => {
-            setForm({
-              data_avaliacao: data.data_avaliacao || new Date().toISOString().split("T")[0],
-              protocolo_dobras: null,
-              ...data,
-            });
-            setEditId(null);
-            setView("form");
+          pacienteId={paciente.id}
+          onImported={() => {
+            loadAvaliacoes();
           }}
         />
       </div>
