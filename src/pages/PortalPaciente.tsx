@@ -720,6 +720,7 @@ export default function PortalPaciente() {
       case "mensagens": return <PortalChat paciente={paciente} />;
       case "jornada": return <PortalJornada paciente={paciente} />;
       case "suplementos": return renderPortalSuplemenos();
+      case "materiais": return <PortalMateriais paciente={paciente} />;
       default: return renderPlaceholder("Materiais", "Este recurso estará disponível em breve.");
     }
   };
