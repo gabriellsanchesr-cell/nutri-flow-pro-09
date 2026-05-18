@@ -109,8 +109,8 @@ export default function PacienteDetalhe() {
       case "avaliacoes": return <AvaliacoesFisicasSection paciente={paciente} />;
       case "diario": return <DiarioAlimentarSection paciente={paciente} />;
       case "receituario": return <ReceitaSection paciente={paciente} />;
-      case "metas": return <PlaceholderSection title="Metas" description="Módulo de metas em desenvolvimento." />;
-      case "materiais": return <PlaceholderSection title="Materiais Extras" description="Módulo de materiais extras em desenvolvimento." />;
+      case "metas": return <MetasSection paciente={paciente} />;
+      case "materiais": return <MateriaisExtrasSection paciente={paciente} />;
       case "suplementos": return <SuplementosSection paciente={paciente} />;
       case "financeiro": return <FinanceiroSection paciente={paciente} />;
       default: return null;
