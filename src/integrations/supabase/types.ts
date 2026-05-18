@@ -374,6 +374,7 @@ export type Database = {
           massa_gorda_kg: number | null
           massa_magra_kg: number | null
           observacoes: string | null
+          origem: string
           paciente_id: string
           percentual_gordura_dobras: number | null
           peso: number | null
@@ -437,6 +438,7 @@ export type Database = {
           massa_gorda_kg?: number | null
           massa_magra_kg?: number | null
           observacoes?: string | null
+          origem?: string
           paciente_id: string
           percentual_gordura_dobras?: number | null
           peso?: number | null
@@ -500,6 +502,7 @@ export type Database = {
           massa_gorda_kg?: number | null
           massa_magra_kg?: number | null
           observacoes?: string | null
+          origem?: string
           paciente_id?: string
           percentual_gordura_dobras?: number | null
           peso?: number | null

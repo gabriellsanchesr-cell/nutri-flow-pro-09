@@ -15,8 +15,10 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/u
 import {
   Plus, ArrowLeft, Save, Trash2, TrendingUp, TrendingDown, Minus,
   Scale, Ruler, Activity, BarChart3, ChevronRight, Calendar, Eye, FileDown,
+  Upload, Sparkles,
 } from "lucide-react";
 import { ExportPdfModal } from "@/components/pdf/ExportPdfModal";
+import { ImportarAvaliacaoModal } from "@/components/paciente/ImportarAvaliacaoModal";
 import { format } from "date-fns";
 import { ptBR } from "date-fns/locale";
 import {
@@ -228,6 +230,7 @@ export function AvaliacoesFisicasSection({ paciente }: Props) {
   const [chartMetric, setChartMetric] = useState("peso");
   const [showPrevList, setShowPrevList] = useState(false);
   const [showExportPdf, setShowExportPdf] = useState(false);
+  const [showImport, setShowImport] = useState(false);
 
   const age = calcAge(paciente.data_nascimento);
 
@@ -350,9 +353,12 @@ export function AvaliacoesFisicasSection({ paciente }: Props) {
           <h2 className="text-xl font-bold text-foreground flex items-center gap-2">
             <Scale className="h-5 w-5 text-primary" /> Avaliação Antropométrica
           </h2>
-          <div className="flex gap-2">
+          <div className="flex flex-wrap gap-2">
             <Button variant="outline" size="sm" onClick={() => setShowCharts(true)}>
               <BarChart3 className="h-4 w-4 mr-1" /> Evolução
+            </Button>
+            <Button variant="outline" size="sm" onClick={() => setShowImport(true)}>
+              <Sparkles className="h-4 w-4 mr-1" /> Importar por IA
             </Button>
             <Button size="sm" onClick={newForm} className="bg-primary text-primary-foreground">
               <Plus className="h-4 w-4 mr-1" /> Nova Avaliação
@@ -378,7 +384,14 @@ export function AvaliacoesFisicasSection({ paciente }: Props) {
                         <Calendar className="h-5 w-5 text-primary" />
                       </div>
                       <div>
-                        <p className="font-semibold text-sm">{format(new Date(av.data_avaliacao), "dd 'de' MMMM 'de' yyyy", { locale: ptBR })}</p>
+                        <div className="flex items-center gap-2">
+                          <p className="font-semibold text-sm">{format(new Date(av.data_avaliacao), "dd 'de' MMMM 'de' yyyy", { locale: ptBR })}</p>
+                          {av.origem === "importado_ia" && (
+                            <Badge variant="outline" className="text-[10px] gap-1 border-primary/40 text-primary">
+                              <Sparkles className="h-2.5 w-2.5" /> IA
+                            </Badge>
+                          )}
+                        </div>
                         <div className="flex gap-3 mt-1 text-xs text-muted-foreground">
                           {av.peso && <span>{av.peso} kg</span>}
                           {av.imc && <span>IMC {av.imc}</span>}
@@ -422,6 +435,20 @@ export function AvaliacoesFisicasSection({ paciente }: Props) {
             ) : <p className="text-center text-sm text-muted-foreground py-8">Sem dados para exibir.</p>}
           </DialogContent>
         </Dialog>
+
+        <ImportarAvaliacaoModal
+          open={showImport}
+          onOpenChange={setShowImport}
+          onExtracted={(data) => {
+            setForm({
+              data_avaliacao: data.data_avaliacao || new Date().toISOString().split("T")[0],
+              protocolo_dobras: null,
+              ...data,
+            });
+            setEditId(null);
+            setView("form");
+          }}
+        />
       </div>
     );
   }
@@ -431,6 +458,12 @@ export function AvaliacoesFisicasSection({ paciente }: Props) {
 
   return (
     <div className="space-y-4">
+      {form.origem === "importado_ia" && !editId && (
+        <div className="rounded-xl border border-primary/30 bg-primary/5 px-4 py-3 flex items-center gap-2 text-sm">
+          <Sparkles className="h-4 w-4 text-primary" />
+          <span className="text-foreground">Avaliação importada por IA — revise os dados antes de salvar.</span>
+        </div>
+      )}
       {/* Header */}
       <div className="flex items-center justify-between">
         <div className="flex items-center gap-3">
