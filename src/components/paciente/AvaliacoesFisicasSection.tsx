@@ -384,7 +384,14 @@ export function AvaliacoesFisicasSection({ paciente }: Props) {
                         <Calendar className="h-5 w-5 text-primary" />
                       </div>
                       <div>
-                        <p className="font-semibold text-sm">{format(new Date(av.data_avaliacao), "dd 'de' MMMM 'de' yyyy", { locale: ptBR })}</p>
+                        <div className="flex items-center gap-2">
+                          <p className="font-semibold text-sm">{format(new Date(av.data_avaliacao), "dd 'de' MMMM 'de' yyyy", { locale: ptBR })}</p>
+                          {av.origem === "importado_ia" && (
+                            <Badge variant="outline" className="text-[10px] gap-1 border-primary/40 text-primary">
+                              <Sparkles className="h-2.5 w-2.5" /> IA
+                            </Badge>
+                          )}
+                        </div>
                         <div className="flex gap-3 mt-1 text-xs text-muted-foreground">
                           {av.peso && <span>{av.peso} kg</span>}
                           {av.imc && <span>IMC {av.imc}</span>}
