@@ -353,9 +353,12 @@ export function AvaliacoesFisicasSection({ paciente }: Props) {
           <h2 className="text-xl font-bold text-foreground flex items-center gap-2">
             <Scale className="h-5 w-5 text-primary" /> Avaliação Antropométrica
           </h2>
-          <div className="flex gap-2">
+          <div className="flex flex-wrap gap-2">
             <Button variant="outline" size="sm" onClick={() => setShowCharts(true)}>
               <BarChart3 className="h-4 w-4 mr-1" /> Evolução
+            </Button>
+            <Button variant="outline" size="sm" onClick={() => setShowImport(true)}>
+              <Sparkles className="h-4 w-4 mr-1" /> Importar por IA
             </Button>
             <Button size="sm" onClick={newForm} className="bg-primary text-primary-foreground">
               <Plus className="h-4 w-4 mr-1" /> Nova Avaliação
