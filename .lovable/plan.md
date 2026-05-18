@@ -1,76 +1,50 @@
 ## Objetivo
 
-Tornar a criação de planos alimentares mais fluida em dois pontos:
+Permitir cadastrar avaliações físicas de pacientes vindos de outros apps (InBody, Tanita, bioimpedâncias, planilhas, etc.) fazendo upload de um **PDF ou imagem da avaliação**. A IA lê o arquivo, extrai os dados antropométricos e preenche automaticamente uma nova avaliação no histórico — mantendo a mesma estrutura de visualização/gráficos atuais.
 
-1. **Adição de alimento personalizado** mais completa e prática (hoje cria um item vazio "Alimento personalizado" com tudo zerado, exigindo edição linha a linha sem campos visíveis para macros).
-2. **Substituições automáticas** carregadas no momento em que um alimento é adicionado à refeição — já com a **quantidade equivalente** (mesma kcal de referência), em vez de exigir clique em "Sugerir Substituições" e mostrar texto solto.
+## Fluxo do usuário
 
----
+1. Em `Pacientes → [Paciente] → Avaliações Físicas`, novo botão **"Importar avaliação"** ao lado de "Nova Avaliação".
+2. Modal solicita: data da avaliação + arquivo (PDF, JPG, PNG).
+3. Sistema envia para uma edge function que usa **Lovable AI (Gemini multimodal)** para extrair os campos.
+4. A tela do formulário abre **pré-preenchida** com tudo que a IA detectou — usuário revisa, ajusta e salva normalmente.
+5. Histórico, gráficos de evolução e PDF de avaliação passam a incluir esses registros como qualquer outro.
 
-## Mudanças propostas
+## Mudanças
 
-### 1. Modal de alimento personalizado
+### 1. Edge function `parse-avaliacao-fisica` (nova)
+- Recebe `{ fileBase64, mimeType }`.
+- Chama Lovable AI Gateway com `google/gemini-3-flash-preview` (multimodal) usando **structured output** (`Output.object` + Zod) com schema cobrindo todos os campos da tabela `avaliacoes_fisicas`:
+  - Básicos: `peso`, `altura`, `imc`
+  - Dobras (todas as 11 em `FOLD_FIELDS`)
+  - Circunferências (todas as 13 em `CIRC_FIELDS`)
+  - Bioimpedância (todos os 11 em `BIO_FIELDS`)
+  - Observações livres detectadas
+- Prompt instrui o modelo a retornar `null` para campos ausentes, normalizar unidades (cm, kg, mm, %), e identificar o protocolo de dobras se mencionado.
+- Retorna `{ extracted: {...campos}, confidence: "high"|"medium"|"low", raw_notes: string }`.
+- Valida JWT, CORS, trata 429/402.
 
-Substituir o botão atual "Personalizado" (que insere uma linha vazia) por um **modal de cadastro rápido** com:
+### 2. Componente `ImportarAvaliacaoModal.tsx` (novo)
+- Dialog com `Input type="file"` (`accept=".pdf,image/*"`), input de data da avaliação, botão "Analisar".
+- Mostra loader durante o processamento ("Lendo avaliação com IA…").
+- Após resposta, fecha o modal e abre o formulário de avaliação em modo "form" já preenchido com os campos extraídos + flag visual indicando que foi importado.
 
-- Nome do alimento (obrigatório)
-- Quantidade (g) e medida caseira (ex.: "1 fatia", "1 colher de sopa")
-- Macros por porção informada: kcal, proteína, carboidrato, gordura, fibra
-- Botão opcional **"Salvar na minha biblioteca"** — grava o alimento numa nova tabela `alimentos_personalizados` (por nutricionista) para reutilização futura
-- Os personalizados salvos aparecem na busca normal, marcados com tag "Meu" ao lado dos resultados da TACO
+### 3. `AvaliacoesFisicasSection.tsx`
+- Adicionar botão **"Importar"** (ícone Upload) ao lado de "Nova Avaliação".
+- Adicionar handler `openFormPrefilled(data)` que faz `setForm({ ...data })` e `setView("form")`.
+- No topo do formulário, quando vier de importação, mostrar badge "Importado por IA — revise os dados antes de salvar".
 
-Resultado: o nutri preenche tudo de uma vez, e ainda monta sua própria base.
-
-### 2. Substituições automáticas por alimento
-
-Hoje a coluna "Substituições Sugeridas" é texto livre por refeição, e o botão pega substituições do grupo inteiro sem proporção.
-
-Nova lógica, disparada **automaticamente ao adicionar um alimento da TACO** à refeição:
-
-- Identificar o `grupo` do alimento adicionado.
-- Buscar em `substituicoes` as opções daquele grupo onde `alimento_original` = nome (ou parte do nome) do alimento adicionado.
-- Para cada substituto, calcular a **quantidade equivalente em gramas** que entrega aproximadamente as mesmas kcal do alimento original na quantidade escolhida:
-  - `qtd_substituto = (kcal_original_total / kcal_substituto_por_100g) * 100`
-  - Se o substituto também existir na base TACO (match por nome), usar suas kcal/100g; se não existir, mostrar como informativo sem grama exata.
-- Renderizar as substituições **abaixo de cada linha de alimento** (collapsible "Ver substituições (N)"), em formato visual:
-  - `Arroz integral cozido — 130g (≈ mesma energia)` com macros calculados
-  - Cada item tem botão **"Substituir"** (troca o alimento na linha) e **"Adicionar como opção"** (acumula no campo `substituicoes_sugeridas` da refeição, com a quantidade já calculada).
-- Recalcular automaticamente quando a quantidade do alimento original muda.
-
-### 3. Manter o campo de texto de substituições
-
-O `substituicoes_sugeridas` (texto livre) continua existindo para anotações manuais e é preenchido pelo botão "Adicionar como opção" no formato:
-`"100g de Arroz branco → 130g de Arroz integral (≈155 kcal)"`
-
-### 4. Pequenas melhorias de UX no editor
-
-- Mostrar o nome completo do alimento com tooltip quando truncar.
-- Mostrar grupo (badge colorido) ao lado do nome na tabela de alimentos da refeição.
-- Ao adicionar alimento, manter o campo de busca focado para inserções em sequência.
-
----
-
-## Detalhes técnicos
-
-**Banco de dados (migração):**
-
-- Nova tabela `alimentos_personalizados`:
-  - `id uuid pk`, `user_id uuid`, `nome text`, `grupo grupo_alimentar`, `quantidade_base numeric default 100`, `medida_caseira text`, `energia_kcal numeric`, `proteina_g`, `carboidrato_g`, `lipidio_g`, `fibra_g`, `created_at timestamptz`
-  - RLS: nutri gerencia os próprios + equipe via `can_access_nutri_data(user_id)`.
-
-**Frontend (`src/components/paciente/PlanoAlimentarEditor.tsx`):**
-
-- Novo componente `AlimentoPersonalizadoModal` (Dialog) com formulário e flag "salvar na biblioteca".
-- `AlimentoSearch`: além do `alimentos_taco`, fazer query paralela em `alimentos_personalizados` filtrado por `user_id`, mesclar resultados com badge "Meu".
-- Linha de alimento: novo bloco expansível `SubstituicoesInline` que carrega via `supabase.from('substituicoes')` filtrando por `grupo` e nome (ilike). Cache local por `alimento_taco_id` para evitar refetch.
-- Função utilitária `calcularEquivalencia(alimentoOriginal, substituto)` retornando `{ quantidade_g, kcal, p, c, l }` usando dados TACO do substituto quando achados por nome.
-
-**Sem mudança em:** estrutura de `refeicoes` / `alimentos_plano`, fluxo de salvar, exportação PDF.
-
----
+### 4. Coluna opcional `origem` em `avaliacoes_fisicas` (migration)
+- `origem text default 'manual'` (valores: `'manual' | 'importado_ia'`).
+- Usada apenas para exibir o badge no card da listagem.
 
 ## Fora do escopo
+- Importar lote de múltiplos PDFs de uma vez.
+- Editar o prompt de IA pela UI.
+- Mudar a visualização existente da lista/gráficos (continua igual — só passa a ter mais registros).
+- Integração direta com APIs de balanças/bioimpedâncias.
 
-- Edição de substituições da biblioteca (já existe em `/biblioteca`).
-- Sugestão por IA — apenas mapeamento direto via tabela `substituicoes` + TACO.
-- Conversão por macros além de kcal (poderia ser próxima iteração: equivalência por proteína, por exemplo).
+## Notas técnicas
+- A função usa `LOVABLE_API_KEY` (já configurada).
+- Para PDFs, envia direto como `inlineData` para o Gemini (suporta PDF nativo até 50 páginas).
+- Cliente abre o arquivo com `FileReader.readAsDataURL` e envia base64.
