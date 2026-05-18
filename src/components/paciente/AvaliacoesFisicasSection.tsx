@@ -384,12 +384,27 @@ export function AvaliacoesFisicasSection({ paciente }: Props) {
                         <Calendar className="h-5 w-5 text-primary" />
                       </div>
                       <div>
-                        <div className="flex items-center gap-2">
+                        <div className="flex items-center gap-2 flex-wrap">
                           <p className="font-semibold text-sm">{format(new Date(av.data_avaliacao), "dd 'de' MMMM 'de' yyyy", { locale: ptBR })}</p>
                           {av.origem === "importado_ia" && (
                             <Badge variant="outline" className="text-[10px] gap-1 border-primary/40 text-primary">
                               <Sparkles className="h-2.5 w-2.5" /> IA
                             </Badge>
+                          )}
+                          {av.pdf_origem_url && (
+                            <button
+                              type="button"
+                              onClick={async (e) => {
+                                e.stopPropagation();
+                                const { data: signed } = await supabase.storage
+                                  .from("documentos-pdf")
+                                  .createSignedUrl(av.pdf_origem_url, 300);
+                                if (signed?.signedUrl) window.open(signed.signedUrl, "_blank");
+                              }}
+                              className="text-[10px] text-primary hover:underline inline-flex items-center gap-1"
+                            >
+                              <FileDown className="h-2.5 w-2.5" /> PDF original
+                            </button>
                           )}
                         </div>
                         <div className="flex gap-3 mt-1 text-xs text-muted-foreground">
