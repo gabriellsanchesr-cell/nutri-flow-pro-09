@@ -230,6 +230,7 @@ export function AvaliacoesFisicasSection({ paciente }: Props) {
   const [chartMetric, setChartMetric] = useState("peso");
   const [showPrevList, setShowPrevList] = useState(false);
   const [showExportPdf, setShowExportPdf] = useState(false);
+  const [showImport, setShowImport] = useState(false);
 
   const age = calcAge(paciente.data_nascimento);
 
