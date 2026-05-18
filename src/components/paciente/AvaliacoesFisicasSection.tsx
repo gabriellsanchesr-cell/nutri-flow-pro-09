@@ -458,6 +458,12 @@ export function AvaliacoesFisicasSection({ paciente }: Props) {
 
   return (
     <div className="space-y-4">
+      {form.origem === "importado_ia" && !editId && (
+        <div className="rounded-xl border border-primary/30 bg-primary/5 px-4 py-3 flex items-center gap-2 text-sm">
+          <Sparkles className="h-4 w-4 text-primary" />
+          <span className="text-foreground">Avaliação importada por IA — revise os dados antes de salvar.</span>
+        </div>
+      )}
       {/* Header */}
       <div className="flex items-center justify-between">
         <div className="flex items-center gap-3">
