@@ -1479,6 +1479,57 @@ export type Database = {
           },
         ]
       }
+      materiais_paciente: {
+        Row: {
+          arquivo_mime: string | null
+          arquivo_nome: string | null
+          arquivo_path: string | null
+          categoria: string
+          created_at: string
+          descricao: string | null
+          id: string
+          paciente_id: string
+          tipo: string
+          titulo: string
+          updated_at: string
+          url_externa: string | null
+          user_id: string
+          visto_em: string | null
+        }
+        Insert: {
+          arquivo_mime?: string | null
+          arquivo_nome?: string | null
+          arquivo_path?: string | null
+          categoria?: string
+          created_at?: string
+          descricao?: string | null
+          id?: string
+          paciente_id: string
+          tipo?: string
+          titulo: string
+          updated_at?: string
+          url_externa?: string | null
+          user_id: string
+          visto_em?: string | null
+        }
+        Update: {
+          arquivo_mime?: string | null
+          arquivo_nome?: string | null
+          arquivo_path?: string | null
+          categoria?: string
+          created_at?: string
+          descricao?: string | null
+          id?: string
+          paciente_id?: string
+          tipo?: string
+          titulo?: string
+          updated_at?: string
+          url_externa?: string | null
+          user_id?: string
+          visto_em?: string | null
+        }
+        Relationships: []
+      }
       mensagens: {
         Row: {
           arquivo_url: string | null
@@ -1525,6 +1576,60 @@ export type Database = {
             referencedColumns: ["id"]
           },
         ]
+      }
+      metas_paciente: {
+        Row: {
+          concluida_em: string | null
+          created_at: string
+          descricao: string | null
+          id: string
+          paciente_id: string
+          prazo: string | null
+          prioridade: string
+          status: string
+          tipo: string
+          titulo: string
+          unidade: string | null
+          updated_at: string
+          user_id: string
+          valor_alvo: number | null
+          valor_atual: number | null
+        }
+        Insert: {
+          concluida_em?: string | null
+          created_at?: string
+          descricao?: string | null
+          id?: string
+          paciente_id: string
+          prazo?: string | null
+          prioridade?: string
+          status?: string
+          tipo?: string
+          titulo: string
+          unidade?: string | null
+          updated_at?: string
+          user_id: string
+          valor_alvo?: number | null
+          valor_atual?: number | null
+        }
+        Update: {
+          concluida_em?: string | null
+          created_at?: string
+          descricao?: string | null
+          id?: string
+          paciente_id?: string
+          prazo?: string | null
+          prioridade?: string
+          status?: string
+          tipo?: string
+          titulo?: string
+          unidade?: string | null
+          updated_at?: string
+          user_id?: string
+          valor_alvo?: number | null
+          valor_atual?: number | null
+        }
+        Relationships: []
       }
       notificacoes: {
         Row: {

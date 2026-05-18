@@ -1,61 +1,59 @@
-## O que muda
+# Plano — Metas e Materiais Extras
 
-O importador atual extrai **apenas uma** avaliação por arquivo. Seu PDF do WebDiet (e relatórios parecidos) traz **várias datas lado a lado** numa única tabela de evolução — 3 datas no caso do Gabriel (20/12/2025, 17/01/2026, 14/03/2026), cada uma com dezenas de medidas (peso, IMC, RCQ, todas as dobras, todas as circunferências, bioimpedância, somatório, densidade, classificações).
+Hoje só essas duas seções do prontuário do paciente estão como "em construção". Vou implementá-las completas (CRUD no painel do nutri + visualização no portal do paciente).
 
-A ideia é trocar o fluxo para: **um upload → várias avaliações criadas de uma vez**, preservando 100% das medidas + anexando o PDF original como histórico.
+## 1. Banco de dados (1 migration)
 
-## Fluxo novo
+**Tabela `metas_paciente`**
+- `paciente_id`, `user_id` (nutri dono), `titulo`, `descricao`
+- `tipo` text: `'checklist'` ou `'numerica'`
+- `valor_alvo` numeric, `valor_atual` numeric, `unidade` text (ex.: kg, L, min, x/semana) — só para numérica
+- `prazo` date, `prioridade` text (`baixa|media|alta`), `status` text (`em_andamento|concluida|pausada`)
+- `concluida_em` timestamptz
+- RLS: nutri/equipe gerenciam; paciente vê e pode atualizar `valor_atual`/`status` (para marcar progresso/concluído).
 
-1. Em `Avaliações Físicas`, botão **"Importar histórico"** abre o modal.
-2. Usuário envia o PDF (WebDiet, Dietbox, planilha, InBody, etc.) — sem precisar informar data.
-3. A IA lê o documento e devolve uma **lista de avaliações** (uma por coluna/data detectada), com todos os campos preenchidos.
-4. Tela de **revisão em tabela** mostra todas as datas detectadas em colunas, com as medidas em linhas (igual ao PDF original). Usuário pode:
-   - Desmarcar datas que não quer importar.
-   - Editar qualquer célula antes de salvar.
-   - Ver quantos campos foram extraídos por data.
-5. Botão **"Salvar N avaliações"** insere todas de uma vez na tabela `avaliacoes_fisicas`, marcadas com `origem = 'importado_ia'`.
-6. O PDF original fica anexado ao paciente (bucket `documentos-pdf`) e cada avaliação importada guarda referência ao arquivo, para o nutri abrir e conferir depois.
+**Tabela `materiais_paciente`**
+- `paciente_id`, `user_id`, `titulo`, `descricao`, `categoria` text (ex.: ebook, video, receita, treino, outro)
+- `tipo` text: `'arquivo'` ou `'link'`
+- `arquivo_path` text (storage `documentos-pdf`), `arquivo_nome`, `arquivo_mime`
+- `url_externa` text (YouTube, Drive, artigo)
+- `visto_em` timestamptz (paciente marca como visto)
+- RLS: nutri/equipe CRUD; paciente lê e atualiza `visto_em` dos próprios.
 
-## Mudanças no código
+Reuso do bucket existente `documentos-pdf` (path `materiais/{paciente_id}/...`); políticas de storage já cobrem nutri+paciente para esse bucket via padrão usado em outras seções.
 
-### 1. Edge function `parse-avaliacao-fisica` (reescrita)
-- Schema de saída muda de `{ extracted: {...} }` para `{ avaliacoes: [{ data_avaliacao, ...campos }, ...] }`.
-- Prompt instrui o modelo a:
-  - Detectar **todas as colunas de data** em tabelas de evolução.
-  - Para cada data, montar um objeto com todos os campos disponíveis (ignorar setas/variações `↑↓`, pegar só o número).
-  - Mapear nomes do WebDiet/Dietbox para o schema da `avaliacoes_fisicas` (ex: "Circunf. Medial da Coxa" → `circ_coxa_dir`, "Dobra Torácica" → `dobra_toracica`, "Massa Muscular" → `bio_massa_muscular`, etc).
-  - Bioimpedância em coluna separada vai para os campos `bio_*` na avaliação da data correspondente (ou na mais próxima se não houver data explícita).
-  - Capturar classificações textuais ("Sobrepeso", "Alta II", "Muito alto") em `observacoes`.
-  - Inferir `protocolo_dobras` pelo conjunto de dobras coletadas (8 dobras = Petroski, 7 = Pollock 7, etc).
-- Continua usando `google/gemini-2.5-flash` multimodal, `response_format: json_object`, sanitização numérica (já existe).
-- Aumenta limite para PDFs grandes (até ~20 páginas).
+## 2. Painel do nutricionista
 
-### 2. `ImportarAvaliacaoModal.tsx` (refatorado)
-- Vira modal de 2 passos:
-  - **Passo 1 — Upload**: só arquivo + botão "Analisar". Remove o campo de data (a IA detecta).
-  - **Passo 2 — Revisão**: tabela com colunas = datas detectadas, linhas = medidas (agrupadas por seção: Básico / Dobras / Circunferências / Bioimpedância). Checkbox no topo de cada coluna para incluir/excluir. Inputs editáveis em cada célula. Botão "Salvar N avaliações".
-- No salvar, faz `insert` em lote em `avaliacoes_fisicas` + upload do PDF original.
+**`MetasSection.tsx`** (nova) — usada em `PacienteDetalhe` no case `"metas"`:
+- Lista cards agrupados por status (Em andamento / Concluídas / Pausadas).
+- Botão "+ Nova meta" abre modal com toggle Checklist / Numérica, campos condicionais, prazo, prioridade.
+- Barra de progresso (valor_atual / valor_alvo) nas numéricas; checkbox de conclusão nas qualitativas.
+- Ações: editar, pausar/retomar, concluir, excluir.
 
-### 3. `AvaliacoesFisicasSection.tsx`
-- Botão muda de "Importar" para "Importar histórico" (Upload icon).
-- Após importação em lote, recarrega lista e mostra toast "N avaliações importadas".
-- Nos cards importados, além do badge `IA`, adicionar link "Ver PDF original" quando houver `pdf_url`.
+**`MateriaisExtrasSection.tsx`** (nova) — case `"materiais"`:
+- Tabs "Todos / Arquivos / Links" + filtro por categoria.
+- Botão "+ Adicionar" abre modal com toggle Arquivo / Link.
+  - Arquivo: upload (PDF/imagem/vídeo até limite do bucket), título, descrição, categoria.
+  - Link: URL, título, descrição, categoria.
+- Cards mostram ícone do tipo, título, categoria, data, badge "Visto pelo paciente" se aplicável.
+- Ações: abrir/baixar (signed URL para arquivo, nova aba para link), editar metadados, excluir.
 
-### 4. Migration
-- Adicionar coluna `pdf_origem_url text` em `avaliacoes_fisicas` (URL/path do PDF anexado).
-- Adicionar coluna `pdf_origem_nome text` (nome amigável do arquivo).
-- (`origem` já foi criada na migration anterior — mantida.)
+Substitui as duas linhas `PlaceholderSection` em `src/pages/PacienteDetalhe.tsx`.
 
-### 5. Storage
-- Reusa o bucket `documentos-pdf` existente. Caminho: `avaliacoes-importadas/{paciente_id}/{timestamp}-{filename}`.
+## 3. Portal do paciente
+
+Em `src/pages/PortalPaciente.tsx`:
+- Aba "Metas" (`renderMetas`): lista das metas com progresso e botão "Marcar como concluída" / input rápido para atualizar `valor_atual` nas numéricas. Mensagem amigável quando vazio.
+- Substituir o default placeholder de "Materiais" no `renderMoreContent` por uma listagem real (cards com ícone, abre link em nova aba ou baixa arquivo via signed URL; marca `visto_em` ao abrir).
+- Respeitar `paciente_portal_permissoes` se existir flag relevante; senão, mostrar sempre.
+
+## 4. Detalhes técnicos
+- Realtime opcional, não necessário nesta fase.
+- Signed URLs com 1h para arquivos privados.
+- Toasts de sucesso/erro padronizados (Sonner).
+- Sem mudanças em outras seções — já estão implementadas (verificado: somente Metas e Materiais usavam `PlaceholderSection`).
 
 ## Fora do escopo
-- Importar múltiplos PDFs de uma vez (um arquivo por importação).
-- OCR de gráficos (somente tabelas — gráficos são reconstruídos no sistema a partir dos dados salvos).
-- Editar/excluir o PDF anexado depois (só leitura).
-- Reconciliar com avaliações existentes (sempre cria novas).
-
-## Notas técnicas
-- O parsing fica determinístico no front: a IA só transcreve, a UI dá controle total antes de salvar — evita ruído nos dados históricos.
-- Datas devem vir em ISO (`YYYY-MM-DD`); prompt converte `dd/MM/yyyy` automaticamente.
-- Campos com valor `null` ou `"-"` no PDF são omitidos do insert.
+- IA para sugerir metas automaticamente.
+- Notificações push quando meta vence.
+- Compartilhar materiais entre múltiplos pacientes em lote (pode vir depois reusando Biblioteca).
