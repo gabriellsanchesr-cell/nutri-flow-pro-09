@@ -17,7 +17,8 @@ import { QuestionariosSection } from "@/components/paciente/QuestionariosSection
 import { ExamesSection } from "@/components/paciente/ExamesSection";
 import { OrientacoesSection } from "@/components/paciente/OrientacoesSection";
 import { ProntuarioSection } from "@/components/paciente/ProntuarioSection";
-import { PlaceholderSection } from "@/components/paciente/PlaceholderSection";
+import { MetasSection } from "@/components/paciente/MetasSection";
+import { MateriaisExtrasSection } from "@/components/paciente/MateriaisExtrasSection";
 import { ReceitaSection } from "@/components/paciente/ReceitaSection";
 import { SuplementosSection } from "@/components/paciente/SuplementosSection";
 import { AvaliacoesFisicasSection } from "@/components/paciente/AvaliacoesFisicasSection";
@@ -108,8 +109,8 @@ export default function PacienteDetalhe() {
       case "avaliacoes": return <AvaliacoesFisicasSection paciente={paciente} />;
       case "diario": return <DiarioAlimentarSection paciente={paciente} />;
       case "receituario": return <ReceitaSection paciente={paciente} />;
-      case "metas": return <PlaceholderSection title="Metas" description="Módulo de metas em desenvolvimento." />;
-      case "materiais": return <PlaceholderSection title="Materiais Extras" description="Módulo de materiais extras em desenvolvimento." />;
+      case "metas": return <MetasSection paciente={paciente} />;
+      case "materiais": return <MateriaisExtrasSection paciente={paciente} />;
       case "suplementos": return <SuplementosSection paciente={paciente} />;
       case "financeiro": return <FinanceiroSection paciente={paciente} />;
       default: return null;

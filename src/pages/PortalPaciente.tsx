@@ -4,6 +4,8 @@ import { PortalDiario } from "@/components/portal/PortalDiario";
 import { PortalJornada } from "@/components/portal/PortalJornada";
 import { PortalReceitas } from "@/components/portal/PortalReceitas";
 import { PortalChat } from "@/components/portal/PortalChat";
+import { PortalMetas } from "@/components/portal/PortalMetas";
+import { PortalMateriais } from "@/components/portal/PortalMateriais";
 import { useAuth } from "@/hooks/useAuth";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -203,7 +205,7 @@ export default function PortalPaciente() {
       case "inicio": return renderInicio();
       case "plano": return renderPlano();
       case "diario": return <PortalDiario paciente={paciente} />;
-      case "metas": return renderPlaceholder("Metas", "Suas metas aparecerão aqui quando o nutricionista configurá-las.");
+      case "metas": return <PortalMetas paciente={paciente} />;
       case "mais": return renderMoreContent();
       default: return null;
     }
@@ -718,6 +720,7 @@ export default function PortalPaciente() {
       case "mensagens": return <PortalChat paciente={paciente} />;
       case "jornada": return <PortalJornada paciente={paciente} />;
       case "suplementos": return renderPortalSuplemenos();
+      case "materiais": return <PortalMateriais paciente={paciente} />;
       default: return renderPlaceholder("Materiais", "Este recurso estará disponível em breve.");
     }
   };
