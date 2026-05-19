@@ -20,9 +20,9 @@ interface Props {
 const STAGES = [
   "Lendo PDF...",
   "Tentando OCR se necessário...",
-  "Interpretando refeições...",
-  "Identificando alimentos...",
-  "Calculando macros...",
+  "Identificando refeições, horários e opções (A/B/C)...",
+  "Identificando substituições por alimento...",
+  "Casando com base TACO e calculando macros...",
 ];
 
 export function ImportarPlanoPdfModal({ open, onOpenChange, pacienteId, mode = "paciente", onImported }: Props) {
