@@ -88,7 +88,7 @@ export default function PortalPaciente() {
       if (pac) {
         const { data: planoData } = await supabase
           .from("planos_alimentares")
-          .select("*, refeicoes(*, alimentos_plano(*))")
+          .select("*, refeicoes(*, alimentos_plano(*, alimento_substituicoes(*)))")
           .eq("paciente_id", pac.id)
           .eq("status", "ativo")
           .order("created_at", { ascending: false })
