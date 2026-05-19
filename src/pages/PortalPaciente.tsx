@@ -210,8 +210,7 @@ export default function PortalPaciente() {
 
   const totalDiario = plano?.refeicoes?.reduce((acc: number, r: any) => {
     const opts = getOpcoes(r);
-    const k = getActiveOpt(r);
-    const list = opts[k] || opts["A"] || [];
+    const list = opts["A"] || opts[Object.keys(opts).sort()[0]] || [];
     return acc + list.reduce((a: number, al: any) => a + (al.energia_kcal || 0), 0);
   }, 0) || 0;
 

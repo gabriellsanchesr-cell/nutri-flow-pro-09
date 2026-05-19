@@ -205,12 +205,17 @@ export function PlanoAlimentarSection({ paciente }: Props) {
                 {expanded === plano.id && refeicoes[plano.id] && (
                   <div className="mt-3 space-y-3">
                     {refeicoes[plano.id].map((ref: any) => {
-                      const alimentos = ref.alimentos_plano || [];
+                      const allAlimentos = ref.alimentos_plano || [];
+                      const hasOpcoes = allAlimentos.some((a: any) => a.opcao && a.opcao !== "A");
+                      const alimentos = allAlimentos.filter((a: any) => !a.opcao || a.opcao === "A");
                       const totalKcal = alimentos.reduce((a: number, al: any) => a + (al.energia_kcal || 0), 0);
                       return (
                         <div key={ref.id} className="border border-border rounded-lg p-3">
                           <div className="flex justify-between items-center mb-2">
-                            <span className="font-medium text-sm">{tipoRefeicaoLabels[ref.tipo] || ref.tipo}</span>
+                            <span className="font-medium text-sm">
+                              {ref.nome_customizado || tipoRefeicaoLabels[ref.tipo] || ref.tipo}
+                              {hasOpcoes && <span className="ml-2 text-[10px] text-muted-foreground font-normal">(opção A)</span>}
+                            </span>
                             <span className="text-xs text-muted-foreground">{Math.round(totalKcal)} kcal</span>
                           </div>
                           {alimentos.length === 0 ? (

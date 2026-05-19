@@ -151,15 +151,17 @@ export function ExportPdfModal({ open, onOpenChange, type, paciente, planoData, 
           horario_sugerido: r.horario_sugerido || "",
           observacoes: r.observacoes || "",
           substituicoes_sugeridas: r.substituicoes_sugeridas || "",
-          alimentos: (r.alimentos_plano || r.alimentos || []).map((a: any) => ({
-            nome_alimento: a.nome_alimento,
-            quantidade: a.quantidade || 0,
-            medida_caseira: a.medida_caseira || "",
-            energia_kcal: a.energia_kcal || 0,
-            proteina_g: a.proteina_g || 0,
-            carboidrato_g: a.carboidrato_g || 0,
-            lipidio_g: a.lipidio_g || 0,
-          })),
+          alimentos: (r.alimentos_plano || r.alimentos || [])
+            .filter((a: any) => !a.opcao || a.opcao === "A")
+            .map((a: any) => ({
+              nome_alimento: a.nome_alimento,
+              quantidade: a.quantidade || 0,
+              medida_caseira: a.medida_caseira || "",
+              energia_kcal: a.energia_kcal || 0,
+              proteina_g: a.proteina_g || 0,
+              carboidrato_g: a.carboidrato_g || 0,
+              lipidio_g: a.lipidio_g || 0,
+            })),
         }));
       return { nome: planoData.nome, observacoes: planoData.observacoes, data_inicio: planoData.data_inicio, data_fim: planoData.data_fim, refeicoes };
     }
@@ -178,15 +180,17 @@ export function ExportPdfModal({ open, onOpenChange, type, paciente, planoData, 
       horario_sugerido: r.horario_sugerido || "",
       observacoes: r.observacoes || "",
       substituicoes_sugeridas: r.substituicoes_sugeridas || "",
-      alimentos: (r.alimentos_plano || []).map((a: any) => ({
-        nome_alimento: a.nome_alimento,
-        quantidade: a.quantidade || 0,
-        medida_caseira: a.medida_caseira || "",
-        energia_kcal: a.energia_kcal || 0,
-        proteina_g: a.proteina_g || 0,
-        carboidrato_g: a.carboidrato_g || 0,
-        lipidio_g: a.lipidio_g || 0,
-      })),
+      alimentos: (r.alimentos_plano || [])
+        .filter((a: any) => !a.opcao || a.opcao === "A")
+        .map((a: any) => ({
+          nome_alimento: a.nome_alimento,
+          quantidade: a.quantidade || 0,
+          medida_caseira: a.medida_caseira || "",
+          energia_kcal: a.energia_kcal || 0,
+          proteina_g: a.proteina_g || 0,
+          carboidrato_g: a.carboidrato_g || 0,
+          lipidio_g: a.lipidio_g || 0,
+        })),
     }));
 
     return { nome: planoData.nome, observacoes: planoData.observacoes, data_inicio: planoData.data_inicio, data_fim: planoData.data_fim, refeicoes };

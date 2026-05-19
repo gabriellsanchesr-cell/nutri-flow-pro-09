@@ -290,11 +290,11 @@ export function PlanoAlimentarEditor({ pacienteId, planoId, onBack, paciente, in
     }
   };
 
-  // Totals computed over the active option of each meal
+  // Totals computed only over Option A of each meal (active option doesn't change daily target)
   const totals = useMemo(() => {
     let kcal = 0, prot = 0, carb = 0, lip = 0, fib = 0;
     refeicoes.forEach(r => {
-      const op = r.opcoes.find(o => o.letra === r.opcaoAtiva) || r.opcoes[0];
+      const op = r.opcoes.find(o => o.letra === "A") || r.opcoes[0];
       op?.alimentos.forEach(a => {
         kcal += a.energia_kcal; prot += a.proteina_g;
         carb += a.carboidrato_g; lip += a.lipidio_g; fib += a.fibra_g;
