@@ -11,8 +11,9 @@ import { Badge } from "@/components/ui/badge";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog";
 import { Checkbox } from "@/components/ui/checkbox";
+import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
 import {
-  Save, ArrowLeft, Plus, Trash2, Search, Clock, ChevronDown, ChevronUp, FileDown, ArrowRightLeft, Sparkles,
+  Save, ArrowLeft, Plus, Trash2, Search, Clock, ChevronDown, ChevronUp, FileDown, ArrowRightLeft, X, AlertTriangle,
 } from "lucide-react";
 import { ExportPdfModal } from "@/components/pdf/ExportPdfModal";
 
@@ -24,6 +25,14 @@ const REFEICAO_TIPOS = [
   { value: "jantar", label: "Jantar", ordem: 5 },
   { value: "ceia", label: "Ceia", ordem: 6 },
 ] as const;
+
+interface SubItem {
+  id?: string;
+  nome: string;
+  quantidade: number;
+  medida_caseira: string;
+  alimento_taco_id: number | null;
+}
 
 interface Alimento {
   id?: string;
@@ -37,22 +46,30 @@ interface Alimento {
   fibra_g: number;
   alimento_taco_id: number | null;
   grupo?: string | null;
-  // Valores base por 100g para recálculo automático
+  precisa_revisao?: boolean;
   base_energia_kcal?: number;
   base_proteina_g?: number;
   base_carboidrato_g?: number;
   base_lipidio_g?: number;
   base_fibra_g?: number;
+  substituicoes: SubItem[];
+}
+
+interface Opcao {
+  letra: string;
+  alimentos: Alimento[];
 }
 
 interface Refeicao {
   id?: string;
   tipo: string;
+  nome_customizado: string;
   ordem: number;
   horario_sugerido: string;
   observacoes: string;
   substituicoes_sugeridas: string;
-  alimentos: Alimento[];
+  opcoes: Opcao[];
+  opcaoAtiva: string;
   expanded: boolean;
 }
 
@@ -70,21 +87,31 @@ interface InitialDraft {
   nome?: string;
   observacoes?: string;
   refeicoes?: Array<{
+    nome?: string;
+    horario?: string;
     tipo: string;
     ordem?: number;
     observacoes?: string;
-    substituicoes_sugeridas?: string;
-    alimentos: Array<{
-      nome_alimento: string;
-      quantidade: number;
-      medida_caseira: string;
-      energia_kcal: number;
-      proteina_g: number;
-      carboidrato_g: number;
-      lipidio_g: number;
-      fibra_g: number;
-      alimento_taco_id: number | null;
-      precisa_revisao?: boolean;
+    opcoes: Array<{
+      letra: string;
+      alimentos: Array<{
+        nome_alimento: string;
+        quantidade: number;
+        medida_caseira: string;
+        energia_kcal: number;
+        proteina_g: number;
+        carboidrato_g: number;
+        lipidio_g: number;
+        fibra_g: number;
+        alimento_taco_id: number | null;
+        precisa_revisao?: boolean;
+        substituicoes?: Array<{
+          nome: string;
+          quantidade: number;
+          medida_caseira: string;
+          alimento_taco_id: number | null;
+        }>;
+      }>;
     }>;
   }>;
 }
@@ -98,6 +125,48 @@ interface Props {
   isTemplate?: boolean;
 }
 
+const baseRatios = (a: { energia_kcal: number; proteina_g: number; carboidrato_g: number; lipidio_g: number; fibra_g: number; quantidade: number; alimento_taco_id: number | null }) => {
+  if (!a.alimento_taco_id || !a.quantidade) return {};
+  const r = 100 / a.quantidade;
+  return {
+    base_energia_kcal: a.energia_kcal * r,
+    base_proteina_g: a.proteina_g * r,
+    base_carboidrato_g: a.carboidrato_g * r,
+    base_lipidio_g: a.lipidio_g * r,
+    base_fibra_g: a.fibra_g * r,
+  };
+};
+
+const mapAlimento = (a: any): Alimento => ({
+  id: a.id,
+  nome_alimento: a.nome_alimento,
+  quantidade: a.quantidade ?? 100,
+  medida_caseira: a.medida_caseira || "1 porção",
+  energia_kcal: a.energia_kcal || 0,
+  proteina_g: a.proteina_g || 0,
+  carboidrato_g: a.carboidrato_g || 0,
+  lipidio_g: a.lipidio_g || 0,
+  fibra_g: a.fibra_g || 0,
+  alimento_taco_id: a.alimento_taco_id ?? null,
+  precisa_revisao: !!a.precisa_revisao,
+  substituicoes: (a.substituicoes || []).map((s: any) => ({
+    id: s.id,
+    nome: s.nome,
+    quantidade: s.quantidade ?? 100,
+    medida_caseira: s.medida_caseira || "1 porção",
+    alimento_taco_id: s.alimento_taco_id ?? null,
+  })),
+  ...baseRatios({
+    energia_kcal: a.energia_kcal || 0,
+    proteina_g: a.proteina_g || 0,
+    carboidrato_g: a.carboidrato_g || 0,
+    lipidio_g: a.lipidio_g || 0,
+    fibra_g: a.fibra_g || 0,
+    quantidade: a.quantidade || 100,
+    alimento_taco_id: a.alimento_taco_id ?? null,
+  }),
+});
+
 export function PlanoAlimentarEditor({ pacienteId, planoId, onBack, paciente, initialData, isTemplate = false }: Props) {
   const { user } = useAuth();
   const { toast } = useToast();
@@ -110,53 +179,69 @@ export function PlanoAlimentarEditor({ pacienteId, planoId, onBack, paciente, in
     status: "rascunho",
     data_inicio: "", data_fim: "", objetivo_template: "",
   });
-  const [refeicoes, setRefeicoes] = useState<Refeicao[]>(() => {
-    // Build base 6 refeicoes
-    const base = REFEICAO_TIPOS.map(r => ({
-      tipo: r.value, ordem: r.ordem, horario_sugerido: "", observacoes: "",
-      substituicoes_sugeridas: "", alimentos: [] as Alimento[], expanded: true,
-    }));
+
+  const buildInitialRefeicoes = (): Refeicao[] => {
     if (initialData?.refeicoes?.length) {
-      initialData.refeicoes.forEach((imp) => {
-        const idx = base.findIndex((b) => b.tipo === imp.tipo);
-        if (idx >= 0) {
-          base[idx].observacoes = imp.observacoes || "";
-          base[idx].substituicoes_sugeridas = imp.substituicoes_sugeridas || "";
-          base[idx].alimentos = imp.alimentos.map((a) => {
-            const baseRatio = a.alimento_taco_id && a.quantidade > 0 ? 100 / a.quantidade : null;
-            return {
-              nome_alimento: a.nome_alimento,
-              quantidade: a.quantidade,
-              medida_caseira: a.medida_caseira,
+      // Use imported structure as-is (preserve order & free names)
+      return initialData.refeicoes.map((imp, i) => {
+        const opcoes: Opcao[] = (imp.opcoes || []).map((op) => ({
+          letra: op.letra || "A",
+          alimentos: (op.alimentos || []).map((a) => ({
+            nome_alimento: a.nome_alimento,
+            quantidade: a.quantidade,
+            medida_caseira: a.medida_caseira,
+            energia_kcal: a.energia_kcal,
+            proteina_g: a.proteina_g,
+            carboidrato_g: a.carboidrato_g,
+            lipidio_g: a.lipidio_g,
+            fibra_g: a.fibra_g,
+            alimento_taco_id: a.alimento_taco_id,
+            precisa_revisao: !!a.precisa_revisao,
+            substituicoes: (a.substituicoes || []).map((s) => ({
+              nome: s.nome,
+              quantidade: s.quantidade,
+              medida_caseira: s.medida_caseira,
+              alimento_taco_id: s.alimento_taco_id,
+            })),
+            ...baseRatios({
               energia_kcal: a.energia_kcal,
               proteina_g: a.proteina_g,
               carboidrato_g: a.carboidrato_g,
               lipidio_g: a.lipidio_g,
               fibra_g: a.fibra_g,
+              quantidade: a.quantidade,
               alimento_taco_id: a.alimento_taco_id,
-              base_energia_kcal: baseRatio ? a.energia_kcal * baseRatio : undefined,
-              base_proteina_g: baseRatio ? a.proteina_g * baseRatio : undefined,
-              base_carboidrato_g: baseRatio ? a.carboidrato_g * baseRatio : undefined,
-              base_lipidio_g: baseRatio ? a.lipidio_g * baseRatio : undefined,
-              base_fibra_g: baseRatio ? a.fibra_g * baseRatio : undefined,
-            };
-          });
-        }
+            }),
+          })),
+        }));
+        if (opcoes.length === 0) opcoes.push({ letra: "A", alimentos: [] });
+        return {
+          tipo: imp.tipo,
+          nome_customizado: imp.nome || "",
+          ordem: imp.ordem || i + 1,
+          horario_sugerido: (imp as any).horario || "",
+          observacoes: imp.observacoes || "",
+          substituicoes_sugeridas: "",
+          opcoes,
+          opcaoAtiva: opcoes[0].letra,
+          expanded: true,
+        };
       });
     }
-    return base;
-  });
+    return REFEICAO_TIPOS.map(r => ({
+      tipo: r.value, nome_customizado: "", ordem: r.ordem, horario_sugerido: "",
+      observacoes: "", substituicoes_sugeridas: "",
+      opcoes: [{ letra: "A", alimentos: [] }],
+      opcaoAtiva: "A", expanded: true,
+    }));
+  };
+  const [refeicoes, setRefeicoes] = useState<Refeicao[]>(buildInitialRefeicoes);
 
-  useEffect(() => {
-    if (planoId) loadPlano();
-  }, [planoId]);
+  useEffect(() => { if (planoId) loadPlano(); }, [planoId]);
 
   const loadPlano = async () => {
     const { data: p } = await supabase
-      .from("planos_alimentares")
-      .select("*")
-      .eq("id", planoId)
-      .single();
+      .from("planos_alimentares").select("*").eq("id", planoId).single();
     if (p) {
       setPlano({
         id: p.id, nome: p.nome, observacoes: p.observacoes || "",
@@ -166,41 +251,55 @@ export function PlanoAlimentarEditor({ pacienteId, planoId, onBack, paciente, in
         objetivo_template: p.objetivo_template || "",
       });
     }
-    const { data: refs } = await supabase
+    const { data: refs } = await (supabase as any)
       .from("refeicoes")
-      .select("*, alimentos_plano(*)")
+      .select("*, alimentos_plano(*, alimento_substituicoes(*))")
       .eq("plano_id", planoId!)
       .order("ordem", { ascending: true });
     if (refs && refs.length > 0) {
-      setRefeicoes(refs.map(r => ({
-        id: r.id, tipo: r.tipo, ordem: r.ordem || 0,
-        horario_sugerido: (r as any).horario_sugerido || "",
-        observacoes: r.observacoes || "",
-        substituicoes_sugeridas: r.substituicoes_sugeridas || "",
-        alimentos: (r.alimentos_plano || []).map((a: any) => ({
-          id: a.id, nome_alimento: a.nome_alimento, quantidade: a.quantidade || 100,
-          medida_caseira: a.medida_caseira || "1 porção",
-          energia_kcal: a.energia_kcal || 0, proteina_g: a.proteina_g || 0,
-          carboidrato_g: a.carboidrato_g || 0, lipidio_g: a.lipidio_g || 0,
-          fibra_g: a.fibra_g || 0, alimento_taco_id: a.alimento_taco_id,
-          // Para alimentos já salvos sem base, calcular a partir dos valores atuais
-          base_energia_kcal: a.alimento_taco_id ? (a.energia_kcal * 100 / (a.quantidade || 100)) : undefined,
-          base_proteina_g: a.alimento_taco_id ? (a.proteina_g * 100 / (a.quantidade || 100)) : undefined,
-          base_carboidrato_g: a.alimento_taco_id ? (a.carboidrato_g * 100 / (a.quantidade || 100)) : undefined,
-          base_lipidio_g: a.alimento_taco_id ? (a.lipidio_g * 100 / (a.quantidade || 100)) : undefined,
-          base_fibra_g: a.alimento_taco_id ? (a.fibra_g * 100 / (a.quantidade || 100)) : undefined,
-        })),
-        expanded: true,
-      })));
+      setRefeicoes(refs.map((r: any) => {
+        const alimentos = (r.alimentos_plano || []).map((a: any) => ({
+          ...a,
+          substituicoes: a.alimento_substituicoes || [],
+        }));
+        // Group by opcao
+        const byOpcao = new Map<string, any[]>();
+        for (const a of alimentos) {
+          const letra = a.opcao || "A";
+          if (!byOpcao.has(letra)) byOpcao.set(letra, []);
+          byOpcao.get(letra)!.push(a);
+        }
+        if (byOpcao.size === 0) byOpcao.set("A", []);
+        const opcoes: Opcao[] = [...byOpcao.entries()]
+          .sort(([a], [b]) => a.localeCompare(b))
+          .map(([letra, items]) => ({
+            letra,
+            alimentos: items
+              .sort((x, y) => (x.ordem || 0) - (y.ordem || 0))
+              .map(mapAlimento),
+          }));
+        return {
+          id: r.id, tipo: r.tipo, nome_customizado: r.nome_customizado || "",
+          ordem: r.ordem || 0,
+          horario_sugerido: r.horario_sugerido || "",
+          observacoes: r.observacoes || "",
+          substituicoes_sugeridas: r.substituicoes_sugeridas || "",
+          opcoes, opcaoAtiva: opcoes[0].letra, expanded: true,
+        };
+      }));
     }
   };
 
+  // Totals computed over the active option of each meal
   const totals = useMemo(() => {
     let kcal = 0, prot = 0, carb = 0, lip = 0, fib = 0;
-    refeicoes.forEach(r => r.alimentos.forEach(a => {
-      kcal += a.energia_kcal; prot += a.proteina_g; carb += a.carboidrato_g;
-      lip += a.lipidio_g; fib += a.fibra_g;
-    }));
+    refeicoes.forEach(r => {
+      const op = r.opcoes.find(o => o.letra === r.opcaoAtiva) || r.opcoes[0];
+      op?.alimentos.forEach(a => {
+        kcal += a.energia_kcal; prot += a.proteina_g;
+        carb += a.carboidrato_g; lip += a.lipidio_g; fib += a.fibra_g;
+      });
+    });
     return { kcal: Math.round(kcal), prot: Math.round(prot), carb: Math.round(carb), lip: Math.round(lip), fib: Math.round(fib) };
   }, [refeicoes]);
 
@@ -230,31 +329,46 @@ export function PlanoAlimentarEditor({ pacienteId, planoId, onBack, paciente, in
         setPlano(p => ({ ...p, id: savedPlanoId, status: finalStatus }));
       }
 
-      // Delete existing refeicoes (cascade deletes alimentos_plano)
       if (planoId || savedPlanoId) {
         await supabase.from("refeicoes").delete().eq("plano_id", savedPlanoId!);
       }
 
       for (const ref of refeicoes) {
-        const { data: savedRef, error: refErr } = await supabase.from("refeicoes").insert({
+        const { data: savedRef, error: refErr } = await (supabase as any).from("refeicoes").insert({
           plano_id: savedPlanoId!, tipo: ref.tipo as any, ordem: ref.ordem,
+          nome_customizado: ref.nome_customizado || null,
           horario_sugerido: ref.horario_sugerido || null,
           observacoes: ref.observacoes || null,
           substituicoes_sugeridas: ref.substituicoes_sugeridas || null,
         }).select("id").single();
         if (refErr) throw refErr;
 
-        if (ref.alimentos.length > 0) {
-          const { error: aliErr } = await supabase.from("alimentos_plano").insert(
-            ref.alimentos.map(a => ({
+        for (const op of ref.opcoes) {
+          for (let i = 0; i < op.alimentos.length; i++) {
+            const a = op.alimentos[i];
+            const { data: savedAli, error: aliErr } = await (supabase as any).from("alimentos_plano").insert({
               refeicao_id: savedRef.id, nome_alimento: a.nome_alimento,
               quantidade: a.quantidade, medida_caseira: a.medida_caseira,
               energia_kcal: a.energia_kcal, proteina_g: a.proteina_g,
               carboidrato_g: a.carboidrato_g, lipidio_g: a.lipidio_g,
               fibra_g: a.fibra_g, alimento_taco_id: a.alimento_taco_id,
-            }))
-          );
-          if (aliErr) throw aliErr;
+              opcao: op.letra, ordem: i, precisa_revisao: !!a.precisa_revisao,
+            }).select("id").single();
+            if (aliErr) throw aliErr;
+            if (a.substituicoes?.length) {
+              const { error: subErr } = await (supabase as any).from("alimento_substituicoes").insert(
+                a.substituicoes.map((s, k) => ({
+                  alimento_plano_id: savedAli.id,
+                  nome: s.nome,
+                  quantidade: s.quantidade,
+                  medida_caseira: s.medida_caseira,
+                  alimento_taco_id: s.alimento_taco_id,
+                  ordem: k,
+                }))
+              );
+              if (subErr) throw subErr;
+            }
+          }
         }
       }
 
@@ -274,35 +388,53 @@ export function PlanoAlimentarEditor({ pacienteId, planoId, onBack, paciente, in
     setRefeicoes(prev => prev.map((r, i) => i === idx ? { ...r, [field]: value } : r));
   };
 
-  const addAlimento = (refIdx: number, alimento: Alimento) => {
-    setRefeicoes(prev => prev.map((r, i) =>
-      i === refIdx ? { ...r, alimentos: [...r.alimentos, alimento] } : r
-    ));
+  const updateOpcao = (refIdx: number, letra: string, mut: (op: Opcao) => Opcao) => {
+    setRefeicoes(prev => prev.map((r, i) => i !== refIdx ? r : {
+      ...r, opcoes: r.opcoes.map(o => o.letra === letra ? mut(o) : o),
+    }));
   };
 
-  const removeAlimento = (refIdx: number, aliIdx: number) => {
-    setRefeicoes(prev => prev.map((r, i) =>
-      i === refIdx ? { ...r, alimentos: r.alimentos.filter((_, j) => j !== aliIdx) } : r
-    ));
+  const addOpcao = (refIdx: number) => {
+    setRefeicoes(prev => prev.map((r, i) => {
+      if (i !== refIdx) return r;
+      const used = new Set(r.opcoes.map(o => o.letra));
+      let letra = "A";
+      for (let c = 65; c <= 90; c++) {
+        const L = String.fromCharCode(c);
+        if (!used.has(L)) { letra = L; break; }
+      }
+      const nova: Opcao = { letra, alimentos: [] };
+      return { ...r, opcoes: [...r.opcoes, nova], opcaoAtiva: letra };
+    }));
   };
 
-  const updateAlimento = (refIdx: number, aliIdx: number, field: string, value: any) => {
-    setRefeicoes(prev => prev.map((r, i) =>
-      i === refIdx ? {
-        ...r, alimentos: r.alimentos.map((a, j) => j === aliIdx ? { ...a, [field]: value } : a)
-      } : r
-    ));
+  const removeOpcao = (refIdx: number, letra: string) => {
+    setRefeicoes(prev => prev.map((r, i) => {
+      if (i !== refIdx) return r;
+      if (r.opcoes.length <= 1) return r;
+      const nova = r.opcoes.filter(o => o.letra !== letra);
+      return { ...r, opcoes: nova, opcaoAtiva: r.opcaoAtiva === letra ? nova[0].letra : r.opcaoAtiva };
+    }));
   };
 
-  const macroTotal = (ref: Refeicao) => {
+  const addAlimento = (refIdx: number, letra: string, alimento: Alimento) => {
+    updateOpcao(refIdx, letra, op => ({ ...op, alimentos: [...op.alimentos, alimento] }));
+  };
+  const removeAlimento = (refIdx: number, letra: string, aliIdx: number) => {
+    updateOpcao(refIdx, letra, op => ({ ...op, alimentos: op.alimentos.filter((_, j) => j !== aliIdx) }));
+  };
+  const updateAlimento = (refIdx: number, letra: string, aliIdx: number, mut: (a: Alimento) => Alimento) => {
+    updateOpcao(refIdx, letra, op => ({ ...op, alimentos: op.alimentos.map((a, j) => j === aliIdx ? mut(a) : a) }));
+  };
+
+  const macroTotalOpcao = (op: Opcao) => {
     let kcal = 0, p = 0, c = 0, l = 0;
-    ref.alimentos.forEach(a => { kcal += a.energia_kcal; p += a.proteina_g; c += a.carboidrato_g; l += a.lipidio_g; });
+    op.alimentos.forEach(a => { kcal += a.energia_kcal; p += a.proteina_g; c += a.carboidrato_g; l += a.lipidio_g; });
     return { kcal: Math.round(kcal), p: Math.round(p), c: Math.round(c), l: Math.round(l) };
   };
 
   return (
     <div className="space-y-4">
-      {/* Sticky macro bar */}
       <div className="bg-card border border-border rounded-xl p-4 shadow-sm">
         <div className="flex items-center justify-between mb-2">
           <div className="flex items-center gap-2">
@@ -334,18 +466,18 @@ export function PlanoAlimentarEditor({ pacienteId, planoId, onBack, paciente, in
           <MacroBox label="Gordura" value={`${totals.lip}`} unit="g" color="bg-yellow-500" />
           <MacroBox label="Fibra" value={`${totals.fib}`} unit="g" color="bg-green-500" />
         </div>
+        <p className="text-[10px] text-muted-foreground mt-2">Totais calculados com base na opção ativa de cada refeição.</p>
       </div>
 
       {importedBanner && (
         <div className="bg-amber-50 dark:bg-amber-950/30 border border-amber-200 dark:border-amber-800 rounded-xl p-3 text-sm text-amber-900 dark:text-amber-100 flex items-start justify-between gap-3">
           <div>
-            <strong>Plano importado de PDF.</strong> Revise refeições e quantidades antes de ativar. Alimentos não encontrados na base TACO ficaram com macros zerados — preencha manualmente ou substitua pela busca.
+            <strong>Plano importado de PDF.</strong> Estrutura preservada: horários, opções (A/B/C) e substituições por alimento. Revise antes de ativar. Itens marcados com <AlertTriangle className="inline h-3 w-3 -mt-0.5" /> precisam de revisão (não encontrados na base TACO).
           </div>
           <Button variant="ghost" size="sm" onClick={() => setImportedBanner(false)}>Ok</Button>
         </div>
       )}
 
-      {/* Plan header */}
       <Card className="border-border rounded-xl">
         <CardContent className="p-4 space-y-4">
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
@@ -389,107 +521,149 @@ export function PlanoAlimentarEditor({ pacienteId, planoId, onBack, paciente, in
           </div>
           <div className="space-y-2">
             <Label>Observações Gerais</Label>
-            <Textarea value={plano.observacoes} onChange={e => setPlano(p => ({ ...p, observacoes: e.target.value }))} rows={2} />
+            <Textarea value={plano.observacoes} onChange={e => setPlano(p => ({ ...p, observacoes: e.target.value }))} rows={3} />
           </div>
         </CardContent>
       </Card>
 
-      {/* Meals */}
       {refeicoes.map((ref, refIdx) => {
-        const mt = macroTotal(ref);
         const tipoLabel = REFEICAO_TIPOS.find(t => t.value === ref.tipo)?.label || ref.tipo;
+        const displayName = ref.nome_customizado || tipoLabel;
+        const activeOp = ref.opcoes.find(o => o.letra === ref.opcaoAtiva) || ref.opcoes[0];
+        const mt = macroTotalOpcao(activeOp);
         return (
-          <Card key={ref.tipo} className="border-border rounded-xl">
-            <CardHeader
-              className="cursor-pointer pb-3"
-              onClick={() => updateRefeicao(refIdx, "expanded", !ref.expanded)}
-            >
+          <Card key={refIdx} className="border-border rounded-xl">
+            <CardHeader className="pb-3">
               <div className="flex items-center justify-between">
-                <div className="flex items-center gap-3">
-                  <CardTitle className="text-base">{tipoLabel}</CardTitle>
+                <button
+                  type="button"
+                  onClick={() => updateRefeicao(refIdx, "expanded", !ref.expanded)}
+                  className="flex items-center gap-3 flex-1 text-left"
+                >
+                  <CardTitle className="text-base">{displayName}</CardTitle>
                   <Badge variant="outline" className="text-xs font-normal">
-                    {mt.kcal} kcal • P {mt.p}g • C {mt.c}g • G {mt.l}g
+                    Opção {activeOp.letra}: {mt.kcal} kcal • P {mt.p}g • C {mt.c}g • G {mt.l}g
                   </Badge>
-                </div>
+                  {ref.opcoes.length > 1 && (
+                    <Badge variant="secondary" className="text-xs">{ref.opcoes.length} opções</Badge>
+                  )}
+                </button>
                 {ref.expanded ? <ChevronUp className="h-4 w-4" /> : <ChevronDown className="h-4 w-4" />}
               </div>
             </CardHeader>
             {ref.expanded && (
               <CardContent className="pt-0 space-y-3">
-                <div className="flex items-center gap-3">
-                  <div className="flex items-center gap-1.5">
-                    <Clock className="h-3.5 w-3.5 text-muted-foreground" />
+                {/* Header: tipo, nome custom, horário */}
+                <div className="grid grid-cols-1 md:grid-cols-3 gap-2">
+                  <div className="space-y-1">
+                    <Label className="text-[10px] uppercase text-muted-foreground">Tipo</Label>
+                    <Select value={ref.tipo} onValueChange={v => updateRefeicao(refIdx, "tipo", v)}>
+                      <SelectTrigger className="h-8 text-xs"><SelectValue /></SelectTrigger>
+                      <SelectContent>
+                        {REFEICAO_TIPOS.map(t => <SelectItem key={t.value} value={t.value}>{t.label}</SelectItem>)}
+                      </SelectContent>
+                    </Select>
+                  </div>
+                  <div className="space-y-1">
+                    <Label className="text-[10px] uppercase text-muted-foreground">Nome livre (opcional)</Label>
                     <Input
-                      className="w-28 h-8 text-xs"
-                      placeholder="08:00"
+                      className="h-8 text-xs"
+                      placeholder={tipoLabel}
+                      value={ref.nome_customizado}
+                      onChange={e => updateRefeicao(refIdx, "nome_customizado", e.target.value)}
+                    />
+                  </div>
+                  <div className="space-y-1">
+                    <Label className="text-[10px] uppercase text-muted-foreground flex items-center gap-1"><Clock className="h-3 w-3" /> Horário</Label>
+                    <Input
+                      className="h-8 text-xs" type="time"
                       value={ref.horario_sugerido}
                       onChange={e => updateRefeicao(refIdx, "horario_sugerido", e.target.value)}
                     />
                   </div>
                 </div>
 
-                {/* Alimentos */}
-                {ref.alimentos.length > 0 && (
-                  <div className="border rounded-lg overflow-hidden">
-                    <div className="grid grid-cols-[1fr,80px,100px,70px,70px,70px,70px,40px] gap-1 px-3 py-1.5 bg-muted/50 text-xs font-medium text-muted-foreground">
-                      <span>Alimento</span><span>Qtd (g)</span><span>Medida</span>
-                      <span>Kcal</span><span>P</span><span>C</span><span>G</span><span></span>
+                {/* Tabs por opção */}
+                <Tabs value={ref.opcaoAtiva} onValueChange={v => updateRefeicao(refIdx, "opcaoAtiva", v)}>
+                  <div className="flex items-center justify-between gap-2">
+                    <TabsList className="h-9">
+                      {ref.opcoes.map(op => (
+                        <TabsTrigger key={op.letra} value={op.letra} className="text-xs px-3">
+                          Opção {op.letra}
+                          <Badge variant="outline" className="ml-2 text-[9px] h-4 px-1">{op.alimentos.length}</Badge>
+                        </TabsTrigger>
+                      ))}
+                    </TabsList>
+                    <div className="flex items-center gap-1">
+                      <Button size="sm" variant="ghost" className="h-7 text-xs" onClick={() => addOpcao(refIdx)}>
+                        <Plus className="h-3 w-3 mr-1" /> Opção
+                      </Button>
+                      {ref.opcoes.length > 1 && (
+                        <Button size="sm" variant="ghost" className="h-7 text-xs text-destructive" onClick={() => removeOpcao(refIdx, ref.opcaoAtiva)}>
+                          <X className="h-3 w-3 mr-1" /> Remover {ref.opcaoAtiva}
+                        </Button>
+                      )}
                     </div>
-                    {ref.alimentos.map((ali, aliIdx) => (
-                      <div key={aliIdx} className="border-t">
-                        <div className="grid grid-cols-[1fr,80px,100px,70px,70px,70px,70px,40px] gap-1 px-3 py-1.5 items-center text-sm">
-                          <span className="truncate" title={ali.nome_alimento}>{ali.nome_alimento}</span>
-                          <Input
-                            className="h-7 text-xs"
-                            type="number"
-                            value={ali.quantidade}
-                            onChange={e => {
-                              const qty = parseFloat(e.target.value) || 0;
-                              updateAlimento(refIdx, aliIdx, "quantidade", qty);
-                              if (ali.base_energia_kcal !== undefined) {
-                                const ratio = qty / 100;
-                                updateAlimento(refIdx, aliIdx, "energia_kcal", ali.base_energia_kcal * ratio);
-                                updateAlimento(refIdx, aliIdx, "proteina_g", (ali.base_proteina_g || 0) * ratio);
-                                updateAlimento(refIdx, aliIdx, "carboidrato_g", (ali.base_carboidrato_g || 0) * ratio);
-                                updateAlimento(refIdx, aliIdx, "lipidio_g", (ali.base_lipidio_g || 0) * ratio);
-                                updateAlimento(refIdx, aliIdx, "fibra_g", (ali.base_fibra_g || 0) * ratio);
-                              }
-                            }}
-                          />
-                          <Input
-                            className="h-7 text-xs"
-                            value={ali.medida_caseira}
-                            onChange={e => updateAlimento(refIdx, aliIdx, "medida_caseira", e.target.value)}
-                          />
-                          <span className="text-xs text-center">{Math.round(ali.energia_kcal)}</span>
-                          <span className="text-xs text-center">{Math.round(ali.proteina_g)}</span>
-                          <span className="text-xs text-center">{Math.round(ali.carboidrato_g)}</span>
-                          <span className="text-xs text-center">{Math.round(ali.lipidio_g)}</span>
-                          <Button variant="ghost" size="icon" className="h-7 w-7" onClick={() => removeAlimento(refIdx, aliIdx)}>
-                            <Trash2 className="h-3.5 w-3.5 text-destructive" />
-                          </Button>
-                        </div>
-                        <SubstituicoesInline
-                          alimento={ali}
-                          onReplace={(novo) => {
-                            setRefeicoes(prev => prev.map((r, i) =>
-                              i === refIdx ? {
-                                ...r, alimentos: r.alimentos.map((a, j) => j === aliIdx ? novo : a)
-                              } : r
-                            ));
-                          }}
-                          onAddNote={(linha) => {
-                            updateRefeicao(refIdx, "substituicoes_sugeridas",
-                              ref.substituicoes_sugeridas ? ref.substituicoes_sugeridas + "\n" + linha : linha
-                            );
-                          }}
-                        />
-                      </div>
-                    ))}
                   </div>
-                )}
 
-                <AlimentoSearch onSelect={(ali) => addAlimento(refIdx, ali)} />
+                  {ref.opcoes.map(op => (
+                    <TabsContent key={op.letra} value={op.letra} className="mt-2 space-y-2">
+                      {op.alimentos.length > 0 && (
+                        <div className="border rounded-lg overflow-hidden">
+                          <div className="grid grid-cols-[1fr,80px,110px,55px,45px,45px,45px,30px] gap-1 px-3 py-1.5 bg-muted/50 text-[10px] font-medium text-muted-foreground">
+                            <span>Alimento</span><span>Qtd (g)</span><span>Medida</span>
+                            <span className="text-center">Kcal</span><span className="text-center">P</span>
+                            <span className="text-center">C</span><span className="text-center">G</span><span></span>
+                          </div>
+                          {op.alimentos.map((ali, aliIdx) => (
+                            <div key={aliIdx} className="border-t">
+                              <div className="grid grid-cols-[1fr,80px,110px,55px,45px,45px,45px,30px] gap-1 px-3 py-1.5 items-center text-sm">
+                                <span className="truncate flex items-center gap-1" title={ali.nome_alimento}>
+                                  {ali.precisa_revisao && <AlertTriangle className="h-3 w-3 text-amber-500 shrink-0" />}
+                                  {ali.nome_alimento}
+                                </span>
+                                <Input
+                                  className="h-7 text-xs" type="number" value={ali.quantidade}
+                                  onChange={e => {
+                                    const qty = parseFloat(e.target.value) || 0;
+                                    updateAlimento(refIdx, op.letra, aliIdx, a => {
+                                      const out = { ...a, quantidade: qty };
+                                      if (a.base_energia_kcal !== undefined) {
+                                        const r = qty / 100;
+                                        out.energia_kcal = a.base_energia_kcal * r;
+                                        out.proteina_g = (a.base_proteina_g || 0) * r;
+                                        out.carboidrato_g = (a.base_carboidrato_g || 0) * r;
+                                        out.lipidio_g = (a.base_lipidio_g || 0) * r;
+                                        out.fibra_g = (a.base_fibra_g || 0) * r;
+                                      }
+                                      return out;
+                                    });
+                                  }}
+                                />
+                                <Input
+                                  className="h-7 text-xs" value={ali.medida_caseira}
+                                  onChange={e => updateAlimento(refIdx, op.letra, aliIdx, a => ({ ...a, medida_caseira: e.target.value }))}
+                                />
+                                <span className="text-xs text-center">{Math.round(ali.energia_kcal)}</span>
+                                <span className="text-xs text-center">{Math.round(ali.proteina_g)}</span>
+                                <span className="text-xs text-center">{Math.round(ali.carboidrato_g)}</span>
+                                <span className="text-xs text-center">{Math.round(ali.lipidio_g)}</span>
+                                <Button variant="ghost" size="icon" className="h-7 w-7" onClick={() => removeAlimento(refIdx, op.letra, aliIdx)}>
+                                  <Trash2 className="h-3.5 w-3.5 text-destructive" />
+                                </Button>
+                              </div>
+                              <StructuredSubs
+                                alimento={ali}
+                                onChange={(subs) => updateAlimento(refIdx, op.letra, aliIdx, a => ({ ...a, substituicoes: subs }))}
+                              />
+                            </div>
+                          ))}
+                        </div>
+                      )}
+                      <AlimentoSearch onSelect={(ali) => addAlimento(refIdx, op.letra, ali)} />
+                    </TabsContent>
+                  ))}
+                </Tabs>
 
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
                   <div className="space-y-1">
@@ -502,52 +676,12 @@ export function PlanoAlimentarEditor({ pacienteId, planoId, onBack, paciente, in
                     />
                   </div>
                   <div className="space-y-1">
-                    <div className="flex items-center justify-between">
-                      <Label className="text-xs">Substituições Sugeridas</Label>
-                      <Button
-                        variant="ghost"
-                        size="sm"
-                        className="h-6 text-[10px] px-2"
-                        onClick={async () => {
-                          // Get food groups present in this meal
-                          const tacoIds = ref.alimentos.filter(a => a.alimento_taco_id).map(a => a.alimento_taco_id!);
-                          if (tacoIds.length === 0) {
-                            toast({ title: "Adicione alimentos da base TACO primeiro" });
-                            return;
-                          }
-                          // Get the groups of foods in this meal
-                          const { data: foods } = await supabase
-                            .from("alimentos_taco")
-                            .select("grupo")
-                            .in("id", tacoIds);
-                          const grupos = [...new Set((foods || []).map(f => f.grupo).filter(Boolean))];
-                          if (grupos.length === 0) return;
-                          // Query substitutions for those groups
-                          const { data: subs } = await supabase
-                            .from("substituicoes")
-                            .select("*")
-                            .in("grupo", grupos);
-                          if (!subs || subs.length === 0) {
-                            toast({ title: "Nenhuma substituição encontrada", description: "Popule sua biblioteca de substituições primeiro." });
-                            return;
-                          }
-                          const text = subs.map(s =>
-                            `${s.alimento_original} → ${s.alimento_substituto}${s.observacoes ? ` (${s.observacoes})` : ""}`
-                          ).join("\n");
-                          updateRefeicao(refIdx, "substituicoes_sugeridas",
-                            ref.substituicoes_sugeridas ? ref.substituicoes_sugeridas + "\n" + text : text
-                          );
-                          toast({ title: `${subs.length} substituições carregadas!` });
-                        }}
-                      >
-                        Sugerir Substituições
-                      </Button>
-                    </div>
+                    <Label className="text-xs">Notas gerais sobre substituições</Label>
                     <Textarea
                       className="text-xs min-h-[60px]"
                       value={ref.substituicoes_sugeridas}
                       onChange={e => updateRefeicao(refIdx, "substituicoes_sugeridas", e.target.value)}
-                      placeholder="Alimentos alternativos..."
+                      placeholder="Notas livres sobre como substituir esta refeição..."
                     />
                   </div>
                 </div>
@@ -563,7 +697,13 @@ export function PlanoAlimentarEditor({ pacienteId, planoId, onBack, paciente, in
           onOpenChange={setShowExport}
           type="plano_alimentar"
           paciente={paciente}
-          planoData={{ ...plano, id: planoId, refeicoes: refeicoes.map(r => ({ ...r, alimentos_plano: r.alimentos })) }}
+          planoData={{
+            ...plano, id: planoId,
+            refeicoes: refeicoes.map(r => ({
+              ...r,
+              alimentos_plano: (r.opcoes.find(o => o.letra === r.opcaoAtiva) || r.opcoes[0])?.alimentos || [],
+            })),
+          }}
         />
       )}
     </div>
@@ -587,7 +727,6 @@ const grupoLabelsSearch: Record<string, string> = {
   oleaginosas: "Oleag.", carnes: "Carnes", leites: "Leites", ovos: "Ovos",
   oleos: "Óleos", acucares: "Açúcares", outros: "Outros",
 };
-
 const grupoColors: Record<string, string> = {
   cereais: "bg-amber-100 text-amber-800", verduras: "bg-green-100 text-green-800",
   frutas: "bg-pink-100 text-pink-800", leguminosas: "bg-orange-100 text-orange-800",
@@ -612,89 +751,79 @@ function AlimentoSearch({ onSelect }: { onSelect: (a: Alimento) => void }) {
       supabase.from("alimentos_taco").select("*")
         .or(`nome.ilike.%${q}%,palavras_chave.cs.{${ql}}`).limit(12),
       user ? supabase.from("alimentos_personalizados").select("*")
-        .eq("user_id", user.id).ilike("nome", `%${q}%`).limit(8) : Promise.resolve({ data: [] as any[] }),
+        .eq("user_id", user.id).ilike("nome", `%${q}%`).limit(8) : { data: [] },
     ]);
-    const tacoItems = (taco.data || []).map((d: any) => ({ ...d, _source: "taco" }));
-    const persoItems = (perso.data || []).map((d: any) => ({ ...d, _source: "perso" }));
-    setResults([...persoItems, ...tacoItems]);
+    const list: any[] = [];
+    (perso.data || []).forEach((p: any) => list.push({ ...p, _origem: "personalizado" }));
+    (taco.data || []).forEach((t: any) => list.push({ ...t, _origem: "taco" }));
+    setResults(list);
     setSearching(false);
   }, [user]);
 
   useEffect(() => {
-    const t = setTimeout(() => search(query), 300);
+    const t = setTimeout(() => search(query), 250);
     return () => clearTimeout(t);
   }, [query, search]);
 
-  const selectAlimento = (item: any) => {
-    const isPerso = item._source === "perso";
-    const baseQty = isPerso ? Number(item.quantidade_base) || 100 : 100;
-    const ratio = isPerso ? 100 / baseQty : 1;
-    const base = {
-      base_energia_kcal: (item.energia_kcal || 0) * ratio,
-      base_proteina_g: (item.proteina_g || 0) * ratio,
-      base_carboidrato_g: (item.carboidrato_g || 0) * ratio,
-      base_lipidio_g: (item.lipidio_g || 0) * ratio,
-      base_fibra_g: (item.fibra_g || 0) * ratio,
-    };
+  const selectItem = (item: any) => {
+    const isTaco = item._origem === "taco";
+    const ratio100 = 1;
     onSelect({
       nome_alimento: item.nome,
-      quantidade: baseQty,
-      medida_caseira: isPerso ? (item.medida_caseira || "1 porção") : "1 porção",
-      energia_kcal: item.energia_kcal || 0,
-      proteina_g: item.proteina_g || 0,
-      carboidrato_g: item.carboidrato_g || 0,
-      lipidio_g: item.lipidio_g || 0,
-      fibra_g: item.fibra_g || 0,
-      alimento_taco_id: isPerso ? null : item.id,
+      quantidade: isTaco ? 100 : (item.quantidade_base || 100),
+      medida_caseira: item.medida_caseira || "1 porção",
+      energia_kcal: (item.energia_kcal || 0) * ratio100,
+      proteina_g: (item.proteina_g || 0) * ratio100,
+      carboidrato_g: (item.carboidrato_g || 0) * ratio100,
+      lipidio_g: (item.lipidio_g || 0) * ratio100,
+      fibra_g: (item.fibra_g || 0) * ratio100,
+      alimento_taco_id: isTaco ? item.id : null,
       grupo: item.grupo || null,
-      ...base,
+      substituicoes: [],
+      ...(isTaco ? {
+        base_energia_kcal: item.energia_kcal, base_proteina_g: item.proteina_g,
+        base_carboidrato_g: item.carboidrato_g, base_lipidio_g: item.lipidio_g, base_fibra_g: item.fibra_g,
+      } : {
+        base_energia_kcal: (item.energia_kcal || 0) * (100 / (item.quantidade_base || 100)),
+        base_proteina_g: (item.proteina_g || 0) * (100 / (item.quantidade_base || 100)),
+        base_carboidrato_g: (item.carboidrato_g || 0) * (100 / (item.quantidade_base || 100)),
+        base_lipidio_g: (item.lipidio_g || 0) * (100 / (item.quantidade_base || 100)),
+        base_fibra_g: (item.fibra_g || 0) * (100 / (item.quantidade_base || 100)),
+      }),
     });
-    setQuery("");
-    setResults([]);
+    setQuery(""); setResults([]);
   };
 
   return (
     <div className="relative">
-      <div className="flex items-center gap-2">
+      <div className="flex gap-2">
         <div className="relative flex-1">
-          <Search className="absolute left-2.5 top-1/2 -translate-y-1/2 h-3.5 w-3.5 text-muted-foreground" />
+          <Search className="absolute left-2 top-1/2 -translate-y-1/2 h-3.5 w-3.5 text-muted-foreground" />
           <Input
-            className="pl-8 h-8 text-xs"
+            className="h-8 pl-7 text-xs"
             placeholder="Buscar alimento (TACO + meus alimentos)..."
-            value={query}
-            onChange={e => setQuery(e.target.value)}
+            value={query} onChange={e => setQuery(e.target.value)}
           />
         </div>
-        <Button variant="outline" size="sm" className="h-8 text-xs" onClick={() => setShowCustom(true)}>
+        <Button size="sm" variant="outline" className="h-8 text-xs" onClick={() => setShowCustom(true)}>
           <Plus className="h-3 w-3 mr-1" /> Personalizado
         </Button>
       </div>
+      {searching && <p className="text-[10px] text-muted-foreground mt-1">Buscando...</p>}
       {results.length > 0 && (
-        <div className="absolute z-20 mt-1 w-full bg-popover border border-border rounded-lg shadow-lg max-h-60 overflow-y-auto">
-          {results.map(item => (
-            <button
-              key={`${item._source}-${item.id}`}
-              className="w-full text-left px-3 py-2 text-sm hover:bg-muted/50 flex justify-between items-center border-b last:border-0 gap-2"
-              onClick={() => selectAlimento(item)}
+        <div className="absolute z-20 left-0 right-0 mt-1 bg-popover border border-border rounded-lg shadow-lg max-h-72 overflow-y-auto">
+          {results.map((r, i) => (
+            <button key={i} type="button"
+              onClick={() => selectItem(r)}
+              className="w-full text-left px-3 py-2 hover:bg-muted text-xs flex items-center justify-between gap-2 border-b border-border/30 last:border-0"
             >
-              <div className="flex items-center gap-2 min-w-0 flex-1">
-                {item._source === "perso" && (
-                  <span className="text-[10px] px-1.5 py-0.5 rounded-full shrink-0 bg-primary/15 text-primary font-medium">Meu</span>
-                )}
-                <span className={`text-[10px] px-1.5 py-0.5 rounded-full shrink-0 ${grupoColors[item.grupo] || grupoColors.outros}`}>
-                  {grupoLabelsSearch[item.grupo] || item.grupo}
-                </span>
-                <span className="truncate">{item.nome}</span>
-              </div>
-              <span className="text-xs text-muted-foreground shrink-0">
-                {Math.round(item.energia_kcal || 0)} kcal · P{Math.round(item.proteina_g || 0)} C{Math.round(item.carboidrato_g || 0)} G{Math.round(item.lipidio_g || 0)} F{Math.round(item.fibra_g || 0)}
-              </span>
+              <span className="truncate flex-1">{r.nome}</span>
+              <Badge variant="outline" className={`text-[9px] ${grupoColors[r.grupo] || ""}`}>{grupoLabelsSearch[r.grupo] || r.grupo}</Badge>
+              <span className="text-[10px] text-muted-foreground shrink-0">{Math.round(r.energia_kcal || 0)} kcal/100g</span>
             </button>
           ))}
         </div>
       )}
-      {searching && <p className="text-xs text-muted-foreground mt-1">Buscando...</p>}
-
       <AlimentoPersonalizadoModal
         open={showCustom}
         onOpenChange={setShowCustom}
@@ -704,12 +833,8 @@ function AlimentoSearch({ onSelect }: { onSelect: (a: Alimento) => void }) {
   );
 }
 
-function AlimentoPersonalizadoModal({
-  open, onOpenChange, onConfirm,
-}: {
-  open: boolean;
-  onOpenChange: (b: boolean) => void;
-  onConfirm: (a: Alimento) => void;
+function AlimentoPersonalizadoModal({ open, onOpenChange, onConfirm }: {
+  open: boolean; onOpenChange: (b: boolean) => void; onConfirm: (a: Alimento) => void;
 }) {
   const { user } = useAuth();
   const { toast } = useToast();
@@ -720,9 +845,7 @@ function AlimentoPersonalizadoModal({
   const [form, setForm] = useState(empty);
   const [salvar, setSalvar] = useState(false);
   const [saving, setSaving] = useState(false);
-
   useEffect(() => { if (open) { setForm(empty); setSalvar(false); } }, [open]);
-
   const handle = async () => {
     if (!form.nome.trim()) { toast({ title: "Informe o nome do alimento", variant: "destructive" }); return; }
     setSaving(true);
@@ -739,16 +862,11 @@ function AlimentoPersonalizadoModal({
       }
       const ratio = 100 / (form.quantidade || 100);
       onConfirm({
-        nome_alimento: form.nome,
-        quantidade: form.quantidade,
-        medida_caseira: form.medida_caseira,
-        energia_kcal: form.energia_kcal,
-        proteina_g: form.proteina_g,
-        carboidrato_g: form.carboidrato_g,
-        lipidio_g: form.lipidio_g,
-        fibra_g: form.fibra_g,
-        alimento_taco_id: null,
-        grupo: form.grupo,
+        nome_alimento: form.nome, quantidade: form.quantidade, medida_caseira: form.medida_caseira,
+        energia_kcal: form.energia_kcal, proteina_g: form.proteina_g,
+        carboidrato_g: form.carboidrato_g, lipidio_g: form.lipidio_g, fibra_g: form.fibra_g,
+        alimento_taco_id: null, grupo: form.grupo,
+        substituicoes: [],
         base_energia_kcal: form.energia_kcal * ratio,
         base_proteina_g: form.proteina_g * ratio,
         base_carboidrato_g: form.carboidrato_g * ratio,
@@ -759,12 +877,10 @@ function AlimentoPersonalizadoModal({
       toast({ title: "Erro", description: err.message, variant: "destructive" });
     } finally { setSaving(false); }
   };
-
   const num = (k: keyof typeof form) => (
     <Input type="number" className="h-8 text-xs" value={(form as any)[k]}
       onChange={e => setForm(f => ({ ...f, [k]: parseFloat(e.target.value) || 0 }))} />
   );
-
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="max-w-lg">
@@ -797,7 +913,6 @@ function AlimentoPersonalizadoModal({
             <div className="space-y-1"><Label className="text-xs">Gordura (g)</Label>{num("lipidio_g")}</div>
             <div className="space-y-1"><Label className="text-xs">Fibra (g)</Label>{num("fibra_g")}</div>
           </div>
-          <p className="text-[11px] text-muted-foreground">Os valores informados se referem à quantidade indicada acima.</p>
           <label className="flex items-center gap-2 text-sm">
             <Checkbox checked={salvar} onCheckedChange={(c) => setSalvar(!!c)} />
             Salvar este alimento na minha biblioteca
@@ -812,163 +927,67 @@ function AlimentoPersonalizadoModal({
   );
 }
 
-interface SubOption {
-  alimento_substituto: string;
-  observacoes: string | null;
-  // dados TACO se encontrados
-  kcal_100?: number;
-  prot_100?: number;
-  carb_100?: number;
-  lip_100?: number;
-  fib_100?: number;
-  taco_id?: number;
-  quantidade_eq?: number; // gramas equivalentes em kcal
-}
-
-function SubstituicoesInline({
-  alimento, onReplace, onAddNote,
-}: {
+function StructuredSubs({ alimento, onChange }: {
   alimento: Alimento;
-  onReplace: (novo: Alimento) => void;
-  onAddNote: (linha: string) => void;
+  onChange: (subs: SubItem[]) => void;
 }) {
   const [open, setOpen] = useState(false);
-  const [loading, setLoading] = useState(false);
-  const [opts, setOpts] = useState<SubOption[]>([]);
-  const [loaded, setLoaded] = useState(false);
+  const subs = alimento.substituicoes || [];
 
-  const carregar = useCallback(async () => {
-    if (loaded) return;
-    setLoading(true);
-    try {
-      // Busca substituições por grupo OU pelo nome do alimento original
-      let query = supabase.from("substituicoes").select("*");
-      if (alimento.grupo) {
-        query = query.or(`grupo.eq.${alimento.grupo},alimento_original.ilike.%${alimento.nome_alimento.split(",")[0]}%`);
-      } else {
-        query = query.ilike("alimento_original", `%${alimento.nome_alimento.split(",")[0]}%`);
-      }
-      const { data: subs } = await query.limit(20);
-      const list = subs || [];
-      // Buscar dados TACO dos substitutos para calcular equivalência
-      const nomes = [...new Set(list.map(s => s.alimento_substituto))];
-      let tacoMap = new Map<string, any>();
-      if (nomes.length) {
-        const ors = nomes.map(n => `nome.ilike.%${n.split(" ")[0]}%`).join(",");
-        const { data: tacos } = await supabase.from("alimentos_taco").select("*").or(ors).limit(80);
-        (tacos || []).forEach(t => {
-          for (const n of nomes) {
-            if (!tacoMap.has(n) && t.nome.toLowerCase().includes(n.toLowerCase().split(" ")[0])) {
-              tacoMap.set(n, t);
-            }
-          }
-        });
-      }
-      const result: SubOption[] = list.map(s => {
-        const t = tacoMap.get(s.alimento_substituto);
-        if (t && (t.energia_kcal || 0) > 0) {
-          const qtd_eq = (alimento.energia_kcal / t.energia_kcal) * 100;
-          return {
-            alimento_substituto: s.alimento_substituto,
-            observacoes: s.observacoes,
-            kcal_100: t.energia_kcal, prot_100: t.proteina_g, carb_100: t.carboidrato_g,
-            lip_100: t.lipidio_g, fib_100: t.fibra_g, taco_id: t.id,
-            quantidade_eq: Math.round(qtd_eq),
-          };
-        }
-        return { alimento_substituto: s.alimento_substituto, observacoes: s.observacoes };
-      });
-      setOpts(result);
-      setLoaded(true);
-    } finally { setLoading(false); }
-  }, [alimento, loaded]);
-
-  useEffect(() => {
-    if (open && !loaded) carregar();
-  }, [open, loaded, carregar]);
-
-  // Reset quando quantidade do alimento muda — recalcular equivalências
-  useEffect(() => {
-    if (loaded) {
-      setOpts(prev => prev.map(o => {
-        if (o.kcal_100 && o.kcal_100 > 0) {
-          return { ...o, quantidade_eq: Math.round((alimento.energia_kcal / o.kcal_100) * 100) };
-        }
-        return o;
-      }));
-    }
-  }, [alimento.energia_kcal, loaded]);
+  const addEmpty = () => {
+    onChange([...subs, { nome: "", quantidade: 100, medida_caseira: "1 porção", alimento_taco_id: null }]);
+    setOpen(true);
+  };
+  const update = (i: number, patch: Partial<SubItem>) => {
+    onChange(subs.map((s, j) => j === i ? { ...s, ...patch } : s));
+  };
+  const remove = (i: number) => onChange(subs.filter((_, j) => j !== i));
 
   return (
     <div className="px-3 pb-2">
-      <button
-        type="button"
-        onClick={() => setOpen(o => !o)}
-        className="text-[11px] text-primary hover:underline flex items-center gap-1"
-      >
-        <ArrowRightLeft className="h-3 w-3" />
-        {open ? "Ocultar substituições" : "Ver substituições"}
-        {loaded && ` (${opts.length})`}
-      </button>
-      {open && (
+      <div className="flex items-center gap-3">
+        <button
+          type="button"
+          onClick={() => setOpen(o => !o)}
+          className="text-[11px] text-primary hover:underline flex items-center gap-1"
+        >
+          <ArrowRightLeft className="h-3 w-3" />
+          {open ? "Ocultar" : "Substituições"} {subs.length > 0 && `(${subs.length})`}
+        </button>
+        <button
+          type="button"
+          onClick={addEmpty}
+          className="text-[11px] text-muted-foreground hover:text-foreground flex items-center gap-0.5"
+        >
+          <Plus className="h-3 w-3" /> Adicionar
+        </button>
+      </div>
+      {open && subs.length > 0 && (
         <div className="mt-2 ml-4 space-y-1">
-          {loading && <p className="text-[11px] text-muted-foreground">Carregando...</p>}
-          {!loading && loaded && opts.length === 0 && (
-            <p className="text-[11px] text-muted-foreground">Nenhuma substituição cadastrada para este alimento. Adicione na Biblioteca.</p>
-          )}
-          {opts.map((o, i) => (
-            <div key={i} className="flex items-center justify-between gap-2 text-[11px] border border-border/50 rounded px-2 py-1 bg-muted/20">
-              <div className="min-w-0 flex-1">
-                <span className="font-medium">{o.alimento_substituto}</span>
-                {o.quantidade_eq ? (
-                  <span className="text-muted-foreground"> — {o.quantidade_eq}g (≈ {Math.round(alimento.energia_kcal)} kcal)</span>
-                ) : (
-                  <span className="text-muted-foreground"> — sem dados TACO, ajuste manualmente</span>
-                )}
-                {o.observacoes && <span className="text-muted-foreground italic"> · {o.observacoes}</span>}
-              </div>
-              <div className="flex items-center gap-1 shrink-0">
-                {o.taco_id && o.quantidade_eq && (
-                  <Button
-                    size="sm" variant="ghost" className="h-6 px-2 text-[10px]"
-                    title="Substituir o alimento desta linha"
-                    onClick={() => {
-                      const ratio = (o.quantidade_eq! / 100);
-                      onReplace({
-                        nome_alimento: o.alimento_substituto,
-                        quantidade: o.quantidade_eq!,
-                        medida_caseira: "1 porção",
-                        energia_kcal: (o.kcal_100 || 0) * ratio,
-                        proteina_g: (o.prot_100 || 0) * ratio,
-                        carboidrato_g: (o.carb_100 || 0) * ratio,
-                        lipidio_g: (o.lip_100 || 0) * ratio,
-                        fibra_g: (o.fib_100 || 0) * ratio,
-                        alimento_taco_id: o.taco_id || null,
-                        grupo: alimento.grupo,
-                        base_energia_kcal: o.kcal_100,
-                        base_proteina_g: o.prot_100,
-                        base_carboidrato_g: o.carb_100,
-                        base_lipidio_g: o.lip_100,
-                        base_fibra_g: o.fib_100,
-                      });
-                    }}
-                  >
-                    <Sparkles className="h-3 w-3" />
-                  </Button>
-                )}
-                <Button
-                  size="sm" variant="ghost" className="h-6 px-2 text-[10px]"
-                  title="Adicionar como opção nas notas da refeição"
-                  onClick={() => {
-                    const linha = o.quantidade_eq
-                      ? `${Math.round(alimento.quantidade)}g de ${alimento.nome_alimento} → ${o.quantidade_eq}g de ${o.alimento_substituto} (≈${Math.round(alimento.energia_kcal)} kcal)`
-                      : `${alimento.nome_alimento} → ${o.alimento_substituto}${o.observacoes ? ` (${o.observacoes})` : ""}`;
-                    onAddNote(linha);
-                  }}
-                >
-                  <Plus className="h-3 w-3" />
-                </Button>
-              </div>
+          {subs.map((s, i) => (
+            <div key={i} className="flex items-center gap-1 text-[11px]">
+              <Input
+                className="h-7 text-xs flex-1"
+                placeholder="Nome do substituto"
+                value={s.nome}
+                onChange={e => update(i, { nome: e.target.value })}
+              />
+              <Input
+                className="h-7 text-xs w-20"
+                type="number"
+                placeholder="Qtd"
+                value={s.quantidade}
+                onChange={e => update(i, { quantidade: parseFloat(e.target.value) || 0 })}
+              />
+              <Input
+                className="h-7 text-xs w-32"
+                placeholder="Medida"
+                value={s.medida_caseira}
+                onChange={e => update(i, { medida_caseira: e.target.value })}
+              />
+              <Button variant="ghost" size="icon" className="h-7 w-7" onClick={() => remove(i)}>
+                <Trash2 className="h-3 w-3 text-destructive" />
+              </Button>
             </div>
           ))}
         </div>
@@ -976,4 +995,3 @@ function SubstituicoesInline({
     </div>
   );
 }
-

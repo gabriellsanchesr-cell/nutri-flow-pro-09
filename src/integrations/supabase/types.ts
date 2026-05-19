@@ -73,6 +73,47 @@ export type Database = {
           },
         ]
       }
+      alimento_substituicoes: {
+        Row: {
+          alimento_plano_id: string
+          alimento_taco_id: number | null
+          created_at: string
+          id: string
+          medida_caseira: string | null
+          nome: string
+          ordem: number
+          quantidade: number | null
+        }
+        Insert: {
+          alimento_plano_id: string
+          alimento_taco_id?: number | null
+          created_at?: string
+          id?: string
+          medida_caseira?: string | null
+          nome: string
+          ordem?: number
+          quantidade?: number | null
+        }
+        Update: {
+          alimento_plano_id?: string
+          alimento_taco_id?: number | null
+          created_at?: string
+          id?: string
+          medida_caseira?: string | null
+          nome?: string
+          ordem?: number
+          quantidade?: number | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "alimento_substituicoes_alimento_plano_id_fkey"
+            columns: ["alimento_plano_id"]
+            isOneToOne: false
+            referencedRelation: "alimentos_plano"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       alimentos_personalizados: {
         Row: {
           carboidrato_g: number
@@ -132,6 +173,9 @@ export type Database = {
           lipidio_g: number | null
           medida_caseira: string | null
           nome_alimento: string
+          opcao: string
+          ordem: number
+          precisa_revisao: boolean
           proteina_g: number | null
           quantidade: number | null
           refeicao_id: string
@@ -146,6 +190,9 @@ export type Database = {
           lipidio_g?: number | null
           medida_caseira?: string | null
           nome_alimento: string
+          opcao?: string
+          ordem?: number
+          precisa_revisao?: boolean
           proteina_g?: number | null
           quantidade?: number | null
           refeicao_id: string
@@ -160,6 +207,9 @@ export type Database = {
           lipidio_g?: number | null
           medida_caseira?: string | null
           nome_alimento?: string
+          opcao?: string
+          ordem?: number
+          precisa_revisao?: boolean
           proteina_g?: number | null
           quantidade?: number | null
           refeicao_id?: string
@@ -2188,6 +2238,7 @@ export type Database = {
           created_at: string
           horario_sugerido: string | null
           id: string
+          nome_customizado: string | null
           observacoes: string | null
           ordem: number | null
           plano_id: string
@@ -2198,6 +2249,7 @@ export type Database = {
           created_at?: string
           horario_sugerido?: string | null
           id?: string
+          nome_customizado?: string | null
           observacoes?: string | null
           ordem?: number | null
           plano_id: string
@@ -2208,6 +2260,7 @@ export type Database = {
           created_at?: string
           horario_sugerido?: string | null
           id?: string
+          nome_customizado?: string | null
           observacoes?: string | null
           ordem?: number | null
           plano_id?: string

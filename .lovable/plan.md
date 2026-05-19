@@ -1,59 +1,74 @@
-# Plano — Metas e Materiais Extras
+## Objetivo
 
-Hoje só essas duas seções do prontuário do paciente estão como "em construção". Vou implementá-las completas (CRUD no painel do nutri + visualização no portal do paciente).
+Reformular a importação de plano alimentar via PDF para preservar toda a estrutura: horário, nome livre da refeição, múltiplas **opções (A/B/C)** por refeição e **substituições por alimento**. Expandir o editor e o portal do paciente para exibir essas opções.
 
-## 1. Banco de dados (1 migration)
+## Mudanças no banco
 
-**Tabela `metas_paciente`**
-- `paciente_id`, `user_id` (nutri dono), `titulo`, `descricao`
-- `tipo` text: `'checklist'` ou `'numerica'`
-- `valor_alvo` numeric, `valor_atual` numeric, `unidade` text (ex.: kg, L, min, x/semana) — só para numérica
-- `prazo` date, `prioridade` text (`baixa|media|alta`), `status` text (`em_andamento|concluida|pausada`)
-- `concluida_em` timestamptz
-- RLS: nutri/equipe gerenciam; paciente vê e pode atualizar `valor_atual`/`status` (para marcar progresso/concluído).
+Migração com 2 colunas novas e 1 tabela nova:
 
-**Tabela `materiais_paciente`**
-- `paciente_id`, `user_id`, `titulo`, `descricao`, `categoria` text (ex.: ebook, video, receita, treino, outro)
-- `tipo` text: `'arquivo'` ou `'link'`
-- `arquivo_path` text (storage `documentos-pdf`), `arquivo_nome`, `arquivo_mime`
-- `url_externa` text (YouTube, Drive, artigo)
-- `visto_em` timestamptz (paciente marca como visto)
-- RLS: nutri/equipe CRUD; paciente lê e atualiza `visto_em` dos próprios.
+1. `refeicoes`
+   - `nome_customizado text null` — para rótulos livres ("Pré-treino", "Café da manhã / pós-treino"). Quando preenchido, sobrepõe o label do `tipo`.
+2. `alimentos_plano`
+   - `opcao char(1) not null default 'A'` — letra da opção (A, B, C, D…). Permite múltiplas listas de alimentos por refeição diferenciadas só por essa coluna.
+   - `precisa_revisao boolean default false` — flag para itens importados com baixa confiança.
+3. Nova tabela `alimento_substituicoes`
+   - `id, alimento_plano_id (fk → alimentos_plano on delete cascade), nome text, quantidade numeric, medida_caseira text, alimento_taco_id int null, ordem int`
+   - RLS espelhando `alimentos_plano` (nutri/equipe gerencia; paciente lê).
 
-Reuso do bucket existente `documentos-pdf` (path `materiais/{paciente_id}/...`); políticas de storage já cobrem nutri+paciente para esse bucket via padrão usado em outras seções.
+Sem alteração na tabela `refeicoes` quanto a `tipo` (mantém enum), porque permitimos nome livre via `nome_customizado`.
 
-## 2. Painel do nutricionista
+## Edge function `import-plano-pdf`
 
-**`MetasSection.tsx`** (nova) — usada em `PacienteDetalhe` no case `"metas"`:
-- Lista cards agrupados por status (Em andamento / Concluídas / Pausadas).
-- Botão "+ Nova meta" abre modal com toggle Checklist / Numérica, campos condicionais, prazo, prioridade.
-- Barra de progresso (valor_atual / valor_alvo) nas numéricas; checkbox de conclusão nas qualitativas.
-- Ações: editar, pausar/retomar, concluir, excluir.
+Reescrita do schema da tool e do prompt:
 
-**`MateriaisExtrasSection.tsx`** (nova) — case `"materiais"`:
-- Tabs "Todos / Arquivos / Links" + filtro por categoria.
-- Botão "+ Adicionar" abre modal com toggle Arquivo / Link.
-  - Arquivo: upload (PDF/imagem/vídeo até limite do bucket), título, descrição, categoria.
-  - Link: URL, título, descrição, categoria.
-- Cards mostram ícone do tipo, título, categoria, data, badge "Visto pelo paciente" se aplicável.
-- Ações: abrir/baixar (signed URL para arquivo, nova aba para link), editar metadados, excluir.
+- Schema da tool passa a aceitar `refeicoes[].nome` (string livre), `horario` ("HH:MM"), `tipo_sugerido` (mapeia para enum: cafe_da_manha…ceia), `opcoes[]` com `letra` + `alimentos[]` + `substituicoes_por_item[]`.
+  - Cada `alimento` tem `nome`, `quantidade_g`, `medida_caseira`, `precisa_revisao`.
+  - Cada `substituicao_por_item` tem `alimento_base` (nome) + `alternativas[]` com `nome`, `quantidade_g`, `medida_caseira`.
+- Prompt atualizado:
+  - Instrui literalidade: copiar nomes e quantidades exatamente como aparecem ("doce de leite", não "batata doce"; "suco de uva", não "suco de laranja").
+  - Lista heurísticas para detectar blocos OPÇÃO A / OPÇÃO B / OPÇÃO C e SUBSTITUIÇÕES POR ITEM.
+  - Pede captura do horário no cabeçalho da refeição (ex.: "06:30").
+  - Pede `nome` livre quando o título da refeição não é canônico.
+- Enriquecimento TACO continua igual, agora aplicado também às alternativas das substituições.
+- Resposta passa a ter formato:
+  ```
+  { observacoes, refeicoes: [{ nome, horario, tipo, opcoes: [{ letra, alimentos, substituicoes }] }] }
+  ```
 
-Substitui as duas linhas `PlaceholderSection` em `src/pages/PacienteDetalhe.tsx`.
+## Editor `PlanoAlimentarEditor.tsx`
 
-## 3. Portal do paciente
+- Estrutura interna passa de `refeicao.alimentos[]` para `refeicao.opcoes[]` onde cada opção tem `letra` + `alimentos[]`.
+- Cabeçalho da refeição ganha campo de texto editável para nome customizado (default = label do tipo) ao lado do select de tipo e do horário.
+- Cada refeição renderiza **abas Opção A / Opção B / Opção C** com botão "+ Adicionar opção". Cada aba mostra a tabela de alimentos atual.
+- Cada linha de alimento ganha um botão "Substituições" que abre um popover/inline editor listando substitutos com nome + qtd + medida (CRUD inline).
+- O bloco "Substituições Sugeridas" global da refeição vira "Notas/Substituições gerais" (mantido).
+- Cálculo de macros: soma alimentos somente da **opção A** (ou da opção marcada como ativa) para evitar somar 3x. Indicador no topo: "Macros calculados sobre Opção A".
+- Persistência:
+  - Insere uma linha em `refeicoes` por refeição (com `nome_customizado`, `horario_sugerido`, `tipo`).
+  - Insere alimentos em `alimentos_plano` com a coluna `opcao` correspondente.
+  - Insere substituições em `alimento_substituicoes` ligadas a cada alimento.
+  - Estratégia de delete em cascade já cobre tudo.
 
-Em `src/pages/PortalPaciente.tsx`:
-- Aba "Metas" (`renderMetas`): lista das metas com progresso e botão "Marcar como concluída" / input rápido para atualizar `valor_atual` nas numéricas. Mensagem amigável quando vazio.
-- Substituir o default placeholder de "Materiais" no `renderMoreContent` por uma listagem real (cards com ícone, abre link em nova aba ou baixa arquivo via signed URL; marca `visto_em` ao abrir).
-- Respeitar `paciente_portal_permissoes` se existir flag relevante; senão, mostrar sempre.
+## Modal `ImportarPlanoPdfModal.tsx`
 
-## 4. Detalhes técnicos
-- Realtime opcional, não necessário nesta fase.
-- Signed URLs com 1h para arquivos privados.
-- Toasts de sucesso/erro padronizados (Sonner).
-- Sem mudanças em outras seções — já estão implementadas (verificado: somente Metas e Materiais usavam `PlaceholderSection`).
+- Mensagem do banner pós-importação atualiza para: "Plano importado: X refeições, Y opções, Z substituições. Revise antes de ativar."
+- Stages atualizados: "Lendo PDF → OCR → Identificando refeições e opções → Identificando substituições → Calculando macros".
+
+## Portal do paciente (`PortalPaciente.tsx` / view de plano)
+
+- Cada refeição mostra o nome customizado + horário.
+- Tabs Opção A/B/C (default A). Paciente escolhe qual seguir no dia.
+- Botão "Ver substituições" por alimento, abrindo lista com qtd e medida.
 
 ## Fora do escopo
-- IA para sugerir metas automaticamente.
-- Notificações push quando meta vence.
-- Compartilhar materiais entre múltiplos pacientes em lote (pode vir depois reusando Biblioteca).
+
+- Importação de fim-de-semana (plano separado): o usuário importa um PDF por vez. Suporte a múltiplos planos por paciente já existe.
+- Editor visual de drag-and-drop entre opções.
+- Sugestão automática de qual opção comer baseado em dia da semana.
+
+## Detalhes técnicos
+
+- Migração faz `UPDATE alimentos_plano SET opcao='A'` para registros antigos, garantindo retrocompatibilidade.
+- Editor existente que lê apenas `alimentos` continua funcionando se a refeição só tiver opção A (fluxo legado).
+- `alimento_substituicoes` é opcional — refeições antigas sem substituições estruturadas seguem usando o campo texto `substituicoes_sugeridas` da refeição.
+- PDF export (`planoAlimentarPdf.ts`) precisará iterar opções; será atualizado para imprimir "OPÇÃO A / B / C" e listar substituições por item embaixo de cada bloco.
