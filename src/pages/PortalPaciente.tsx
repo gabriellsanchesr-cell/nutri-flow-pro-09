@@ -193,9 +193,27 @@ export default function PortalPaciente() {
     );
   }
 
-  const totalDiario = plano?.refeicoes?.reduce((acc: number, r: any) =>
-    acc + (r.alimentos_plano?.reduce((a: number, al: any) => a + (al.energia_kcal || 0), 0) || 0), 0
-  ) || 0;
+  const getOpcoes = (ref: any): Record<string, any[]> => {
+    const groups: Record<string, any[]> = {};
+    (ref.alimentos_plano || []).forEach((a: any) => {
+      const k = a.opcao || "A";
+      (groups[k] = groups[k] || []).push(a);
+    });
+    if (!Object.keys(groups).length) groups["A"] = [];
+    Object.keys(groups).forEach(k => groups[k].sort((a: any, b: any) => (a.ordem || 0) - (b.ordem || 0)));
+    return groups;
+  };
+  const getActiveOpt = (ref: any): string => {
+    const keys = Object.keys(getOpcoes(ref)).sort();
+    return activeOption[ref.id] || keys[0] || "A";
+  };
+
+  const totalDiario = plano?.refeicoes?.reduce((acc: number, r: any) => {
+    const opts = getOpcoes(r);
+    const k = getActiveOpt(r);
+    const list = opts[k] || opts["A"] || [];
+    return acc + list.reduce((a: number, al: any) => a + (al.energia_kcal || 0), 0);
+  }, 0) || 0;
 
   const firstName = paciente.nome_completo.split(" ")[0];
   const initials = getInitials(paciente.nome_completo);
