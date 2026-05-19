@@ -21,6 +21,7 @@ import {
   Calendar, Star, Trophy, CheckCircle2,
 } from "lucide-react";
 import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetTrigger } from "@/components/ui/sheet";
+import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
 import { format, differenceInDays, isToday, isTomorrow, addDays, startOfWeek, endOfWeek } from "date-fns";
 import { ptBR } from "date-fns/locale";
 import {
@@ -69,6 +70,7 @@ export default function PortalPaciente() {
   const [activeTab, setActiveTab] = useState<PortalTab>("inicio");
   const [moreTab, setMoreTab] = useState<MoreTab | null>(null);
   const [expandedMeal, setExpandedMeal] = useState<string | null>(null);
+  const [activeOption, setActiveOption] = useState<Record<string, string>>({});
   const [portalPresc, setPortalPresc] = useState<any[]>([]);
   const [prescLoaded, setPrescLoaded] = useState(false);
   const [avaliacoes, setAvaliacoes] = useState<any[]>([]);
@@ -87,7 +89,7 @@ export default function PortalPaciente() {
       if (pac) {
         const { data: planoData } = await supabase
           .from("planos_alimentares")
-          .select("*, refeicoes(*, alimentos_plano(*))")
+          .select("*, refeicoes(*, alimentos_plano(*, alimento_substituicoes(*)))")
           .eq("paciente_id", pac.id)
           .eq("status", "ativo")
           .order("created_at", { ascending: false })
@@ -191,9 +193,27 @@ export default function PortalPaciente() {
     );
   }
 
-  const totalDiario = plano?.refeicoes?.reduce((acc: number, r: any) =>
-    acc + (r.alimentos_plano?.reduce((a: number, al: any) => a + (al.energia_kcal || 0), 0) || 0), 0
-  ) || 0;
+  const getOpcoes = (ref: any): Record<string, any[]> => {
+    const groups: Record<string, any[]> = {};
+    (ref.alimentos_plano || []).forEach((a: any) => {
+      const k = a.opcao || "A";
+      (groups[k] = groups[k] || []).push(a);
+    });
+    if (!Object.keys(groups).length) groups["A"] = [];
+    Object.keys(groups).forEach(k => groups[k].sort((a: any, b: any) => (a.ordem || 0) - (b.ordem || 0)));
+    return groups;
+  };
+  const getActiveOpt = (ref: any): string => {
+    const keys = Object.keys(getOpcoes(ref)).sort();
+    return activeOption[ref.id] || keys[0] || "A";
+  };
+
+  const totalDiario = plano?.refeicoes?.reduce((acc: number, r: any) => {
+    const opts = getOpcoes(r);
+    const k = getActiveOpt(r);
+    const list = opts[k] || opts["A"] || [];
+    return acc + list.reduce((a: number, al: any) => a + (al.energia_kcal || 0), 0);
+  }, 0) || 0;
 
   const firstName = paciente.nome_completo.split(" ")[0];
   const initials = getInitials(paciente.nome_completo);
@@ -419,9 +439,13 @@ export default function PortalPaciente() {
             <div className="grid grid-cols-4 gap-2 text-center">
               {(() => {
                 let p = 0, c = 0, g = 0;
-                plano.refeicoes?.forEach((r: any) => r.alimentos_plano?.forEach((a: any) => {
-                  p += a.proteina_g || 0; c += a.carboidrato_g || 0; g += a.lipidio_g || 0;
-                }));
+                plano.refeicoes?.forEach((r: any) => {
+                  const opts = getOpcoes(r);
+                  const list = opts[getActiveOpt(r)] || opts["A"] || [];
+                  list.forEach((a: any) => {
+                    p += a.proteina_g || 0; c += a.carboidrato_g || 0; g += a.lipidio_g || 0;
+                  });
+                });
                 return (
                   <>
                     <div><p className="text-lg font-bold text-primary">{Math.round(totalDiario)}</p><p className="text-[10px] text-muted-foreground">Kcal</p></div>
@@ -436,7 +460,12 @@ export default function PortalPaciente() {
         </Card>
         {sortedRefeicoes.map((ref: any, idx: number) => {
           const isExp = expandedMeal === ref.id;
-          const mealKcal = ref.alimentos_plano?.reduce((a: number, al: any) => a + (al.energia_kcal || 0), 0) || 0;
+          const opcoes = getOpcoes(ref);
+          const opLetras = Object.keys(opcoes).sort();
+          const activeOpt = getActiveOpt(ref);
+          const alimentosAtivos = opcoes[activeOpt] || [];
+          const mealKcal = alimentosAtivos.reduce((a: number, al: any) => a + (al.energia_kcal || 0), 0);
+          const displayName = ref.nome_customizado?.trim() || tipoRefeicaoLabels[ref.tipo] || ref.tipo;
           return (
             <Card key={ref.id} className="rounded-2xl overflow-hidden transition-all duration-200 hover:shadow-md" style={{ animationDelay: `${idx * 0.05}s` }}>
               <button className="w-full text-left p-4 flex items-center justify-between" onClick={() => setExpandedMeal(isExp ? null : ref.id)}>
@@ -445,10 +474,11 @@ export default function PortalPaciente() {
                     <Utensils className="h-4 w-4 text-primary" />
                   </div>
                   <div>
-                    <p className="font-semibold text-sm text-foreground">{tipoRefeicaoLabels[ref.tipo] || ref.tipo}</p>
+                    <p className="font-semibold text-sm text-foreground">{displayName}</p>
                     <div className="flex items-center gap-2 text-xs text-muted-foreground">
                       {ref.horario_sugerido && <span className="flex items-center gap-0.5"><Clock className="h-3 w-3" /> {ref.horario_sugerido}</span>}
                       <span>{Math.round(mealKcal)} kcal</span>
+                      {opLetras.length > 1 && <span className="text-[10px] bg-primary/10 text-primary px-1.5 py-0.5 rounded-full font-medium">{opLetras.length} opções</span>}
                     </div>
                   </div>
                 </div>
@@ -458,19 +488,43 @@ export default function PortalPaciente() {
               </button>
               {isExp && (
                 <div className="px-4 pb-4 space-y-2 animate-fade-in">
-                  {ref.alimentos_plano?.map((ali: any) => (
-                    <div key={ali.id} className="flex justify-between items-center py-2 border-t border-border/50 text-sm">
-                      <div>
-                        <p className="text-foreground">{ali.nome_alimento}</p>
-                        <p className="text-xs text-muted-foreground">{ali.quantidade}g • {ali.medida_caseira}</p>
+                  {opLetras.length > 1 && (
+                    <Tabs value={activeOpt} onValueChange={(v) => setActiveOption(prev => ({ ...prev, [ref.id]: v }))}>
+                      <TabsList className="w-full">
+                        {opLetras.map(l => (
+                          <TabsTrigger key={l} value={l} className="flex-1 text-xs">Opção {l}</TabsTrigger>
+                        ))}
+                      </TabsList>
+                    </Tabs>
+                  )}
+                  {alimentosAtivos.map((ali: any) => {
+                    const subs = (ali.alimento_substituicoes || []).slice().sort((a: any, b: any) => (a.ordem || 0) - (b.ordem || 0));
+                    return (
+                      <div key={ali.id} className="py-2 border-t border-border/50 text-sm">
+                        <div className="flex justify-between items-center">
+                          <div>
+                            <p className="text-foreground">{ali.nome_alimento}</p>
+                            <p className="text-xs text-muted-foreground">{ali.quantidade}g{ali.medida_caseira ? ` • ${ali.medida_caseira}` : ""}</p>
+                          </div>
+                          <span className="text-xs font-medium text-muted-foreground bg-muted/50 px-2 py-0.5 rounded-full">{Math.round(ali.energia_kcal || 0)} kcal</span>
+                        </div>
+                        {subs.length > 0 && (
+                          <div className="mt-2 ml-2 pl-3 border-l-2 border-primary/20 space-y-1">
+                            <p className="text-[10px] uppercase tracking-wide text-muted-foreground font-medium">Substituições</p>
+                            {subs.map((s: any) => (
+                              <p key={s.id} className="text-xs text-muted-foreground">
+                                ↔ {s.nome}{s.quantidade ? ` — ${s.quantidade}g` : ""}{s.medida_caseira ? ` (${s.medida_caseira})` : ""}
+                              </p>
+                            ))}
+                          </div>
+                        )}
                       </div>
-                      <span className="text-xs font-medium text-muted-foreground bg-muted/50 px-2 py-0.5 rounded-full">{Math.round(ali.energia_kcal || 0)} kcal</span>
-                    </div>
-                  ))}
+                    );
+                  })}
                   {ref.substituicoes_sugeridas && (
                     <div className="bg-muted/50 rounded-xl p-3 text-xs">
-                      <p className="font-medium text-foreground mb-1">🔄 Substituições</p>
-                      <p className="text-muted-foreground">{ref.substituicoes_sugeridas}</p>
+                      <p className="font-medium text-foreground mb-1">🔄 Substituições gerais</p>
+                      <p className="text-muted-foreground whitespace-pre-line">{ref.substituicoes_sugeridas}</p>
                     </div>
                   )}
                   {ref.observacoes && (
