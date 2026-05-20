@@ -520,6 +520,7 @@ export default function PortalPaciente() {
                         ))}
                       </TabsList>
                     </Tabs>
+                    </>
                   )}
                   {alimentosAtivos.map((ali: any) => {
                     const subs = (ali.alimento_substituicoes || []).slice().sort((a: any, b: any) => (a.ordem || 0) - (b.ordem || 0));
