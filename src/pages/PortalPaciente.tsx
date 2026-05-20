@@ -96,6 +96,12 @@ export default function PortalPaciente() {
           .limit(1)
           .maybeSingle();
         setPlano(planoData);
+        if (planoData?.id) {
+          try {
+            const saved = localStorage.getItem(`opcaoSel:${planoData.id}`);
+            if (saved) setActiveOption(JSON.parse(saved));
+          } catch {}
+        }
 
         const { data: avData } = await supabase
           .from("avaliacoes_fisicas")
