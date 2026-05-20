@@ -486,10 +486,15 @@ export default function PortalPaciente() {
                   </div>
                   <div>
                     <p className="font-semibold text-sm text-foreground">{displayName}</p>
-                    <div className="flex items-center gap-2 text-xs text-muted-foreground">
+                    <div className="flex items-center gap-2 text-xs text-muted-foreground flex-wrap">
                       {ref.horario_sugerido && <span className="flex items-center gap-0.5"><Clock className="h-3 w-3" /> {ref.horario_sugerido}</span>}
                       <span>{Math.round(mealKcal)} kcal</span>
-                      {opLetras.length > 1 && <span className="text-[10px] bg-primary/10 text-primary px-1.5 py-0.5 rounded-full font-medium">{opLetras.length} opções</span>}
+                      {opLetras.length > 1 && (
+                        <>
+                          <span className="text-[10px] bg-primary/10 text-primary px-1.5 py-0.5 rounded-full font-medium">{opLetras.length} opções</span>
+                          <span className="text-[10px] bg-emerald-100 text-emerald-700 dark:bg-emerald-950/50 dark:text-emerald-300 px-1.5 py-0.5 rounded-full font-medium">contabilizando: {activeOpt}</span>
+                        </>
+                      )}
                     </div>
                   </div>
                 </div>
@@ -500,7 +505,15 @@ export default function PortalPaciente() {
               {isExp && (
                 <div className="px-4 pb-4 space-y-2 animate-fade-in">
                   {opLetras.length > 1 && (
-                    <Tabs value={activeOpt} onValueChange={(v) => setActiveOption(prev => ({ ...prev, [ref.id]: v }))}>
+                    <>
+                    <p className="text-[10px] text-muted-foreground">Escolha qual opção você vai seguir hoje — ela passa a contar no total do dia.</p>
+                    <Tabs value={activeOpt} onValueChange={(v) => setActiveOption(prev => {
+                      const next = { ...prev, [ref.id]: v };
+                      if (plano?.id) {
+                        try { localStorage.setItem(`opcaoSel:${plano.id}`, JSON.stringify(next)); } catch {}
+                      }
+                      return next;
+                    })}>
                       <TabsList className="w-full">
                         {opLetras.map(l => (
                           <TabsTrigger key={l} value={l} className="flex-1 text-xs">Opção {l}</TabsTrigger>
