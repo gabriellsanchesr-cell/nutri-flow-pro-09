@@ -207,11 +207,16 @@ export default function PortalPaciente() {
     const keys = Object.keys(getOpcoes(ref)).sort();
     return activeOption[ref.id] || keys[0] || "A";
   };
+  // Lista de alimentos da opção que o paciente marcou para contabilizar nesta refeição
+  const getContabilizada = (r: any): any[] => {
+    const opts = getOpcoes(r);
+    const chosen = activeOption[r.id];
+    if (chosen && opts[chosen]) return opts[chosen];
+    return opts["A"] || opts[Object.keys(opts).sort()[0]] || [];
+  };
 
   const totalDiario = plano?.refeicoes?.reduce((acc: number, r: any) => {
-    const opts = getOpcoes(r);
-    const list = opts["A"] || opts[Object.keys(opts).sort()[0]] || [];
-    return acc + list.reduce((a: number, al: any) => a + (al.energia_kcal || 0), 0);
+    return acc + getContabilizada(r).reduce((a: number, al: any) => a + (al.energia_kcal || 0), 0);
   }, 0) || 0;
 
   const firstName = paciente.nome_completo.split(" ")[0];
