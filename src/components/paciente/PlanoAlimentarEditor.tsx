@@ -466,7 +466,7 @@ export function PlanoAlimentarEditor({ pacienteId, planoId, onBack, paciente, in
           <MacroBox label="Gordura" value={`${totals.lip}`} unit="g" color="bg-yellow-500" />
           <MacroBox label="Fibra" value={`${totals.fib}`} unit="g" color="bg-green-500" />
         </div>
-        <p className="text-[10px] text-muted-foreground mt-2">Totais calculados com base na opção ativa de cada refeição.</p>
+        <p className="text-[10px] text-muted-foreground mt-2">Totais calculados com base na Opção A de cada refeição.</p>
       </div>
 
       {importedBanner && (
