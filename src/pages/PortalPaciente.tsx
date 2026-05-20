@@ -435,14 +435,15 @@ export default function PortalPaciente() {
         </div>
         <Card className="rounded-2xl glass-card">
           <CardContent className="p-4">
-            <div className="grid grid-cols-4 gap-2 text-center">
+            <div className="grid grid-cols-5 gap-2 text-center">
               {(() => {
-                let p = 0, c = 0, g = 0;
+                let p = 0, c = 0, g = 0, f = 0;
                 plano.refeicoes?.forEach((r: any) => {
                   const opts = getOpcoes(r);
-                  const list = opts[getActiveOpt(r)] || opts["A"] || [];
+                  const list = opts["A"] || opts[Object.keys(opts).sort()[0]] || [];
                   list.forEach((a: any) => {
-                    p += a.proteina_g || 0; c += a.carboidrato_g || 0; g += a.lipidio_g || 0;
+                    p += a.proteina_g || 0; c += a.carboidrato_g || 0;
+                    g += a.lipidio_g || 0; f += a.fibra_g || 0;
                   });
                 });
                 return (
@@ -451,10 +452,12 @@ export default function PortalPaciente() {
                     <div><p className="text-lg font-bold text-blue-500">{Math.round(p)}g</p><p className="text-[10px] text-muted-foreground">Proteína</p></div>
                     <div><p className="text-lg font-bold text-orange-500">{Math.round(c)}g</p><p className="text-[10px] text-muted-foreground">Carb</p></div>
                     <div><p className="text-lg font-bold text-yellow-500">{Math.round(g)}g</p><p className="text-[10px] text-muted-foreground">Gordura</p></div>
+                    <div><p className="text-lg font-bold text-green-500">{Math.round(f)}g</p><p className="text-[10px] text-muted-foreground">Fibra</p></div>
                   </>
                 );
               })()}
             </div>
+            <p className="text-[10px] text-muted-foreground text-center mt-2">Totais baseados na Opção A de cada refeição</p>
           </CardContent>
         </Card>
         {sortedRefeicoes.map((ref: any, idx: number) => {
