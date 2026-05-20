@@ -96,6 +96,12 @@ export default function PortalPaciente() {
           .limit(1)
           .maybeSingle();
         setPlano(planoData);
+        if (planoData?.id) {
+          try {
+            const saved = localStorage.getItem(`opcaoSel:${planoData.id}`);
+            if (saved) setActiveOption(JSON.parse(saved));
+          } catch {}
+        }
 
         const { data: avData } = await supabase
           .from("avaliacoes_fisicas")
@@ -207,11 +213,16 @@ export default function PortalPaciente() {
     const keys = Object.keys(getOpcoes(ref)).sort();
     return activeOption[ref.id] || keys[0] || "A";
   };
+  // Lista de alimentos da opção que o paciente marcou para contabilizar nesta refeição
+  const getContabilizada = (r: any): any[] => {
+    const opts = getOpcoes(r);
+    const chosen = activeOption[r.id];
+    if (chosen && opts[chosen]) return opts[chosen];
+    return opts["A"] || opts[Object.keys(opts).sort()[0]] || [];
+  };
 
   const totalDiario = plano?.refeicoes?.reduce((acc: number, r: any) => {
-    const opts = getOpcoes(r);
-    const list = opts["A"] || opts[Object.keys(opts).sort()[0]] || [];
-    return acc + list.reduce((a: number, al: any) => a + (al.energia_kcal || 0), 0);
+    return acc + getContabilizada(r).reduce((a: number, al: any) => a + (al.energia_kcal || 0), 0);
   }, 0) || 0;
 
   const firstName = paciente.nome_completo.split(" ")[0];
@@ -439,9 +450,7 @@ export default function PortalPaciente() {
               {(() => {
                 let p = 0, c = 0, g = 0, f = 0;
                 plano.refeicoes?.forEach((r: any) => {
-                  const opts = getOpcoes(r);
-                  const list = opts["A"] || opts[Object.keys(opts).sort()[0]] || [];
-                  list.forEach((a: any) => {
+                  getContabilizada(r).forEach((a: any) => {
                     p += a.proteina_g || 0; c += a.carboidrato_g || 0;
                     g += a.lipidio_g || 0; f += a.fibra_g || 0;
                   });
@@ -457,7 +466,7 @@ export default function PortalPaciente() {
                 );
               })()}
             </div>
-            <p className="text-[10px] text-muted-foreground text-center mt-2">Totais baseados na Opção A de cada refeição</p>
+            <p className="text-[10px] text-muted-foreground text-center mt-2">Totais baseados na opção selecionada em cada refeição (padrão: Opção A)</p>
           </CardContent>
         </Card>
         {sortedRefeicoes.map((ref: any, idx: number) => {
@@ -477,10 +486,15 @@ export default function PortalPaciente() {
                   </div>
                   <div>
                     <p className="font-semibold text-sm text-foreground">{displayName}</p>
-                    <div className="flex items-center gap-2 text-xs text-muted-foreground">
+                    <div className="flex items-center gap-2 text-xs text-muted-foreground flex-wrap">
                       {ref.horario_sugerido && <span className="flex items-center gap-0.5"><Clock className="h-3 w-3" /> {ref.horario_sugerido}</span>}
                       <span>{Math.round(mealKcal)} kcal</span>
-                      {opLetras.length > 1 && <span className="text-[10px] bg-primary/10 text-primary px-1.5 py-0.5 rounded-full font-medium">{opLetras.length} opções</span>}
+                      {opLetras.length > 1 && (
+                        <>
+                          <span className="text-[10px] bg-primary/10 text-primary px-1.5 py-0.5 rounded-full font-medium">{opLetras.length} opções</span>
+                          <span className="text-[10px] bg-emerald-100 text-emerald-700 dark:bg-emerald-950/50 dark:text-emerald-300 px-1.5 py-0.5 rounded-full font-medium">contabilizando: {activeOpt}</span>
+                        </>
+                      )}
                     </div>
                   </div>
                 </div>
@@ -491,13 +505,22 @@ export default function PortalPaciente() {
               {isExp && (
                 <div className="px-4 pb-4 space-y-2 animate-fade-in">
                   {opLetras.length > 1 && (
-                    <Tabs value={activeOpt} onValueChange={(v) => setActiveOption(prev => ({ ...prev, [ref.id]: v }))}>
+                    <>
+                    <p className="text-[10px] text-muted-foreground">Escolha qual opção você vai seguir hoje — ela passa a contar no total do dia.</p>
+                    <Tabs value={activeOpt} onValueChange={(v) => setActiveOption(prev => {
+                      const next = { ...prev, [ref.id]: v };
+                      if (plano?.id) {
+                        try { localStorage.setItem(`opcaoSel:${plano.id}`, JSON.stringify(next)); } catch {}
+                      }
+                      return next;
+                    })}>
                       <TabsList className="w-full">
                         {opLetras.map(l => (
                           <TabsTrigger key={l} value={l} className="flex-1 text-xs">Opção {l}</TabsTrigger>
                         ))}
                       </TabsList>
                     </Tabs>
+                    </>
                   )}
                   {alimentosAtivos.map((ali: any) => {
                     const subs = (ali.alimento_substituicoes || []).slice().sort((a: any, b: any) => (a.ordem || 0) - (b.ordem || 0));
