@@ -450,9 +450,7 @@ export default function PortalPaciente() {
               {(() => {
                 let p = 0, c = 0, g = 0, f = 0;
                 plano.refeicoes?.forEach((r: any) => {
-                  const opts = getOpcoes(r);
-                  const list = opts["A"] || opts[Object.keys(opts).sort()[0]] || [];
-                  list.forEach((a: any) => {
+                  getContabilizada(r).forEach((a: any) => {
                     p += a.proteina_g || 0; c += a.carboidrato_g || 0;
                     g += a.lipidio_g || 0; f += a.fibra_g || 0;
                   });
@@ -468,7 +466,7 @@ export default function PortalPaciente() {
                 );
               })()}
             </div>
-            <p className="text-[10px] text-muted-foreground text-center mt-2">Totais baseados na Opção A de cada refeição</p>
+            <p className="text-[10px] text-muted-foreground text-center mt-2">Totais baseados na opção selecionada em cada refeição (padrão: Opção A)</p>
           </CardContent>
         </Card>
         {sortedRefeicoes.map((ref: any, idx: number) => {
