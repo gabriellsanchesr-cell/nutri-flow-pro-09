@@ -290,11 +290,11 @@ export function PlanoAlimentarEditor({ pacienteId, planoId, onBack, paciente, in
     }
   };
 
-  // Totals computed only over Option A of each meal (active option doesn't change daily target)
+  // Totais somam a opção atualmente selecionada em cada refeição
   const totals = useMemo(() => {
     let kcal = 0, prot = 0, carb = 0, lip = 0, fib = 0;
     refeicoes.forEach(r => {
-      const op = r.opcoes.find(o => o.letra === "A") || r.opcoes[0];
+      const op = r.opcoes.find(o => o.letra === r.opcaoAtiva) || r.opcoes[0];
       op?.alimentos.forEach(a => {
         kcal += a.energia_kcal; prot += a.proteina_g;
         carb += a.carboidrato_g; lip += a.lipidio_g; fib += a.fibra_g;
@@ -466,7 +466,7 @@ export function PlanoAlimentarEditor({ pacienteId, planoId, onBack, paciente, in
           <MacroBox label="Gordura" value={`${totals.lip}`} unit="g" color="bg-yellow-500" />
           <MacroBox label="Fibra" value={`${totals.fib}`} unit="g" color="bg-green-500" />
         </div>
-        <p className="text-[10px] text-muted-foreground mt-2">Totais calculados com base na Opção A de cada refeição.</p>
+        <p className="text-[10px] text-muted-foreground mt-2">Totais calculados pela opção selecionada em cada refeição.</p>
       </div>
 
       {importedBanner && (
