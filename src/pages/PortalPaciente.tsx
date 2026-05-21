@@ -492,7 +492,7 @@ export default function PortalPaciente() {
                       {opLetras.length > 1 && (
                         <>
                           <span className="text-[10px] bg-primary/10 text-primary px-1.5 py-0.5 rounded-full font-medium">{opLetras.length} opções</span>
-                          <span className="text-[10px] bg-emerald-100 text-emerald-700 dark:bg-emerald-950/50 dark:text-emerald-300 px-1.5 py-0.5 rounded-full font-medium">contabilizando: {activeOpt}</span>
+                          <span className="text-[10px] bg-emerald-100 text-emerald-700 dark:bg-emerald-950/50 dark:text-emerald-300 px-1.5 py-0.5 rounded-full font-medium">Conta no dia: Opção {activeOpt}</span>
                         </>
                       )}
                     </div>
