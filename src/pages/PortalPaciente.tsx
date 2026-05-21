@@ -505,22 +505,45 @@ export default function PortalPaciente() {
               {isExp && (
                 <div className="px-4 pb-4 space-y-2 animate-fade-in">
                   {opLetras.length > 1 && (
-                    <>
-                    <p className="text-[10px] text-muted-foreground">Escolha qual opção você vai seguir hoje — ela passa a contar no total do dia.</p>
-                    <Tabs value={activeOpt} onValueChange={(v) => setActiveOption(prev => {
-                      const next = { ...prev, [ref.id]: v };
-                      if (plano?.id) {
-                        try { localStorage.setItem(`opcaoSel:${plano.id}`, JSON.stringify(next)); } catch {}
-                      }
-                      return next;
-                    })}>
-                      <TabsList className="w-full">
-                        {opLetras.map(l => (
-                          <TabsTrigger key={l} value={l} className="flex-1 text-xs">Opção {l}</TabsTrigger>
-                        ))}
-                      </TabsList>
-                    </Tabs>
-                    </>
+                    <div className="rounded-xl bg-muted/40 border border-border/60 p-3 space-y-2">
+                      <div className="flex items-start gap-2">
+                        <div className="h-5 w-5 rounded-full bg-emerald-500/15 text-emerald-700 dark:text-emerald-300 flex items-center justify-center text-[10px] font-bold shrink-0 mt-0.5">✓</div>
+                        <div className="flex-1">
+                          <p className="text-xs font-semibold text-foreground">Qual opção você vai comer hoje?</p>
+                          <p className="text-[10px] text-muted-foreground">Marque uma — ela conta no total do dia (calorias e macros).</p>
+                        </div>
+                      </div>
+                      <div className="flex flex-wrap gap-2">
+                        {opLetras.map(l => {
+                          const isSel = activeOpt === l;
+                          const kcalOp = (opcoes[l] || []).reduce((a: number, al: any) => a + (al.energia_kcal || 0), 0);
+                          return (
+                            <button
+                              key={l}
+                              type="button"
+                              onClick={() => setActiveOption(prev => {
+                                const next = { ...prev, [ref.id]: l };
+                                if (plano?.id) {
+                                  try { localStorage.setItem(`opcaoSel:${plano.id}`, JSON.stringify(next)); } catch {}
+                                }
+                                return next;
+                              })}
+                              className={`flex items-center gap-2 px-3 py-1.5 rounded-full text-xs font-medium border transition-all ${
+                                isSel
+                                  ? "bg-emerald-500 text-white border-emerald-500 shadow-sm"
+                                  : "bg-background text-foreground border-border hover:border-emerald-400"
+                              }`}
+                            >
+                              <span className={`h-3.5 w-3.5 rounded-full border-2 flex items-center justify-center ${isSel ? "border-white" : "border-muted-foreground"}`}>
+                                {isSel && <span className="h-1.5 w-1.5 rounded-full bg-white" />}
+                              </span>
+                              Opção {l}
+                              <span className={`text-[10px] ${isSel ? "text-white/80" : "text-muted-foreground"}`}>· {Math.round(kcalOp)} kcal</span>
+                            </button>
+                          );
+                        })}
+                      </div>
+                    </div>
                   )}
                   {alimentosAtivos.map((ali: any) => {
                     const subs = (ali.alimento_substituicoes || []).slice().sort((a: any, b: any) => (a.ordem || 0) - (b.ordem || 0));
