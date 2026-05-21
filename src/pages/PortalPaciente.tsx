@@ -466,7 +466,7 @@ export default function PortalPaciente() {
                 );
               })()}
             </div>
-            <p className="text-[10px] text-muted-foreground text-center mt-2">Totais baseados na opção selecionada em cada refeição (padrão: Opção A)</p>
+            <p className="text-[10px] text-muted-foreground text-center mt-2">Totais calculados pelas opções marcadas em cada refeição (padrão: Opção A)</p>
           </CardContent>
         </Card>
         {sortedRefeicoes.map((ref: any, idx: number) => {
