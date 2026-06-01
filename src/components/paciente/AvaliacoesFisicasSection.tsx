@@ -304,6 +304,11 @@ export function AvaliacoesFisicasSection({ paciente }: Props) {
       // Clean non-DB fields
       delete payload.id; delete payload.created_at; delete payload.updated_at;
 
+      // Convert empty strings to null (avoids "invalid input syntax for type numeric" on empty numeric fields)
+      for (const k of Object.keys(payload)) {
+        if (payload[k] === "") payload[k] = null;
+      }
+
       if (editId) {
         const { error } = await supabase.from("avaliacoes_fisicas").update(payload as any).eq("id", editId);
         if (error) throw error;
