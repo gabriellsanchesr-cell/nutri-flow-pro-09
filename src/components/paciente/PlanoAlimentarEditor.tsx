@@ -58,6 +58,10 @@ interface Alimento {
 interface Opcao {
   letra: string;
   alimentos: Alimento[];
+  kcal_opcao?: number;
+  prot_opcao_g?: number;
+  carb_opcao_g?: number;
+  gord_opcao_g?: number;
 }
 
 interface Refeicao {
