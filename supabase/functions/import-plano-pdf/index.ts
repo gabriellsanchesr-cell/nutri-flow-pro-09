@@ -286,20 +286,52 @@ Deno.serve(async (req) => {
     }
 
     const aiJson = await aiResp.json();
-    const toolCall = aiJson?.choices?.[0]?.message?.tool_calls?.[0];
-    if (!toolCall) {
-      console.error("No tool call:", JSON.stringify(aiJson).slice(0, 500));
+    const message = aiJson?.choices?.[0]?.message;
+    const toolCall = message?.tool_calls?.[0];
+    let rawArgs: string | undefined = toolCall?.function?.arguments;
+    if (!rawArgs && typeof message?.content === "string") {
+      const m = message.content.match(/\{[\s\S]*\}/);
+      if (m) rawArgs = m[0];
+    }
+    if (!rawArgs) {
+      console.error("No tool call/JSON:", JSON.stringify(aiJson).slice(0, 800));
       return json({ error: "IA não devolveu estrutura válida" }, 500);
     }
     let parsed: { observacoes?: string; refeicoes: RefeicaoExtraida[] };
     try {
-      parsed = JSON.parse(toolCall.function.arguments);
+      parsed = JSON.parse(rawArgs);
     } catch {
-      return json({ error: "Resposta da IA inválida" }, 500);
+      return json({ error: "Resposta da IA inválida (JSON)" }, 500);
     }
-    if (!parsed.refeicoes?.length) {
+    if (!Array.isArray(parsed.refeicoes) || parsed.refeicoes.length === 0) {
       return json({ error: "Nenhuma refeição identificada no PDF." }, 422);
     }
+
+    // Sanitiza número aceitando "507", "507 kcal", "40g", "40,5", "P 40"
+    const num = (v: any): number | undefined => {
+      if (v == null) return undefined;
+      if (typeof v === "number" && isFinite(v)) return v;
+      const s = String(v).replace(",", ".").match(/-?\d+(\.\d+)?/);
+      return s ? parseFloat(s[0]) : undefined;
+    };
+
+    // Fallback local: varre o texto do PDF capturando padrões como
+    // "507 kcal · P 40 · C 61 · G 12" (separadores variados).
+    const pdfTotalsQueue: Array<{ kcal: number; p?: number; c?: number; g?: number }> = [];
+    if (pdfText) {
+      const re = /(\d{2,4})\s*kcal[^\n]{0,80}?P[^\d]{0,4}(\d{1,3})[^\n]{0,20}?C[^\d]{0,4}(\d{1,3})[^\n]{0,20}?G[^\d]{0,4}(\d{1,3})/gi;
+      let mm: RegExpExecArray | null;
+      while ((mm = re.exec(pdfText)) !== null) {
+        pdfTotalsQueue.push({
+          kcal: parseInt(mm[1], 10),
+          p: parseInt(mm[2], 10),
+          c: parseInt(mm[3], 10),
+          g: parseInt(mm[4], 10),
+        });
+      }
+    }
+    let pdfTotalsIdx = 0;
+    const nextPdfTotal = () => pdfTotalsQueue[pdfTotalsIdx++];
 
     const admin = createClient(supabaseUrl, supabaseService);
     const { data: tacoAll } = await admin
