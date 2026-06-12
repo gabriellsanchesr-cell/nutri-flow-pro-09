@@ -2244,6 +2244,7 @@ export type Database = {
           plano_id: string
           substituicoes_sugeridas: string | null
           tipo: Database["public"]["Enums"]["tipo_refeicao"]
+          totais_opcao: Json
         }
         Insert: {
           created_at?: string
@@ -2255,6 +2256,7 @@ export type Database = {
           plano_id: string
           substituicoes_sugeridas?: string | null
           tipo: Database["public"]["Enums"]["tipo_refeicao"]
+          totais_opcao?: Json
         }
         Update: {
           created_at?: string
@@ -2266,6 +2268,7 @@ export type Database = {
           plano_id?: string
           substituicoes_sugeridas?: string | null
           tipo?: Database["public"]["Enums"]["tipo_refeicao"]
+          totais_opcao?: Json
         }
         Relationships: [
           {
