@@ -98,6 +98,10 @@ interface InitialDraft {
     observacoes?: string;
     opcoes: Array<{
       letra: string;
+      kcal_opcao?: number;
+      prot_opcao_g?: number;
+      carb_opcao_g?: number;
+      gord_opcao_g?: number;
       alimentos: Array<{
         nome_alimento: string;
         quantidade: number;
