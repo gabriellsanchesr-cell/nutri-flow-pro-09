@@ -391,7 +391,7 @@ Deno.serve(async (req) => {
 
     function enrichAlimento(a: AlimentoExtraido) {
       const { taco, precisaRevisao } = findTaco(a.nome, a.nota);
-      const qty = Number(a.quantidade_g) || 100;
+      const qty = num(a.quantidade_g) ?? 100;
       const displayName = a.nota ? `${a.nome} (${a.nota})` : a.nome;
       if (taco) {
         const ratio = qty / 100;
