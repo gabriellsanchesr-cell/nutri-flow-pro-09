@@ -365,12 +365,24 @@ export function PlanoAlimentarEditor({ pacienteId, planoId, onBack, paciente, in
       }
 
       for (const ref of refeicoes) {
+        const totaisOpcao: Record<string, any> = {};
+        for (const op of ref.opcoes) {
+          if (op.kcal_opcao != null) {
+            totaisOpcao[op.letra] = {
+              kcal: op.kcal_opcao,
+              p: op.prot_opcao_g ?? null,
+              c: op.carb_opcao_g ?? null,
+              g: op.gord_opcao_g ?? null,
+            };
+          }
+        }
         const { data: savedRef, error: refErr } = await (supabase as any).from("refeicoes").insert({
           plano_id: savedPlanoId!, tipo: ref.tipo as any, ordem: ref.ordem,
           nome_customizado: ref.nome_customizado || null,
           horario_sugerido: ref.horario_sugerido || null,
           observacoes: ref.observacoes || null,
           substituicoes_sugeridas: ref.substituicoes_sugeridas || null,
+          totais_opcao: totaisOpcao,
         }).select("id").single();
         if (refErr) throw refErr;
 
