@@ -677,10 +677,16 @@ export function PlanoAlimentarEditor({ pacienteId, planoId, onBack, paciente, in
                                   className="h-7 text-xs" value={ali.medida_caseira}
                                   onChange={e => updateAlimento(refIdx, op.letra, aliIdx, a => ({ ...a, medida_caseira: e.target.value }))}
                                 />
-                                <span className="text-xs text-center">{Math.round(ali.energia_kcal)}</span>
-                                <span className="text-xs text-center">{Math.round(ali.proteina_g)}</span>
-                                <span className="text-xs text-center">{Math.round(ali.carboidrato_g)}</span>
-                                <span className="text-xs text-center">{Math.round(ali.lipidio_g)}</span>
+                                {(() => {
+                                  const naoTemMacros = ali.alimento_taco_id == null && (ali.energia_kcal || 0) === 0;
+                                  const fmt = (v: number) => naoTemMacros ? "—" : Math.round(v);
+                                  return <>
+                                    <span className="text-xs text-center">{fmt(ali.energia_kcal)}</span>
+                                    <span className="text-xs text-center">{fmt(ali.proteina_g)}</span>
+                                    <span className="text-xs text-center">{fmt(ali.carboidrato_g)}</span>
+                                    <span className="text-xs text-center">{fmt(ali.lipidio_g)}</span>
+                                  </>;
+                                })()}
                                 <Button variant="ghost" size="icon" className="h-7 w-7" onClick={() => removeAlimento(refIdx, op.letra, aliIdx)}>
                                   <Trash2 className="h-3.5 w-3.5 text-destructive" />
                                 </Button>
