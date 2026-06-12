@@ -452,13 +452,27 @@ Deno.serve(async (req) => {
           });
           return { ...a, ordem: idx, substituicoes };
         });
+        let kcalOp = num(op.kcal_opcao);
+        let pOp = num(op.prot_opcao_g);
+        let cOp = num(op.carb_opcao_g);
+        let gOp = num(op.gord_opcao_g);
+        if (kcalOp == null) {
+          // Fallback: consome o próximo total detectado no texto do PDF
+          const pdfTot = nextPdfTotal();
+          if (pdfTot) {
+            kcalOp = pdfTot.kcal;
+            pOp = pOp ?? pdfTot.p;
+            cOp = cOp ?? pdfTot.c;
+            gOp = gOp ?? pdfTot.g;
+          }
+        }
         return {
           letra: op.letra || String.fromCharCode(65 + j),
           alimentos: alimentosComSubs,
-          kcal_opcao: op.kcal_opcao,
-          prot_opcao_g: op.prot_opcao_g,
-          carb_opcao_g: op.carb_opcao_g,
-          gord_opcao_g: op.gord_opcao_g,
+          kcal_opcao: kcalOp,
+          prot_opcao_g: pOp,
+          carb_opcao_g: cOp,
+          gord_opcao_g: gOp,
         };
       });
       return {
