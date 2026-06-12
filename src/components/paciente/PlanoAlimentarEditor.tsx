@@ -282,14 +282,22 @@ export function PlanoAlimentarEditor({ pacienteId, planoId, onBack, paciente, in
           byOpcao.get(letra)!.push(a);
         }
         if (byOpcao.size === 0) byOpcao.set("A", []);
+        const totaisOpcao = (r.totais_opcao || {}) as Record<string, any>;
         const opcoes: Opcao[] = [...byOpcao.entries()]
           .sort(([a], [b]) => a.localeCompare(b))
-          .map(([letra, items]) => ({
-            letra,
-            alimentos: items
-              .sort((x, y) => (x.ordem || 0) - (y.ordem || 0))
-              .map(mapAlimento),
-          }));
+          .map(([letra, items]) => {
+            const t = totaisOpcao[letra] || {};
+            return {
+              letra,
+              alimentos: items
+                .sort((x, y) => (x.ordem || 0) - (y.ordem || 0))
+                .map(mapAlimento),
+              kcal_opcao: t.kcal != null ? Number(t.kcal) : undefined,
+              prot_opcao_g: t.p != null ? Number(t.p) : undefined,
+              carb_opcao_g: t.c != null ? Number(t.c) : undefined,
+              gord_opcao_g: t.g != null ? Number(t.g) : undefined,
+            };
+          });
         return {
           id: r.id, tipo: r.tipo, nome_customizado: r.nome_customizado || "",
           ordem: r.ordem || 0,
