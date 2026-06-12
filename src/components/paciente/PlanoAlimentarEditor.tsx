@@ -302,15 +302,26 @@ export function PlanoAlimentarEditor({ pacienteId, planoId, onBack, paciente, in
     }
   };
 
-  // Totais somam a opção atualmente selecionada em cada refeição
+  // Totais somam a opção atualmente selecionada em cada refeição.
+  // Quando a opção traz totais vindos do PDF (kcal_opcao/...), usamos esses valores
+  // como autoritativos; caso contrário caímos para a soma calculada via TACO.
   const totals = useMemo(() => {
     let kcal = 0, prot = 0, carb = 0, lip = 0, fib = 0;
     refeicoes.forEach(r => {
       const op = r.opcoes.find(o => o.letra === r.opcaoAtiva) || r.opcoes[0];
-      op?.alimentos.forEach(a => {
-        kcal += a.energia_kcal; prot += a.proteina_g;
-        carb += a.carboidrato_g; lip += a.lipidio_g; fib += a.fibra_g;
-      });
+      if (!op) return;
+      if (op.kcal_opcao != null) {
+        kcal += op.kcal_opcao;
+        prot += op.prot_opcao_g || 0;
+        carb += op.carb_opcao_g || 0;
+        lip += op.gord_opcao_g || 0;
+        op.alimentos.forEach(a => { fib += a.fibra_g; });
+      } else {
+        op.alimentos.forEach(a => {
+          kcal += a.energia_kcal; prot += a.proteina_g;
+          carb += a.carboidrato_g; lip += a.lipidio_g; fib += a.fibra_g;
+        });
+      }
     });
     return { kcal: Math.round(kcal), prot: Math.round(prot), carb: Math.round(carb), lip: Math.round(lip), fib: Math.round(fib) };
   }, [refeicoes]);
