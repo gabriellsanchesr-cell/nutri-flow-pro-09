@@ -573,8 +573,9 @@ export function PlanoAlimentarEditor({ pacienteId, planoId, onBack, paciente, in
                   className="flex items-center gap-3 flex-1 text-left"
                 >
                   <CardTitle className="text-base">{displayName}</CardTitle>
-                  <Badge variant="outline" className="text-xs font-normal">
+                  <Badge variant="outline" className="text-xs font-normal" title={mt.fromPdf ? "Valores extraídos do PDF" : "Calculado pela base TACO"}>
                     Opção {activeOp.letra}: {mt.kcal} kcal • P {mt.p}g • C {mt.c}g • G {mt.l}g
+                    {mt.fromPdf && <span className="ml-1 text-[9px] text-muted-foreground">(PDF)</span>}
                   </Badge>
                   {ref.opcoes.length > 1 && (
                     <Badge variant="secondary" className="text-xs">{ref.opcoes.length} opções</Badge>
