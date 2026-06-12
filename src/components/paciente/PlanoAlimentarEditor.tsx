@@ -451,9 +451,18 @@ export function PlanoAlimentarEditor({ pacienteId, planoId, onBack, paciente, in
   };
 
   const macroTotalOpcao = (op: Opcao) => {
+    if (op.kcal_opcao != null) {
+      return {
+        kcal: Math.round(op.kcal_opcao),
+        p: Math.round(op.prot_opcao_g || 0),
+        c: Math.round(op.carb_opcao_g || 0),
+        l: Math.round(op.gord_opcao_g || 0),
+        fromPdf: true,
+      };
+    }
     let kcal = 0, p = 0, c = 0, l = 0;
     op.alimentos.forEach(a => { kcal += a.energia_kcal; p += a.proteina_g; c += a.carboidrato_g; l += a.lipidio_g; });
-    return { kcal: Math.round(kcal), p: Math.round(p), c: Math.round(c), l: Math.round(l) };
+    return { kcal: Math.round(kcal), p: Math.round(p), c: Math.round(c), l: Math.round(l), fromPdf: false };
   };
 
   return (
