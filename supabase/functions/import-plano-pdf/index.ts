@@ -19,21 +19,26 @@ const TIPOS_VALIDOS = [
 const SYSTEM_PROMPT = `Você é um extrator de planos alimentares estruturados a partir de PDFs feitos por nutricionistas (em português brasileiro).
 
 REGRAS CRÍTICAS:
-- COPIE LITERALMENTE os nomes dos alimentos e quantidades como aparecem no PDF. NUNCA invente alimentos, NUNCA troque "doce de leite" por "batata doce", NUNCA troque "suco de uva" por "suco de laranja". Se estiver na dúvida, copie o termo exato e marque precisa_revisao=true.
+- COPIE LITERALMENTE os nomes dos alimentos e quantidades como aparecem no PDF. NUNCA invente alimentos, NUNCA troque "doce de leite" por "batata doce", NUNCA troque "suco de uva" por "suco de laranja", NUNCA troque "Maçã" por "Macarrão". Se estiver na dúvida, copie o termo exato e marque precisa_revisao=true.
+- Para o campo "nome", devolva o nome PRINCIPAL do alimento, limpo, em minúsculo, SEM parênteses descritivos. Coloque o conteúdo entre parênteses no campo "nota". Exemplos:
+  • "Carne magra (patinho ou alcatra)" → nome="carne magra", nota="patinho ou alcatra"
+  • "Folhas e legumes (alface, rucula, cenoura)" → nome="folhas e legumes", nota="alface, rucula, cenoura"
+  • "Ovos mexidos" → nome="ovos mexidos", sem nota
+- Mantenha "macarrão de arroz" como nome próprio (NÃO encurte para "macarrão"). Mantenha "iogurte natural zero lactose" inteiro. Mantenha "tapioca (goma)" como nome="tapioca", nota="goma".
 - Extraia TODAS as refeições do PDF na ordem em que aparecem.
-- Para cada refeição, extraia o NOME exato do título (ex.: "Pré-treino", "Café da manhã / pós-treino", "Almoço", "Lanche da tarde", "Jantar", "Ceia") e o HORÁRIO no formato HH:MM se houver (ex.: "06:30").
-- Mapeie o tipo_sugerido para o enum mais próximo: cafe_da_manha, lanche_da_manha, almoco, lanche_da_tarde, jantar, ceia. Use "lanche_da_manha" para Pré-treino e "cafe_da_manha" para Pós-treino quando ambíguo.
-- Cada refeição pode ter MÚLTIPLAS OPÇÕES (Opção A, Opção B, Opção C…). Extraia CADA OPÇÃO COMO UM ITEM SEPARADO no array opcoes, com sua própria lista de alimentos e suas próprias substituições por item.
-- Se a refeição tiver apenas uma lista (sem opções A/B/C), use uma única opção com letra "A".
-- Para cada alimento extraia: nome (limpo, sem marca, em minúsculo), quantidade_g em GRAMAS/ML (converta: "1 fatia"≈30g, "1 col sopa"≈15g, "1 xícara"≈200ml, "1 unidade média maçã"≈130g, "1 unidade média banana"≈65g, "1 medidor whey"=30g, "1 concha pequena feijão"≈65g), medida_caseira (texto literal como "2 fatias (50g)").
-- SUBSTITUIÇÕES POR ITEM: cada opção pode ter um bloco "SUBSTITUIÇÕES POR ITEM" listando alternativas para cada alimento. Extraia em substituicoes_por_item: para cada alimento base do bloco, extraia alternativas[] com nome, quantidade_g e medida_caseira.
-  Ex.: "Pão integral ↔ tapioca 40g goma · pão francês 1 unid · cuscuz 90g · torrada integral 4 unid"
-  → alimento_base: "Pão integral", alternativas: [{nome:"tapioca goma", quantidade_g:40, medida_caseira:"40g goma"}, {nome:"pão francês", quantidade_g:50, medida_caseira:"1 unidade"}, {nome:"cuscuz", quantidade_g:90, medida_caseira:"90g"}, {nome:"torrada integral", quantidade_g:32, medida_caseira:"4 unidades"}]
-- Observações da refeição vão em observacoes. Observações gerais do plano (hidratação, café, suplementação, totais, etc.) vão na raiz em observacoes.
+- Para cada refeição, extraia o NOME exato do título (ex.: "Almoço", "Lanche da tarde", "Jantar", "Ceia") e o HORÁRIO no formato HH:MM se houver.
+- Mapeie tipo_sugerido para o enum mais próximo: cafe_da_manha, lanche_da_manha, almoco, lanche_da_tarde, jantar, ceia.
+- Cada refeição pode ter MÚLTIPLAS OPÇÕES (Opção A, Opção B, Opção C…). Extraia CADA OPÇÃO como item separado em opcoes, com sua própria lista de alimentos e suas próprias substituições por item.
+- TOTAIS DA OPÇÃO: se o PDF traz no cabeçalho da opção algo como "507 kcal · P 40 · C 61 · G 12", preencha kcal_opcao=507, prot_opcao_g=40, carb_opcao_g=61, gord_opcao_g=12. NÃO recalcule, copie os valores do PDF. Se não houver, deixe em branco.
+- Para cada alimento extraia: nome (limpo, minúsculo, sem parênteses), nota (texto entre parênteses, se houver), quantidade_g em GRAMAS/ML (converta unidades: "1 fatia"≈30g, "1 col sopa"≈15g, "1 xícara"≈200ml, "1 unidade média maçã"≈130g, "1 unidade média banana"≈65g, "1 ovo"≈50g, "1 clara"≈33g), medida_caseira (texto literal, ex.: "2 un (100g)" ou "à vontade").
+- Para "à vontade", "a vontade", "livre" use quantidade_g=100 e medida_caseira="à vontade" e precisa_revisao=true.
+- SUBSTITUIÇÕES POR ITEM: para cada opção, se houver bloco "SUBSTITUIÇÕES POR ITEM", extraia em substituicoes_por_item: para cada alimento base, alternativas[] com nome, quantidade_g e medida_caseira.
+- Observações específicas da refeição vão em observacoes da refeição. Observações gerais do plano (notas clínicas, hidratação, lista de compras) vão na raiz em observacoes.
 - Devolva APENAS JSON válido conforme o schema da tool.`;
 
 interface AlimentoExtraido {
   nome: string;
+  nota?: string;
   quantidade_g: number;
   medida_caseira: string;
   precisa_revisao?: boolean;
@@ -48,6 +53,10 @@ interface OpcaoExtraida {
   letra: string;
   alimentos: AlimentoExtraido[];
   substituicoes_por_item?: SubstituicaoItem[];
+  kcal_opcao?: number;
+  prot_opcao_g?: number;
+  carb_opcao_g?: number;
+  gord_opcao_g?: number;
 }
 
 interface RefeicaoExtraida {
@@ -58,6 +67,57 @@ interface RefeicaoExtraida {
   observacoes?: string;
   opcoes: OpcaoExtraida[];
 }
+
+// Curated alias dictionary: maps normalized user text → preferred TACO name fragment
+// The right side is matched (substring, all tokens) against the TACO catalog.
+const ALIASES: Array<{ match: RegExp; tacoLike: string; precisaRevisao?: boolean }> = [
+  // Frutas
+  { match: /^maca$/, tacoLike: "maca com casca" },
+  { match: /^maca fuji$/, tacoLike: "maca fuji" },
+  { match: /^banana( prata)?$/, tacoLike: "banana prata" },
+  { match: /^ponca$/, tacoLike: "tangerina", precisaRevisao: true },
+  { match: /^tangerina$/, tacoLike: "tangerina" },
+  // Carnes
+  { match: /^carne magra/, tacoLike: "carne bovina patinho grelhado" },
+  { match: /^patinho/, tacoLike: "carne bovina patinho grelhado" },
+  { match: /^alcatra/, tacoLike: "carne bovina alcatra grelhada" },
+  { match: /^carne moida/, tacoLike: "carne bovina acem cozido", precisaRevisao: true },
+  { match: /^frango( grelhado| peito)?$/, tacoLike: "frango peito grelhado" },
+  { match: /^tilapia( grelhada| cozida)?$/, tacoLike: "peixe tilapia cozida" },
+  { match: /tilapia ou sardinha/, tacoLike: "peixe sardinha enlatada", precisaRevisao: true },
+  { match: /^sardinha/, tacoLike: "peixe sardinha enlatada" },
+  { match: /^atum/, tacoLike: "peixe atum em agua enlatado" },
+  { match: /^salmao/, tacoLike: "peixe salmao grelhado" },
+  // Ovos
+  { match: /^ovos? mexidos?$/, tacoLike: "ovo de galinha inteiro cozido" },
+  { match: /^ovos?$/, tacoLike: "ovo de galinha inteiro cozido" },
+  { match: /^claras?( de ovo)?$/, tacoLike: "ovo de galinha clara", precisaRevisao: true },
+  // Carboidratos
+  { match: /^arroz( branco| cozido)?$/, tacoLike: "arroz cozido" },
+  { match: /^arroz integral/, tacoLike: "arroz integral cozido" },
+  { match: /^batata( inglesa)?( cozida)?$/, tacoLike: "batata inglesa cozida" },
+  { match: /^batata[- ]doce( cozida)?$/, tacoLike: "batata-doce cozida" },
+  { match: /^mandioca/, tacoLike: "mandioca cozida" },
+  { match: /^inhame/, tacoLike: "inhame cozido" },
+  { match: /^quinoa/, tacoLike: "quinoa" },
+  { match: /^macarrao de arroz/, tacoLike: "macarrao de arroz", precisaRevisao: true },
+  { match: /^macarrao( comum| trigo)?$/, tacoLike: "macarrao cozido" },
+  { match: /^aveia/, tacoLike: "aveia flocos" },
+  { match: /^tapioca( goma)?/, tacoLike: "tapioca" },
+  // Folhas e legumes (não tem entrada precisa — marcar revisao)
+  { match: /^folhas e legumes/, tacoLike: "alface", precisaRevisao: true },
+  // Laticínios
+  { match: /iogurte.*(zero lactose|natural|desnatado)/, tacoLike: "iogurte natural desnatado" },
+  { match: /^iogurte/, tacoLike: "iogurte natural integral" },
+  // Oleaginosas e gorduras
+  { match: /^amendoas?$/, tacoLike: "amendoa", precisaRevisao: true },
+  { match: /^amendoim/, tacoLike: "amendoim torrado" },
+  { match: /^pasta de amendoim/, tacoLike: "pasta de amendoim" },
+  { match: /^abacate/, tacoLike: "abacate" },
+  { match: /^azeite/, tacoLike: "azeite oliva" },
+  // Molho
+  { match: /^molho de tomate/, tacoLike: "molho de tomate", precisaRevisao: true },
+];
 
 Deno.serve(async (req) => {
   if (req.method === "OPTIONS") {
@@ -89,7 +149,6 @@ Deno.serve(async (req) => {
       return json({ error: "paciente_id é obrigatório no modo paciente" }, 400);
     }
 
-    // Decode PDF
     const binaryStr = atob(pdfBase64);
     const bytes = new Uint8Array(binaryStr.length);
     for (let i = 0; i < binaryStr.length; i++) bytes[i] = binaryStr.charCodeAt(i);
@@ -115,7 +174,7 @@ Deno.serve(async (req) => {
       ? {
           role: "user",
           content: [
-            { type: "text", text: "Este PDF é um plano alimentar (provavelmente escaneado). Faça OCR e extraia a estrutura completa conforme o schema, preservando opções A/B/C e substituições por item." },
+            { type: "text", text: "Este PDF é um plano alimentar (provavelmente escaneado). Faça OCR e extraia a estrutura completa conforme o schema, preservando opções A/B/C, totais por opção e substituições por item." },
             { type: "image_url", image_url: { url: `data:application/pdf;base64,${pdfBase64}` } },
           ],
         }
@@ -142,14 +201,14 @@ Deno.serve(async (req) => {
               parameters: {
                 type: "object",
                 properties: {
-                  observacoes: { type: "string", description: "Observações gerais do plano (hidratação, suplementação, notas finais)" },
+                  observacoes: { type: "string" },
                   refeicoes: {
                     type: "array",
                     items: {
                       type: "object",
                       properties: {
-                        nome: { type: "string", description: "Nome literal da refeição como no PDF (ex.: 'Pré-treino', 'Café da manhã / pós-treino')" },
-                        horario: { type: "string", description: "Horário no formato HH:MM se houver" },
+                        nome: { type: "string" },
+                        horario: { type: "string" },
                         tipo_sugerido: { type: "string", enum: TIPOS_VALIDOS },
                         ordem: { type: "number" },
                         observacoes: { type: "string" },
@@ -158,13 +217,18 @@ Deno.serve(async (req) => {
                           items: {
                             type: "object",
                             properties: {
-                              letra: { type: "string", description: "Letra da opção: A, B, C…" },
+                              letra: { type: "string" },
+                              kcal_opcao: { type: "number", description: "Total de kcal da opção, conforme aparece no PDF (não recalcular)" },
+                              prot_opcao_g: { type: "number" },
+                              carb_opcao_g: { type: "number" },
+                              gord_opcao_g: { type: "number" },
                               alimentos: {
                                 type: "array",
                                 items: {
                                   type: "object",
                                   properties: {
                                     nome: { type: "string" },
+                                    nota: { type: "string", description: "Texto entre parênteses ou descritor secundário" },
                                     quantidade_g: { type: "number" },
                                     medida_caseira: { type: "string" },
                                     precisa_revisao: { type: "boolean" },
@@ -177,13 +241,14 @@ Deno.serve(async (req) => {
                                 items: {
                                   type: "object",
                                   properties: {
-                                    alimento_base: { type: "string", description: "Nome do alimento base ao qual estas substituições se aplicam" },
+                                    alimento_base: { type: "string" },
                                     alternativas: {
                                       type: "array",
                                       items: {
                                         type: "object",
                                         properties: {
                                           nome: { type: "string" },
+                                          nota: { type: "string" },
                                           quantidade_g: { type: "number" },
                                           medida_caseira: { type: "string" },
                                         },
@@ -236,42 +301,70 @@ Deno.serve(async (req) => {
       return json({ error: "Nenhuma refeição identificada no PDF." }, 422);
     }
 
-    // TACO
     const admin = createClient(supabaseUrl, supabaseService);
     const { data: tacoAll } = await admin
       .from("alimentos_taco")
       .select("id, nome, energia_kcal, proteina_g, carboidrato_g, lipidio_g, fibra_g");
 
     const normalize = (s: string) =>
-      s.toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "")
+      (s || "").toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "")
+        .replace(/\([^)]*\)/g, " ")
         .replace(/[^a-z0-9 ]/g, " ").replace(/\s+/g, " ").trim();
+
     const tacoIndex = (tacoAll || []).map((t) => ({ ...t, norm: normalize(t.nome) }));
 
-    function findTaco(nome: string) {
-      const n = normalize(nome);
+    // SAFE matcher: never use prefix/includes on short tokens; require all significant
+    // tokens (>=4 chars) to appear in the TACO name. Returns null when not confident.
+    function matchTacoByText(text: string) {
+      const n = normalize(text);
       if (!n) return null;
+      // exact
       let m = tacoIndex.find((t) => t.norm === n);
       if (m) return m;
-      m = tacoIndex.find((t) => t.norm.startsWith(n) || n.startsWith(t.norm));
-      if (m) return m;
-      const tokens = n.split(" ").filter((w) => w.length >= 3);
+      // all significant tokens
+      const tokens = n.split(" ").filter((w) => w.length >= 4);
       if (tokens.length === 0) return null;
-      const candidates = tacoIndex.filter((t) => tokens.every((tok) => t.norm.includes(tok)));
+      const candidates = tacoIndex.filter((t) =>
+        tokens.every((tok) => new RegExp(`(^|\\s)${tok}`).test(t.norm))
+      );
       if (candidates.length > 0) {
         candidates.sort((a, b) => a.norm.length - b.norm.length);
         return candidates[0];
       }
-      m = tacoIndex.find((t) => t.norm.includes(tokens[0]));
-      return m || null;
+      return null;
+    }
+
+    function findTaco(nome: string, nota?: string) {
+      const n = normalize(nome);
+      if (!n) return { taco: null, precisaRevisao: false };
+      // 1. alias dictionary
+      for (const alias of ALIASES) {
+        if (alias.match.test(n)) {
+          const t = matchTacoByText(alias.tacoLike);
+          if (t) return { taco: t, precisaRevisao: !!alias.precisaRevisao };
+        }
+      }
+      // 2. try literal name
+      let t = matchTacoByText(n);
+      if (t) return { taco: t, precisaRevisao: false };
+      // 3. try name + nota combined (e.g., "carne magra" + "patinho")
+      if (nota) {
+        t = matchTacoByText(`${n} ${normalize(nota)}`);
+        if (t) return { taco: t, precisaRevisao: false };
+        t = matchTacoByText(normalize(nota));
+        if (t) return { taco: t, precisaRevisao: false };
+      }
+      return { taco: null, precisaRevisao: true };
     }
 
     function enrichAlimento(a: AlimentoExtraido) {
-      const taco = findTaco(a.nome);
+      const { taco, precisaRevisao } = findTaco(a.nome, a.nota);
       const qty = Number(a.quantidade_g) || 100;
+      const displayName = a.nota ? `${a.nome} (${a.nota})` : a.nome;
       if (taco) {
         const ratio = qty / 100;
         return {
-          nome_alimento: taco.nome,
+          nome_alimento: displayName,
           quantidade: qty,
           medida_caseira: a.medida_caseira || "1 porção",
           energia_kcal: Number(taco.energia_kcal) * ratio,
@@ -280,11 +373,11 @@ Deno.serve(async (req) => {
           lipidio_g: Number(taco.lipidio_g) * ratio,
           fibra_g: Number(taco.fibra_g) * ratio,
           alimento_taco_id: taco.id,
-          precisa_revisao: !!a.precisa_revisao,
+          precisa_revisao: !!a.precisa_revisao || precisaRevisao,
         };
       }
       return {
-        nome_alimento: a.nome,
+        nome_alimento: displayName,
         quantidade: qty,
         medida_caseira: a.medida_caseira || "1 porção",
         energia_kcal: 0, proteina_g: 0, carboidrato_g: 0, lipidio_g: 0, fibra_g: 0,
@@ -297,22 +390,19 @@ Deno.serve(async (req) => {
       const tipo = TIPOS_VALIDOS.includes(r.tipo_sugerido) ? r.tipo_sugerido : "lanche_da_manha";
       const opcoes = (r.opcoes || []).map((op, j) => {
         const alimentos = (op.alimentos || []).map(enrichAlimento);
-        // Build per-base substitution map keyed by normalized base name
         const subsMap = new Map<string, AlimentoExtraido[]>();
         for (const s of op.substituicoes_por_item || []) {
           const key = normalize(s.alimento_base);
           if (!key) continue;
           subsMap.set(key, s.alternativas || []);
         }
-        // Attach substituicoes structured to each food
         const alimentosComSubs = alimentos.map((a, idx) => {
-          // try direct match by normalized name OR by first token
           const aNorm = normalize(a.nome_alimento);
           let alts: AlimentoExtraido[] | undefined = subsMap.get(aNorm);
           if (!alts) {
             const baseToken = aNorm.split(" ")[0];
             for (const [k, v] of subsMap.entries()) {
-              if (k.includes(baseToken) || baseToken.includes(k.split(" ")[0])) {
+              if (baseToken.length >= 4 && (k === baseToken || k.startsWith(baseToken + " "))) {
                 alts = v;
                 break;
               }
@@ -330,7 +420,14 @@ Deno.serve(async (req) => {
           });
           return { ...a, ordem: idx, substituicoes };
         });
-        return { letra: op.letra || String.fromCharCode(65 + j), alimentos: alimentosComSubs };
+        return {
+          letra: op.letra || String.fromCharCode(65 + j),
+          alimentos: alimentosComSubs,
+          kcal_opcao: op.kcal_opcao,
+          prot_opcao_g: op.prot_opcao_g,
+          carb_opcao_g: op.carb_opcao_g,
+          gord_opcao_g: op.gord_opcao_g,
+        };
       });
       return {
         nome: r.nome || "",

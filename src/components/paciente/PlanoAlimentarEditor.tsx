@@ -58,6 +58,10 @@ interface Alimento {
 interface Opcao {
   letra: string;
   alimentos: Alimento[];
+  kcal_opcao?: number;
+  prot_opcao_g?: number;
+  carb_opcao_g?: number;
+  gord_opcao_g?: number;
 }
 
 interface Refeicao {
@@ -94,6 +98,10 @@ interface InitialDraft {
     observacoes?: string;
     opcoes: Array<{
       letra: string;
+      kcal_opcao?: number;
+      prot_opcao_g?: number;
+      carb_opcao_g?: number;
+      gord_opcao_g?: number;
       alimentos: Array<{
         nome_alimento: string;
         quantidade: number;
@@ -186,6 +194,10 @@ export function PlanoAlimentarEditor({ pacienteId, planoId, onBack, paciente, in
       return initialData.refeicoes.map((imp, i) => {
         const opcoes: Opcao[] = (imp.opcoes || []).map((op) => ({
           letra: op.letra || "A",
+          kcal_opcao: op.kcal_opcao,
+          prot_opcao_g: op.prot_opcao_g,
+          carb_opcao_g: op.carb_opcao_g,
+          gord_opcao_g: op.gord_opcao_g,
           alimentos: (op.alimentos || []).map((a) => ({
             nome_alimento: a.nome_alimento,
             quantidade: a.quantidade,
@@ -290,15 +302,26 @@ export function PlanoAlimentarEditor({ pacienteId, planoId, onBack, paciente, in
     }
   };
 
-  // Totais somam a opção atualmente selecionada em cada refeição
+  // Totais somam a opção atualmente selecionada em cada refeição.
+  // Quando a opção traz totais vindos do PDF (kcal_opcao/...), usamos esses valores
+  // como autoritativos; caso contrário caímos para a soma calculada via TACO.
   const totals = useMemo(() => {
     let kcal = 0, prot = 0, carb = 0, lip = 0, fib = 0;
     refeicoes.forEach(r => {
       const op = r.opcoes.find(o => o.letra === r.opcaoAtiva) || r.opcoes[0];
-      op?.alimentos.forEach(a => {
-        kcal += a.energia_kcal; prot += a.proteina_g;
-        carb += a.carboidrato_g; lip += a.lipidio_g; fib += a.fibra_g;
-      });
+      if (!op) return;
+      if (op.kcal_opcao != null) {
+        kcal += op.kcal_opcao;
+        prot += op.prot_opcao_g || 0;
+        carb += op.carb_opcao_g || 0;
+        lip += op.gord_opcao_g || 0;
+        op.alimentos.forEach(a => { fib += a.fibra_g; });
+      } else {
+        op.alimentos.forEach(a => {
+          kcal += a.energia_kcal; prot += a.proteina_g;
+          carb += a.carboidrato_g; lip += a.lipidio_g; fib += a.fibra_g;
+        });
+      }
     });
     return { kcal: Math.round(kcal), prot: Math.round(prot), carb: Math.round(carb), lip: Math.round(lip), fib: Math.round(fib) };
   }, [refeicoes]);
@@ -428,9 +451,18 @@ export function PlanoAlimentarEditor({ pacienteId, planoId, onBack, paciente, in
   };
 
   const macroTotalOpcao = (op: Opcao) => {
+    if (op.kcal_opcao != null) {
+      return {
+        kcal: Math.round(op.kcal_opcao),
+        p: Math.round(op.prot_opcao_g || 0),
+        c: Math.round(op.carb_opcao_g || 0),
+        l: Math.round(op.gord_opcao_g || 0),
+        fromPdf: true,
+      };
+    }
     let kcal = 0, p = 0, c = 0, l = 0;
     op.alimentos.forEach(a => { kcal += a.energia_kcal; p += a.proteina_g; c += a.carboidrato_g; l += a.lipidio_g; });
-    return { kcal: Math.round(kcal), p: Math.round(p), c: Math.round(c), l: Math.round(l) };
+    return { kcal: Math.round(kcal), p: Math.round(p), c: Math.round(c), l: Math.round(l), fromPdf: false };
   };
 
   return (
@@ -541,8 +573,9 @@ export function PlanoAlimentarEditor({ pacienteId, planoId, onBack, paciente, in
                   className="flex items-center gap-3 flex-1 text-left"
                 >
                   <CardTitle className="text-base">{displayName}</CardTitle>
-                  <Badge variant="outline" className="text-xs font-normal">
+                  <Badge variant="outline" className="text-xs font-normal" title={mt.fromPdf ? "Valores extraídos do PDF" : "Calculado pela base TACO"}>
                     Opção {activeOp.letra}: {mt.kcal} kcal • P {mt.p}g • C {mt.c}g • G {mt.l}g
+                    {mt.fromPdf && <span className="ml-1 text-[9px] text-muted-foreground">(PDF)</span>}
                   </Badge>
                   {ref.opcoes.length > 1 && (
                     <Badge variant="secondary" className="text-xs">{ref.opcoes.length} opções</Badge>
@@ -644,10 +677,16 @@ export function PlanoAlimentarEditor({ pacienteId, planoId, onBack, paciente, in
                                   className="h-7 text-xs" value={ali.medida_caseira}
                                   onChange={e => updateAlimento(refIdx, op.letra, aliIdx, a => ({ ...a, medida_caseira: e.target.value }))}
                                 />
-                                <span className="text-xs text-center">{Math.round(ali.energia_kcal)}</span>
-                                <span className="text-xs text-center">{Math.round(ali.proteina_g)}</span>
-                                <span className="text-xs text-center">{Math.round(ali.carboidrato_g)}</span>
-                                <span className="text-xs text-center">{Math.round(ali.lipidio_g)}</span>
+                                {(() => {
+                                  const naoTemMacros = ali.alimento_taco_id == null && (ali.energia_kcal || 0) === 0;
+                                  const fmt = (v: number) => naoTemMacros ? "—" : Math.round(v);
+                                  return <>
+                                    <span className="text-xs text-center">{fmt(ali.energia_kcal)}</span>
+                                    <span className="text-xs text-center">{fmt(ali.proteina_g)}</span>
+                                    <span className="text-xs text-center">{fmt(ali.carboidrato_g)}</span>
+                                    <span className="text-xs text-center">{fmt(ali.lipidio_g)}</span>
+                                  </>;
+                                })()}
                                 <Button variant="ghost" size="icon" className="h-7 w-7" onClick={() => removeAlimento(refIdx, op.letra, aliIdx)}>
                                   <Trash2 className="h-3.5 w-3.5 text-destructive" />
                                 </Button>
