@@ -194,6 +194,10 @@ export function PlanoAlimentarEditor({ pacienteId, planoId, onBack, paciente, in
       return initialData.refeicoes.map((imp, i) => {
         const opcoes: Opcao[] = (imp.opcoes || []).map((op) => ({
           letra: op.letra || "A",
+          kcal_opcao: op.kcal_opcao,
+          prot_opcao_g: op.prot_opcao_g,
+          carb_opcao_g: op.carb_opcao_g,
+          gord_opcao_g: op.gord_opcao_g,
           alimentos: (op.alimentos || []).map((a) => ({
             nome_alimento: a.nome_alimento,
             quantidade: a.quantidade,
