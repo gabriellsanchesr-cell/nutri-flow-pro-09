@@ -131,7 +131,7 @@ export default function ConfiguracaoClinica() {
         smtp_host: config.smtp_host || null,
         smtp_port: config.smtp_port,
         smtp_user: config.smtp_user || null,
-        smtp_password: config.smtp_password || null,
+        ...(config.smtp_password ? { smtp_password: config.smtp_password } : {}),
         smtp_ativo: config.smtp_ativo,
       };
 
