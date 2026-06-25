@@ -18,11 +18,11 @@ interface Props {
 }
 
 const STAGES = [
-  "Lendo PDF...",
-  "Tentando OCR se necessário...",
+  "Lendo o PDF e preservando o layout...",
+  "Enviando para a IA com leitura visual...",
   "Identificando refeições, horários e opções (A/B/C)...",
-  "Identificando substituições por alimento...",
-  "Casando com base TACO e calculando macros...",
+  "Separando alimentos e substituições por item...",
+  "Casando com a base TACO e calculando macros...",
 ];
 
 export function ImportarPlanoPdfModal({ open, onOpenChange, pacienteId, mode = "paciente", onImported }: Props) {
@@ -43,7 +43,6 @@ export function ImportarPlanoPdfModal({ open, onOpenChange, pacienteId, mode = "
     const interval = setInterval(() => setStage((s) => Math.min(s + 1, STAGES.length - 1)), 4000);
 
     try {
-      // Read as base64
       const base64 = await new Promise<string>((resolve, reject) => {
         const reader = new FileReader();
         reader.onload = () => {
@@ -67,7 +66,12 @@ export function ImportarPlanoPdfModal({ open, onOpenChange, pacienteId, mode = "
         return;
       }
 
-      toast({ title: "PDF importado!", description: "Revise as informações antes de ativar." });
+      const stats = (data as any)?.stats;
+      const descricao = stats
+        ? `${stats.refeicoes} refeições · ${stats.opcoes} opções · ${stats.alimentos} alimentos · ${stats.substituicoes} substituições${stats.precisam_revisao ? ` · ${stats.precisam_revisao} p/ revisar` : ""}`
+        : "Revise as informações antes de ativar.";
+
+      toast({ title: "PDF importado!", description: descricao });
       onImported({
         nome: nome.trim() || "Plano Importado",
         observacoes: data.observacoes || "",
