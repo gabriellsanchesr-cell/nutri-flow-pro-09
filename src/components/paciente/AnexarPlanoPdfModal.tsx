@@ -16,9 +16,65 @@ interface Props {
   open: boolean;
   onOpenChange: (open: boolean) => void;
   pacienteId: string;
-  /** Quando definido, edita o plano existente (somente metadados/arquivo opcional). */
   planoExistente?: { id: string; nome: string; observacoes?: string | null; status?: string; pdf_path?: string | null } | null;
   onSaved: () => void;
+}
+
+async function fileToBase64(file: File): Promise<string> {
+  const buf = await file.arrayBuffer();
+  const bytes = new Uint8Array(buf);
+  let binary = "";
+  const chunk = 0x8000;
+  for (let i = 0; i < bytes.length; i += chunk) {
+    binary += String.fromCharCode.apply(null, Array.from(bytes.subarray(i, i + chunk)) as any);
+  }
+  return btoa(binary);
+}
+
+/**
+ * Cria/atualiza a "refeição resumo" do plano anexado para que o sistema
+ * contabilize kcal/macros no portal e no painel do nutricionista sem precisar
+ * criar colunas novas.
+ */
+async function upsertResumoRefeicao(planoId: string, totals: any) {
+  // Remove resumos antigos do plano
+  const { data: refsExist } = await supabase
+    .from("refeicoes").select("id").eq("plano_id", planoId);
+  if (refsExist?.length) {
+    await supabase.from("refeicoes").delete().eq("plano_id", planoId);
+  }
+  if (!totals || (totals.kcal == null && totals.proteina_g == null && totals.carboidrato_g == null && totals.gordura_g == null)) {
+    return false;
+  }
+  const { data: ref, error: refErr } = await supabase.from("refeicoes").insert({
+    plano_id: planoId,
+    tipo: "cafe_da_manha" as any,
+    nome_customizado: "Resumo do PDF",
+    ordem: 0,
+    horario_sugerido: null,
+    totais_opcao: { A: {
+      kcal: totals.kcal ?? 0,
+      proteina_g: totals.proteina_g ?? 0,
+      carboidrato_g: totals.carboidrato_g ?? 0,
+      lipidio_g: totals.gordura_g ?? 0,
+      fibra_g: totals.fibra_g ?? 0,
+    } } as any,
+  } as any).select("id").single();
+  if (refErr) throw refErr;
+  await supabase.from("alimentos_plano").insert({
+    refeicao_id: ref.id,
+    nome_alimento: "Resumo nutricional do PDF",
+    quantidade: 1,
+    medida_caseira: "plano/dia",
+    energia_kcal: totals.kcal ?? 0,
+    proteina_g: totals.proteina_g ?? 0,
+    carboidrato_g: totals.carboidrato_g ?? 0,
+    lipidio_g: totals.gordura_g ?? 0,
+    fibra_g: totals.fibra_g ?? 0,
+    opcao: "A",
+    ordem: 0,
+  } as any);
+  return true;
 }
 
 export function AnexarPlanoPdfModal({ open, onOpenChange, pacienteId, planoExistente, onSaved }: Props) {
@@ -30,6 +86,7 @@ export function AnexarPlanoPdfModal({ open, onOpenChange, pacienteId, planoExist
   const [observacoes, setObservacoes] = useState("");
   const [status, setStatus] = useState<"ativo" | "rascunho">("ativo");
   const [saving, setSaving] = useState(false);
+  const [progress, setProgress] = useState<string>("");
 
   useEffect(() => {
     if (open) {
@@ -38,6 +95,7 @@ export function AnexarPlanoPdfModal({ open, onOpenChange, pacienteId, planoExist
       setObservacoes(planoExistente?.observacoes || "");
       setStatus((planoExistente?.status as any) || "ativo");
       setSaving(false);
+      setProgress("");
     }
   }, [open, planoExistente]);
 
@@ -60,8 +118,10 @@ export function AnexarPlanoPdfModal({ open, onOpenChange, pacienteId, planoExist
     try {
       let pdf_path = planoExistente?.pdf_path || null;
       let pdf_nome: string | null = null;
+      let totals: any = null;
 
       if (file) {
+        setProgress("Enviando PDF...");
         const safeName = file.name.replace(/[^\w.\-]+/g, "_");
         const path = `planos/${pacienteId}/${Date.now()}_${safeName}`;
         const { error: upErr } = await supabase.storage
@@ -69,13 +129,27 @@ export function AnexarPlanoPdfModal({ open, onOpenChange, pacienteId, planoExist
           .upload(path, file, { contentType: "application/pdf", upsert: false });
         if (upErr) throw upErr;
 
-        // Apaga o anterior se estiver substituindo
         if (isEdit && planoExistente?.pdf_path && planoExistente.pdf_path !== path) {
           await supabase.storage.from("documentos-pdf").remove([planoExistente.pdf_path]);
         }
         pdf_path = path;
         pdf_nome = file.name;
+
+        // Leitura mínima dos totais nutricionais via IA
+        try {
+          setProgress("Lendo totais nutricionais...");
+          const b64 = await fileToBase64(file);
+          const { data, error } = await supabase.functions.invoke("parse-plano-pdf-totais", {
+            body: { fileBase64: b64, mimeType: "application/pdf" },
+          });
+          if (error) console.warn("parse-plano-pdf-totais falhou", error);
+          else totals = data;
+        } catch (e) {
+          console.warn("Falha ao ler totais do PDF", e);
+        }
       }
+
+      let planoId = planoExistente?.id;
 
       if (isEdit) {
         const update: any = { nome: nome.trim(), observacoes, status };
@@ -85,9 +159,8 @@ export function AnexarPlanoPdfModal({ open, onOpenChange, pacienteId, planoExist
         }
         const { error } = await supabase.from("planos_alimentares").update(update).eq("id", planoExistente!.id);
         if (error) throw error;
-        toast({ title: "Plano atualizado!" });
       } else {
-        const { error } = await supabase.from("planos_alimentares").insert({
+        const { data: inserted, error } = await supabase.from("planos_alimentares").insert({
           user_id: user.id,
           paciente_id: pacienteId,
           nome: nome.trim() || "Plano (PDF anexado)",
@@ -97,9 +170,27 @@ export function AnexarPlanoPdfModal({ open, onOpenChange, pacienteId, planoExist
           tipo: "anexo",
           pdf_path,
           pdf_nome,
-        } as any);
+        } as any).select("id").single();
         if (error) throw error;
-        toast({ title: "PDF anexado!", description: "O plano em PDF está disponível no portal do paciente." });
+        planoId = inserted!.id;
+      }
+
+      if (planoId && file) {
+        setProgress("Atualizando resumo...");
+        const ok = await upsertResumoRefeicao(planoId, totals);
+        if (ok) {
+          toast({
+            title: isEdit ? "Plano atualizado!" : "PDF anexado!",
+            description: `Totais lidos: ${totals?.kcal ? Math.round(totals.kcal) + " kcal" : "—"} • P ${totals?.proteina_g ?? "—"}g • C ${totals?.carboidrato_g ?? "—"}g • G ${totals?.gordura_g ?? "—"}g`,
+          });
+        } else {
+          toast({
+            title: isEdit ? "Plano atualizado" : "PDF anexado",
+            description: "Não consegui identificar os totais no PDF — você pode editar o plano manualmente para preenchê-los.",
+          });
+        }
+      } else {
+        toast({ title: isEdit ? "Plano atualizado!" : "PDF anexado!" });
       }
 
       onSaved();
@@ -108,6 +199,7 @@ export function AnexarPlanoPdfModal({ open, onOpenChange, pacienteId, planoExist
       toast({ title: "Erro", description: e.message, variant: "destructive" });
     } finally {
       setSaving(false);
+      setProgress("");
     }
   };
 
@@ -117,7 +209,7 @@ export function AnexarPlanoPdfModal({ open, onOpenChange, pacienteId, planoExist
         <DialogHeader>
           <DialogTitle>{isEdit ? "Editar plano anexado" : "Anexar PDF do plano alimentar"}</DialogTitle>
           <DialogDescription>
-            O PDF é exibido exatamente como foi enviado, sem alterações de layout. Ideal para planos já formatados em outras ferramentas.
+            O PDF é exibido exatamente como foi enviado. O sistema lê apenas os totais nutricionais (kcal e macros) para exibir no resumo.
           </DialogDescription>
         </DialogHeader>
 
@@ -150,6 +242,11 @@ export function AnexarPlanoPdfModal({ open, onOpenChange, pacienteId, planoExist
             />
             {file && <p className="text-xs text-muted-foreground">{file.name} • {(file.size / 1024).toFixed(0)} KB</p>}
           </div>
+          {saving && progress && (
+            <p className="text-xs text-muted-foreground flex items-center gap-1">
+              <Loader2 className="h-3 w-3 animate-spin" /> {progress}
+            </p>
+          )}
         </div>
 
         <DialogFooter>
