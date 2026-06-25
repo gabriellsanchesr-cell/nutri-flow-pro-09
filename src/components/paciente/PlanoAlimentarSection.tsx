@@ -197,9 +197,12 @@ export function PlanoAlimentarSection({ paciente }: Props) {
     <div className="space-y-4">
       <div className="flex justify-between items-center flex-wrap gap-2">
         <h3 className="text-lg font-semibold text-foreground">Planos Alimentares</h3>
-        <div className="flex items-center gap-2">
+        <div className="flex items-center gap-2 flex-wrap">
           <Button size="sm" variant="outline" onClick={() => setImportOpen(true)}>
             <FileUp className="h-3.5 w-3.5 mr-1" /> Importar PDF
+          </Button>
+          <Button size="sm" variant="outline" onClick={() => { setAnexarEditando(null); setAnexarOpen(true); }}>
+            <Paperclip className="h-3.5 w-3.5 mr-1" /> Anexar PDF
           </Button>
           <Button size="sm" onClick={() => { setImportedDraft(null); setEditingPlanoId("new"); }}>
             <Plus className="h-3.5 w-3.5 mr-1" /> Novo Plano
