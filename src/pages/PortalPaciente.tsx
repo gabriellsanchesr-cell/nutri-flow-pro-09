@@ -445,6 +445,44 @@ export default function PortalPaciente() {
         </div>
       );
     }
+    if (plano.tipo === "anexo") {
+      return (
+        <div className="space-y-4 animate-fade-in">
+          <div>
+            <h2 className="text-lg font-bold text-foreground">{plano.nome}</h2>
+            <p className="text-xs text-muted-foreground">Plano em PDF enviado pelo nutricionista</p>
+          </div>
+          {plano.observacoes && (
+            <Card className="rounded-2xl glass-card">
+              <CardContent className="p-4">
+                <p className="text-sm text-muted-foreground">{plano.observacoes}</p>
+              </CardContent>
+            </Card>
+          )}
+          <div className="h-[70vh] rounded-2xl overflow-hidden border border-border bg-card">
+            {planoPdfUrl ? (
+              <PdfViewer url={planoPdfUrl} />
+            ) : (
+              <div className="flex items-center justify-center h-full text-sm text-muted-foreground">
+                Carregando PDF...
+              </div>
+            )}
+          </div>
+          {planoPdfUrl && (
+            <div className="flex justify-end">
+              <a
+                href={planoPdfUrl}
+                target="_blank"
+                rel="noreferrer"
+                className="text-xs text-primary underline"
+              >
+                Abrir em nova aba
+              </a>
+            </div>
+          )}
+        </div>
+      );
+    }
     const sortedRefeicoes = [...(plano.refeicoes || [])].sort((a: any, b: any) => (a.ordem || 0) - (b.ordem || 0));
     return (
       <div className="space-y-4 animate-fade-in">
