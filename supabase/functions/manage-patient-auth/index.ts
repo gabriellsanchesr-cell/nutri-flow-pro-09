@@ -71,6 +71,8 @@ Deno.serve(async (req) => {
         if (!email || !password || !paciente_id) {
           return json({ error: "Email, senha e paciente_id são obrigatórios" }, 400);
         }
+        const ownCreate = await assertOwnership(paciente_id);
+        if ('error' in ownCreate) return ownCreate.error;
 
         const { data: newUser, error: createError } = await adminClient.auth.admin.createUser({
           email,
@@ -93,12 +95,9 @@ Deno.serve(async (req) => {
 
       case "update": {
         if (!paciente_id) return json({ error: "paciente_id é obrigatório" }, 400);
-
-        const { data: paciente } = await adminClient
-          .from("pacientes")
-          .select("auth_user_id")
-          .eq("id", paciente_id)
-          .single();
+        const own = await assertOwnership(paciente_id);
+        if ('error' in own) return own.error;
+        const paciente = own.paciente;
 
         if (!paciente?.auth_user_id) {
           return json({ error: "Paciente não tem conta vinculada" }, 400);
@@ -125,12 +124,9 @@ Deno.serve(async (req) => {
 
       case "deactivate": {
         if (!paciente_id) return json({ error: "paciente_id é obrigatório" }, 400);
-
-        const { data: paciente } = await adminClient
-          .from("pacientes")
-          .select("auth_user_id")
-          .eq("id", paciente_id)
-          .single();
+        const own = await assertOwnership(paciente_id);
+        if ('error' in own) return own.error;
+        const paciente = own.paciente;
 
         if (!paciente?.auth_user_id) {
           return json({ error: "Paciente não tem conta vinculada" }, 400);
@@ -146,12 +142,9 @@ Deno.serve(async (req) => {
 
       case "reactivate": {
         if (!paciente_id) return json({ error: "paciente_id é obrigatório" }, 400);
-
-        const { data: paciente } = await adminClient
-          .from("pacientes")
-          .select("auth_user_id")
-          .eq("id", paciente_id)
-          .single();
+        const own = await assertOwnership(paciente_id);
+        if ('error' in own) return own.error;
+        const paciente = own.paciente;
 
         if (!paciente?.auth_user_id) {
           return json({ error: "Paciente não tem conta vinculada" }, 400);
@@ -167,12 +160,9 @@ Deno.serve(async (req) => {
 
       case "delete": {
         if (!paciente_id) return json({ error: "paciente_id é obrigatório" }, 400);
-
-        const { data: paciente } = await adminClient
-          .from("pacientes")
-          .select("auth_user_id")
-          .eq("id", paciente_id)
-          .single();
+        const own = await assertOwnership(paciente_id);
+        if ('error' in own) return own.error;
+        const paciente = own.paciente;
 
         if (paciente?.auth_user_id) {
           await adminClient.auth.admin.deleteUser(paciente.auth_user_id);
@@ -181,6 +171,7 @@ Deno.serve(async (req) => {
         await adminClient.from("pacientes").delete().eq("id", paciente_id);
         return json({ success: true });
       }
+
 
       default:
         return json({ error: "Ação inválida" }, 400);
