@@ -369,7 +369,7 @@ export function PlanoAlimentarSection({ paciente }: Props) {
         open={anexarOpen}
         onOpenChange={(open) => { setAnexarOpen(open); if (!open) setAnexarEditando(null); }}
         pacienteId={paciente.id}
-        plano={anexarEditando}
+        planoExistente={anexarEditando}
         onSaved={() => {
           setAnexarOpen(false);
           setAnexarEditando(null);
