@@ -47,6 +47,9 @@ export function PlanoAlimentarSection({ paciente }: Props) {
   const [exportType, setExportType] = useState<"plano_alimentar" | "plano_simplificado">("plano_alimentar");
   const [importOpen, setImportOpen] = useState(false);
   const [importedDraft, setImportedDraft] = useState<any>(null);
+  const [anexarOpen, setAnexarOpen] = useState(false);
+  const [anexarEditando, setAnexarEditando] = useState<any>(null);
+  const [pdfUrls, setPdfUrls] = useState<Record<string, string>>({});
 
   useEffect(() => { loadPlanos(); }, [paciente.id]);
 
