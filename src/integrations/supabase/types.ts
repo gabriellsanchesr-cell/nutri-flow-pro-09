@@ -2460,6 +2460,19 @@ export type Database = {
           observacoes: string
         }[]
       }
+      get_questionario_by_token: {
+        Args: { p_token: string }
+        Returns: {
+          data_envio: string
+          data_resposta: string
+          id: string
+          paciente_id: string
+          respostas: Json
+          status: string
+          tipo: string
+          token: string
+        }[]
+      }
       get_user_role: {
         Args: { _user_id: string }
         Returns: Database["public"]["Enums"]["app_role"]
@@ -2469,6 +2482,10 @@ export type Database = {
           _role: Database["public"]["Enums"]["app_role"]
           _user_id: string
         }
+        Returns: boolean
+      }
+      respond_questionario_by_token: {
+        Args: { p_respostas: Json; p_token: string }
         Returns: boolean
       }
       submit_anamnese: {
