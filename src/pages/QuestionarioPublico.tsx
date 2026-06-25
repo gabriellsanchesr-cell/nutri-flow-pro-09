@@ -61,25 +61,18 @@ export default function QuestionarioPublico() {
   useEffect(() => { if (token) load(); }, [token]);
 
   const load = async () => {
-    const { data } = await supabase
-      .from("questionarios")
-      .select("*")
-      .eq("token", token)
-      .maybeSingle();
-    if (!data) { setNotFound(true); }
-    else if (data.status === "respondido") { setSaved(true); setQuestionario(data); }
-    else { setQuestionario(data); }
+    const { data, error } = await supabase.rpc("get_questionario_by_token", { p_token: token as string });
+    const row: any = Array.isArray(data) ? data[0] : data;
+    if (error || !row) { setNotFound(true); }
+    else if (row.status === "respondido") { setSaved(true); setQuestionario(row); }
+    else { setQuestionario(row); }
     setLoading(false);
   };
 
   const handleSubmit = async () => {
     if (!questionario) return;
     setSaving(true);
-    await supabase
-      .from("questionarios")
-      .update({ respostas: answers, status: "respondido", data_resposta: new Date().toISOString() })
-      .eq("token", token)
-      .neq("status", "respondido");
+    await supabase.rpc("respond_questionario_by_token", { p_token: token as string, p_respostas: answers });
     setSaving(false);
     setSaved(true);
   };
