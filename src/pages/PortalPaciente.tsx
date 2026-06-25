@@ -24,6 +24,7 @@ import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetTrigger } from "@/co
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
 import { format, differenceInDays, isToday, isTomorrow, addDays, startOfWeek, endOfWeek } from "date-fns";
 import { ptBR } from "date-fns/locale";
+import { PdfViewer } from "@/components/paciente/PdfViewer";
 import {
   LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer,
 } from "recharts";
@@ -66,6 +67,7 @@ export default function PortalPaciente() {
   const { user, signOut } = useAuth();
   const [paciente, setPaciente] = useState<any>(null);
   const [plano, setPlano] = useState<any>(null);
+  const [planoPdfUrl, setPlanoPdfUrl] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
   const [activeTab, setActiveTab] = useState<PortalTab>("inicio");
   const [moreTab, setMoreTab] = useState<MoreTab | null>(null);
@@ -96,6 +98,14 @@ export default function PortalPaciente() {
           .limit(1)
           .maybeSingle();
         setPlano(planoData);
+        if (planoData?.tipo === "anexo" && planoData?.pdf_path) {
+          try {
+            const { data: signed } = await supabase.storage
+              .from("documentos-pdf")
+              .createSignedUrl(planoData.pdf_path, 3600);
+            if (signed?.signedUrl) setPlanoPdfUrl(signed.signedUrl);
+          } catch {}
+        }
         if (planoData?.id) {
           try {
             const saved = localStorage.getItem(`opcaoSel:${planoData.id}`);
@@ -432,6 +442,44 @@ export default function PortalPaciente() {
           <Utensils className="h-10 w-10 mx-auto mb-3 opacity-40" />
           <p className="font-medium">Nenhum plano ativo</p>
           <p className="text-sm mt-1">Seu plano alimentar será enviado em breve.</p>
+        </div>
+      );
+    }
+    if (plano.tipo === "anexo") {
+      return (
+        <div className="space-y-4 animate-fade-in">
+          <div>
+            <h2 className="text-lg font-bold text-foreground">{plano.nome}</h2>
+            <p className="text-xs text-muted-foreground">Plano em PDF enviado pelo nutricionista</p>
+          </div>
+          {plano.observacoes && (
+            <Card className="rounded-2xl glass-card">
+              <CardContent className="p-4">
+                <p className="text-sm text-muted-foreground">{plano.observacoes}</p>
+              </CardContent>
+            </Card>
+          )}
+          <div className="h-[70vh] rounded-2xl overflow-hidden border border-border bg-card">
+            {planoPdfUrl ? (
+              <PdfViewer url={planoPdfUrl} />
+            ) : (
+              <div className="flex items-center justify-center h-full text-sm text-muted-foreground">
+                Carregando PDF...
+              </div>
+            )}
+          </div>
+          {planoPdfUrl && (
+            <div className="flex justify-end">
+              <a
+                href={planoPdfUrl}
+                target="_blank"
+                rel="noreferrer"
+                className="text-xs text-primary underline"
+              >
+                Abrir em nova aba
+              </a>
+            </div>
+          )}
         </div>
       );
     }

@@ -1,44 +1,57 @@
-Plano de implementação:
 
-1. Reestruturar a leitura do PDF
-- Trocar a extração atual que junta o conteúdo em texto corrido por uma extração com coordenadas X/Y.
-- Recriar linhas, colunas e espaçamentos para preservar horários, títulos, opções A/B/C, listas de alimentos e blocos de substituições.
-- Evitar que tabelas ou colunas do PDF sejam lidas fora de ordem.
+## Objetivo
 
-2. Criar uma etapa local de pré-estruturação antes da IA
-- Detectar refeições por padrões reais: “Café da manhã”, “Almoço”, “Jantar”, “Ceia”, “Pré-treino”, horários e títulos customizados.
-- Detectar opções: “Opção A”, “Opção B”, “Opção C”, variações como “Opção 1/2” e blocos repetidos.
-- Separar alimentos linha a linha, em vez de deixar uma refeição inteira virar um único campo de texto.
-- Identificar substituições por item e associá-las ao alimento correto.
+Manter a importação inteligente atual e adicionar uma segunda abordagem: **Anexar PDF** — o nutricionista anexa o plano em PDF, e o sistema apenas armazena e exibe o arquivo original (igual a um visualizador), sem tentar interpretar, editar ou estruturar nada. Útil para planos vindos de outras ferramentas, garantindo fidelidade visual 100%.
 
-3. Melhorar o contrato da IA
-- Enviar para a IA o texto já organizado em linhas/blocos, com marcações de refeição/opção/substituição.
-- Reforçar que a IA deve retornar somente estrutura JSON com refeições, opções, alimentos, quantidades, medidas, totais e substituições.
-- Bloquear respostas onde a IA coloque parágrafos inteiros em `nome_alimento`; esses casos serão quebrados ou marcados para revisão.
+## Como vai funcionar (UX)
 
-4. Pós-processar e validar a importação
-- Sanitizar nomes, quantidades e medidas sem perder o texto original do PDF.
-- Separar alimentos quando vierem juntos na mesma linha, por padrões como “+”, “,”, “ou”, bullets e quebras visuais.
-- Usar totais do PDF como fonte oficial quando existirem.
-- Quando não houver TACO confiável, manter o alimento no plano com macros zerados e `precisa_revisao`, em vez de trocar por alimento errado.
+Na seção **Planos Alimentares** do paciente (`PlanoAlimentarSection.tsx`), o header passa a ter 3 botões:
 
-5. Garantir que o resultado entre no editor como plano feito manualmente
-- Cada refeição importada vira uma refeição real do editor.
-- Cada opção vira aba/opção real.
-- Cada alimento vira item editável com quantidade, medida, macros e substituições.
-- Substituições serão salvas na tabela própria e aparecerão no editor e portal como substituições estruturadas, não como texto solto.
+- `Importar PDF` (mantém o fluxo atual, com IA)
+- `Anexar PDF` (novo — sem IA, só armazena)
+- `Novo Plano` (manual)
 
-6. Melhorar feedback da tela de importação
-- Exibir mensagem mais clara quando o PDF foi parcialmente interpretado.
-- Informar quantas refeições, opções, alimentos e substituições foram importados.
-- Destacar itens que precisam revisão para o nutricionista corrigir antes de ativar.
+Ao clicar em **Anexar PDF**:
+- Modal pede: nome do plano, status (ativo/rascunho), observações opcionais e o arquivo (até 10 MB).
+- Upload direto para o bucket privado `documentos-pdf`, em `planos/{paciente_id}/{plano_id}.pdf`.
+- Cria um registro em `planos_alimentares` marcado como tipo "anexo" (sem refeições associadas).
 
-Arquivos principais:
-- `supabase/functions/import-plano-pdf/index.ts`
-- `src/components/paciente/ImportarPlanoPdfModal.tsx`
-- `src/components/paciente/PlanoAlimentarEditor.tsx`
+Na listagem, o plano aparece como card normal com badge **"PDF anexado"**. Ao expandir **Ver refeições**, em vez da lista de refeições, mostra:
+- O visualizador de PDF embutido (mesmo componente `PdfViewer.tsx` já usado em exames laboratoriais), com rolagem entre páginas, zoom e rotação, mantendo o layout original intacto.
+- Botões: **Abrir em nova aba**, **Baixar**, **Substituir arquivo**, **Excluir**.
 
-Validação:
-- Testar importação com PDFs que têm opções A/B/C, horários, substituições e totais nutricionais.
-- Confirmar que nada entra como um bloco de texto único quando deveria ser refeição/alimento.
-- Confirmar que salvar e reabrir preserva opções, totais e substituições.
+Ações no card:
+- Editar → reabre o modal apenas para alterar nome/observações/status/arquivo (não abre o editor estruturado).
+- Duplicar → copia o registro e o arquivo no storage.
+- Exportar PDF → desabilitado (já é o próprio PDF; o botão Baixar substitui).
+- Ativar/Inativar e Excluir funcionam normalmente (excluir remove também o arquivo do bucket).
+
+No **portal do paciente** (`PortalJornada` / seção de plano alimentar do paciente): se o plano ativo for do tipo anexo, mostra o mesmo `PdfViewer` em vez da renderização estruturada por refeições, com botão de download.
+
+## Alterações técnicas
+
+1. **DB migration** em `planos_alimentares`:
+   - `tipo text not null default 'estruturado'` (`'estruturado' | 'anexo'`)
+   - `pdf_url text`, `pdf_nome text`, `pdf_path text` (path no bucket, para deleção/replace)
+   - Sem mudança de RLS — políticas existentes cobrem o novo campo.
+
+2. **Storage**: reusar bucket privado `documentos-pdf`. Adicionar policy específica (se ainda não coberta) permitindo nutri dono e equipe atribuída lerem/escreverem em `planos/{paciente_id}/*`. Paciente lê apenas seus próprios planos via signed URL.
+
+3. **Novo componente** `src/components/paciente/AnexarPlanoPdfModal.tsx`: form + upload + insert. Reaproveita estilo do `ImportarPlanoPdfModal`.
+
+4. **PlanoAlimentarSection.tsx**:
+   - Adicionar botão "Anexar PDF" e estado `anexarOpen`.
+   - Ao renderizar cada plano, se `plano.tipo === 'anexo'`: badge "PDF anexado", expand mostra `<PdfViewer url={signedUrl} />`, gera signed URL on-demand (1h), botões Baixar/Substituir.
+   - Ao excluir um plano anexo, remover também o objeto do storage.
+
+5. **Portal do paciente** (`src/components/portal/PortalJornada.tsx` ou onde o plano é renderizado): branch para `tipo === 'anexo'` → exibe `PdfViewer` com signed URL.
+
+6. **PDF export** (`ExportPdfModal`): se `tipo === 'anexo'`, oculta a opção e mostra apenas botão "Baixar PDF original".
+
+## Fora de escopo
+
+- Nenhuma extração de texto/IA sobre o PDF anexado.
+- Sem edição de conteúdo do PDF anexado.
+- Não altera o fluxo `Importar PDF` existente.
+
+Confirma essa direção? Se sim, sigo para implementação.

@@ -6,11 +6,13 @@ import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { useToast } from "@/hooks/use-toast";
 import {
-  Plus, Utensils, ChevronDown, ChevronUp, Pencil, Copy, Power, Trash2, Send, FileDown,
+  Plus, Utensils, ChevronDown, ChevronUp, Pencil, Copy, Power, Trash2, Send, FileDown, Paperclip, Download, ExternalLink,
 } from "lucide-react";
 import { PlanoAlimentarEditor } from "./PlanoAlimentarEditor";
 import { ExportPdfModal } from "@/components/pdf/ExportPdfModal";
 import { ImportarPlanoPdfModal } from "./ImportarPlanoPdfModal";
+import { AnexarPlanoPdfModal } from "./AnexarPlanoPdfModal";
+import { PdfViewer } from "./PdfViewer";
 import { FileUp } from "lucide-react";
 import {
   AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent,
@@ -45,6 +47,9 @@ export function PlanoAlimentarSection({ paciente }: Props) {
   const [exportType, setExportType] = useState<"plano_alimentar" | "plano_simplificado">("plano_alimentar");
   const [importOpen, setImportOpen] = useState(false);
   const [importedDraft, setImportedDraft] = useState<any>(null);
+  const [anexarOpen, setAnexarOpen] = useState(false);
+  const [anexarEditando, setAnexarEditando] = useState<any>(null);
+  const [pdfUrls, setPdfUrls] = useState<Record<string, string>>({});
 
   useEffect(() => { loadPlanos(); }, [paciente.id]);
 
@@ -60,9 +65,17 @@ export function PlanoAlimentarSection({ paciente }: Props) {
     setLoading(false);
   };
 
-  const toggleExpand = async (planoId: string) => {
+  const toggleExpand = async (plano: any) => {
+    const planoId = plano.id;
     if (expanded === planoId) { setExpanded(null); return; }
     setExpanded(planoId);
+    if (plano.tipo === "anexo") {
+      if (!pdfUrls[planoId] && plano.pdf_path) {
+        const { data } = await supabase.storage.from("documentos-pdf").createSignedUrl(plano.pdf_path, 3600);
+        if (data?.signedUrl) setPdfUrls(prev => ({ ...prev, [planoId]: data.signedUrl }));
+      }
+      return;
+    }
     if (!refeicoes[planoId]) {
       const { data: refs } = await supabase
         .from("refeicoes")
@@ -73,9 +86,43 @@ export function PlanoAlimentarSection({ paciente }: Props) {
     }
   };
 
+  const openPdfNewTab = async (plano: any) => {
+    if (!plano.pdf_path) return;
+    const { data } = await supabase.storage.from("documentos-pdf").createSignedUrl(plano.pdf_path, 3600);
+    if (data?.signedUrl) window.open(data.signedUrl, "_blank");
+  };
+
+  const downloadPdf = async (plano: any) => {
+    if (!plano.pdf_path) return;
+    const { data } = await supabase.storage.from("documentos-pdf").createSignedUrl(plano.pdf_path, 3600, { download: plano.pdf_nome || "plano.pdf" });
+    if (data?.signedUrl) window.open(data.signedUrl, "_blank");
+  };
+
   const duplicatePlano = async (plano: any) => {
     if (!user) return;
     try {
+      // Plano do tipo anexo: copia o arquivo e cria registro
+      if (plano.tipo === "anexo") {
+        let newPath: string | null = null;
+        if (plano.pdf_path) {
+          const { data: file } = await supabase.storage.from("documentos-pdf").download(plano.pdf_path);
+          if (file) {
+            newPath = `planos/${paciente.id}/${Date.now()}_copia_${(plano.pdf_nome || "plano.pdf").replace(/[^\w.\-]+/g, "_")}`;
+            await supabase.storage.from("documentos-pdf").upload(newPath, file, { contentType: "application/pdf", upsert: false });
+          }
+        }
+        const { error } = await supabase.from("planos_alimentares").insert({
+          user_id: user.id, paciente_id: paciente.id,
+          nome: `${plano.nome} (cópia)`, observacoes: plano.observacoes,
+          status: "rascunho", is_template: false,
+          tipo: "anexo", pdf_path: newPath, pdf_nome: plano.pdf_nome,
+        } as any);
+        if (error) throw error;
+        toast({ title: "Plano duplicado!" });
+        loadPlanos();
+        return;
+      }
+
       const { data: newPlano, error } = await supabase.from("planos_alimentares").insert({
         user_id: user.id, paciente_id: paciente.id,
         nome: `${plano.nome} (cópia)`, observacoes: plano.observacoes,
@@ -120,6 +167,10 @@ export function PlanoAlimentarSection({ paciente }: Props) {
 
   const deletePlano = async () => {
     if (!deleteId) return;
+    const plano = planos.find(p => p.id === deleteId);
+    if (plano?.tipo === "anexo" && plano.pdf_path) {
+      await supabase.storage.from("documentos-pdf").remove([plano.pdf_path]);
+    }
     await supabase.from("planos_alimentares").delete().eq("id", deleteId);
     setDeleteId(null);
     toast({ title: "Plano excluído." });
@@ -146,9 +197,12 @@ export function PlanoAlimentarSection({ paciente }: Props) {
     <div className="space-y-4">
       <div className="flex justify-between items-center flex-wrap gap-2">
         <h3 className="text-lg font-semibold text-foreground">Planos Alimentares</h3>
-        <div className="flex items-center gap-2">
+        <div className="flex items-center gap-2 flex-wrap">
           <Button size="sm" variant="outline" onClick={() => setImportOpen(true)}>
             <FileUp className="h-3.5 w-3.5 mr-1" /> Importar PDF
+          </Button>
+          <Button size="sm" variant="outline" onClick={() => { setAnexarEditando(null); setAnexarOpen(true); }}>
+            <Paperclip className="h-3.5 w-3.5 mr-1" /> Anexar PDF
           </Button>
           <Button size="sm" onClick={() => { setImportedDraft(null); setEditingPlanoId("new"); }}>
             <Plus className="h-3.5 w-3.5 mr-1" /> Novo Plano
@@ -166,6 +220,7 @@ export function PlanoAlimentarSection({ paciente }: Props) {
       ) : (
         planos.map(plano => {
           const st = statusLabels[(plano as any).status] || statusLabels.rascunho;
+          const isAnexo = plano.tipo === "anexo";
           return (
             <Card key={plano.id} className="border-border rounded-xl">
               <CardHeader className="pb-3">
@@ -173,20 +228,45 @@ export function PlanoAlimentarSection({ paciente }: Props) {
                   <div className="flex items-center gap-2 flex-1 min-w-0 flex-wrap">
                     <CardTitle className="text-base truncate">{plano.nome}</CardTitle>
                     <Badge variant={st.variant} className="text-xs shrink-0">{st.label}</Badge>
+                    {isAnexo && (
+                      <Badge variant="outline" className="text-xs shrink-0 gap-1">
+                        <Paperclip className="h-3 w-3" /> PDF anexado
+                      </Badge>
+                    )}
                     <Badge variant="secondary" className="text-xs shrink-0">
                       {new Date(plano.created_at).toLocaleDateString("pt-BR")}
                     </Badge>
                   </div>
                   <div className="flex items-center gap-1 shrink-0">
-                    <Button variant="ghost" size="icon" className="h-8 w-8" title="Editar" onClick={() => setEditingPlanoId(plano.id)}>
+                    <Button
+                      variant="ghost"
+                      size="icon"
+                      className="h-8 w-8"
+                      title="Editar"
+                      onClick={() => {
+                        if (isAnexo) { setAnexarEditando(plano); setAnexarOpen(true); }
+                        else setEditingPlanoId(plano.id);
+                      }}
+                    >
                       <Pencil className="h-3.5 w-3.5" />
                     </Button>
                     <Button variant="ghost" size="icon" className="h-8 w-8" title="Duplicar" onClick={() => duplicatePlano(plano)}>
                       <Copy className="h-3.5 w-3.5" />
                     </Button>
-                    <Button variant="ghost" size="icon" className="h-8 w-8" title="Exportar PDF" onClick={() => { setExportPlano(plano); setExportType("plano_alimentar"); }}>
-                      <FileDown className="h-3.5 w-3.5" />
-                    </Button>
+                    {isAnexo ? (
+                      <>
+                        <Button variant="ghost" size="icon" className="h-8 w-8" title="Abrir em nova aba" onClick={() => openPdfNewTab(plano)}>
+                          <ExternalLink className="h-3.5 w-3.5" />
+                        </Button>
+                        <Button variant="ghost" size="icon" className="h-8 w-8" title="Baixar PDF" onClick={() => downloadPdf(plano)}>
+                          <Download className="h-3.5 w-3.5" />
+                        </Button>
+                      </>
+                    ) : (
+                      <Button variant="ghost" size="icon" className="h-8 w-8" title="Exportar PDF" onClick={() => { setExportPlano(plano); setExportType("plano_alimentar"); }}>
+                        <FileDown className="h-3.5 w-3.5" />
+                      </Button>
+                    )}
                     <Button variant="ghost" size="icon" className="h-8 w-8" title={plano.status === "ativo" ? "Desativar" : "Ativar"} onClick={() => toggleStatus(plano)}>
                       <Power className="h-3.5 w-3.5" />
                     </Button>
@@ -198,11 +278,22 @@ export function PlanoAlimentarSection({ paciente }: Props) {
                 {plano.observacoes && <p className="text-xs text-muted-foreground mt-1">{plano.observacoes}</p>}
               </CardHeader>
               <CardContent className="pt-0">
-                <Button variant="ghost" size="sm" className="text-xs" onClick={() => toggleExpand(plano.id)}>
+                <Button variant="ghost" size="sm" className="text-xs" onClick={() => toggleExpand(plano)}>
                   {expanded === plano.id ? <ChevronUp className="h-3 w-3 mr-1" /> : <ChevronDown className="h-3 w-3 mr-1" />}
-                  {expanded === plano.id ? "Recolher" : "Ver refeições"}
+                  {expanded === plano.id ? "Recolher" : (isAnexo ? "Ver PDF" : "Ver refeições")}
                 </Button>
-                {expanded === plano.id && refeicoes[plano.id] && (
+                {expanded === plano.id && isAnexo && (
+                  <div className="mt-3 h-[700px] border border-border rounded-lg overflow-hidden">
+                    {pdfUrls[plano.id] ? (
+                      <PdfViewer url={pdfUrls[plano.id]} />
+                    ) : (
+                      <div className="flex items-center justify-center h-full text-sm text-muted-foreground">
+                        {plano.pdf_path ? "Carregando PDF..." : "Nenhum PDF anexado."}
+                      </div>
+                    )}
+                  </div>
+                )}
+                {expanded === plano.id && !isAnexo && refeicoes[plano.id] && (
                   <div className="mt-3 space-y-3">
                     {refeicoes[plano.id].map((ref: any) => {
                       const allAlimentos = ref.alimentos_plano || [];
@@ -271,6 +362,18 @@ export function PlanoAlimentarSection({ paciente }: Props) {
         onImported={(draft) => {
           setImportedDraft(draft);
           setEditingPlanoId("new");
+        }}
+      />
+
+      <AnexarPlanoPdfModal
+        open={anexarOpen}
+        onOpenChange={(open) => { setAnexarOpen(open); if (!open) setAnexarEditando(null); }}
+        pacienteId={paciente.id}
+        planoExistente={anexarEditando}
+        onSaved={() => {
+          setAnexarOpen(false);
+          setAnexarEditando(null);
+          loadPlanos();
         }}
       />
     </div>
