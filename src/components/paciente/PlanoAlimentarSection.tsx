@@ -167,6 +167,10 @@ export function PlanoAlimentarSection({ paciente }: Props) {
 
   const deletePlano = async () => {
     if (!deleteId) return;
+    const plano = planos.find(p => p.id === deleteId);
+    if (plano?.tipo === "anexo" && plano.pdf_path) {
+      await supabase.storage.from("documentos-pdf").remove([plano.pdf_path]);
+    }
     await supabase.from("planos_alimentares").delete().eq("id", deleteId);
     setDeleteId(null);
     toast({ title: "Plano excluído." });
