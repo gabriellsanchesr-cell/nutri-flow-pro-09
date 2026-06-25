@@ -220,6 +220,7 @@ export function PlanoAlimentarSection({ paciente }: Props) {
       ) : (
         planos.map(plano => {
           const st = statusLabels[(plano as any).status] || statusLabels.rascunho;
+          const isAnexo = plano.tipo === "anexo";
           return (
             <Card key={plano.id} className="border-border rounded-xl">
               <CardHeader className="pb-3">
@@ -227,20 +228,45 @@ export function PlanoAlimentarSection({ paciente }: Props) {
                   <div className="flex items-center gap-2 flex-1 min-w-0 flex-wrap">
                     <CardTitle className="text-base truncate">{plano.nome}</CardTitle>
                     <Badge variant={st.variant} className="text-xs shrink-0">{st.label}</Badge>
+                    {isAnexo && (
+                      <Badge variant="outline" className="text-xs shrink-0 gap-1">
+                        <Paperclip className="h-3 w-3" /> PDF anexado
+                      </Badge>
+                    )}
                     <Badge variant="secondary" className="text-xs shrink-0">
                       {new Date(plano.created_at).toLocaleDateString("pt-BR")}
                     </Badge>
                   </div>
                   <div className="flex items-center gap-1 shrink-0">
-                    <Button variant="ghost" size="icon" className="h-8 w-8" title="Editar" onClick={() => setEditingPlanoId(plano.id)}>
+                    <Button
+                      variant="ghost"
+                      size="icon"
+                      className="h-8 w-8"
+                      title="Editar"
+                      onClick={() => {
+                        if (isAnexo) { setAnexarEditando(plano); setAnexarOpen(true); }
+                        else setEditingPlanoId(plano.id);
+                      }}
+                    >
                       <Pencil className="h-3.5 w-3.5" />
                     </Button>
                     <Button variant="ghost" size="icon" className="h-8 w-8" title="Duplicar" onClick={() => duplicatePlano(plano)}>
                       <Copy className="h-3.5 w-3.5" />
                     </Button>
-                    <Button variant="ghost" size="icon" className="h-8 w-8" title="Exportar PDF" onClick={() => { setExportPlano(plano); setExportType("plano_alimentar"); }}>
-                      <FileDown className="h-3.5 w-3.5" />
-                    </Button>
+                    {isAnexo ? (
+                      <>
+                        <Button variant="ghost" size="icon" className="h-8 w-8" title="Abrir em nova aba" onClick={() => openPdfNewTab(plano)}>
+                          <ExternalLink className="h-3.5 w-3.5" />
+                        </Button>
+                        <Button variant="ghost" size="icon" className="h-8 w-8" title="Baixar PDF" onClick={() => downloadPdf(plano)}>
+                          <Download className="h-3.5 w-3.5" />
+                        </Button>
+                      </>
+                    ) : (
+                      <Button variant="ghost" size="icon" className="h-8 w-8" title="Exportar PDF" onClick={() => { setExportPlano(plano); setExportType("plano_alimentar"); }}>
+                        <FileDown className="h-3.5 w-3.5" />
+                      </Button>
+                    )}
                     <Button variant="ghost" size="icon" className="h-8 w-8" title={plano.status === "ativo" ? "Desativar" : "Ativar"} onClick={() => toggleStatus(plano)}>
                       <Power className="h-3.5 w-3.5" />
                     </Button>
@@ -252,11 +278,22 @@ export function PlanoAlimentarSection({ paciente }: Props) {
                 {plano.observacoes && <p className="text-xs text-muted-foreground mt-1">{plano.observacoes}</p>}
               </CardHeader>
               <CardContent className="pt-0">
-                <Button variant="ghost" size="sm" className="text-xs" onClick={() => toggleExpand(plano.id)}>
+                <Button variant="ghost" size="sm" className="text-xs" onClick={() => toggleExpand(plano)}>
                   {expanded === plano.id ? <ChevronUp className="h-3 w-3 mr-1" /> : <ChevronDown className="h-3 w-3 mr-1" />}
-                  {expanded === plano.id ? "Recolher" : "Ver refeições"}
+                  {expanded === plano.id ? "Recolher" : (isAnexo ? "Ver PDF" : "Ver refeições")}
                 </Button>
-                {expanded === plano.id && refeicoes[plano.id] && (
+                {expanded === plano.id && isAnexo && (
+                  <div className="mt-3 h-[700px] border border-border rounded-lg overflow-hidden">
+                    {pdfUrls[plano.id] ? (
+                      <PdfViewer url={pdfUrls[plano.id]} />
+                    ) : (
+                      <div className="flex items-center justify-center h-full text-sm text-muted-foreground">
+                        {plano.pdf_path ? "Carregando PDF..." : "Nenhum PDF anexado."}
+                      </div>
+                    )}
+                  </div>
+                )}
+                {expanded === plano.id && !isAnexo && refeicoes[plano.id] && (
                   <div className="mt-3 space-y-3">
                     {refeicoes[plano.id].map((ref: any) => {
                       const allAlimentos = ref.alimentos_plano || [];
