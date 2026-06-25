@@ -72,7 +72,7 @@ export default function ConfiguracaoClinica() {
     try {
       const { data } = await supabase
         .from("configuracoes_clinica")
-        .select("*")
+        .select("id,nome_clinica,endereco,telefone,crn,site,instagram,facebook,whatsapp,mensagem_boas_vindas,cor_primaria,cor_secundaria,logo_url,incluir_capa,marca_dagua,smtp_host,smtp_port,smtp_user,smtp_ativo")
         .eq("user_id", user!.id)
         .maybeSingle();
 
