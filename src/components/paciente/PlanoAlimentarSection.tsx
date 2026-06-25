@@ -6,11 +6,13 @@ import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { useToast } from "@/hooks/use-toast";
 import {
-  Plus, Utensils, ChevronDown, ChevronUp, Pencil, Copy, Power, Trash2, Send, FileDown,
+  Plus, Utensils, ChevronDown, ChevronUp, Pencil, Copy, Power, Trash2, Send, FileDown, Paperclip, Download, ExternalLink,
 } from "lucide-react";
 import { PlanoAlimentarEditor } from "./PlanoAlimentarEditor";
 import { ExportPdfModal } from "@/components/pdf/ExportPdfModal";
 import { ImportarPlanoPdfModal } from "./ImportarPlanoPdfModal";
+import { AnexarPlanoPdfModal } from "./AnexarPlanoPdfModal";
+import { PdfViewer } from "./PdfViewer";
 import { FileUp } from "lucide-react";
 import {
   AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent,
