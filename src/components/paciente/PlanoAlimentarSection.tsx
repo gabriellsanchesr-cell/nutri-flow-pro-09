@@ -65,9 +65,17 @@ export function PlanoAlimentarSection({ paciente }: Props) {
     setLoading(false);
   };
 
-  const toggleExpand = async (planoId: string) => {
+  const toggleExpand = async (plano: any) => {
+    const planoId = plano.id;
     if (expanded === planoId) { setExpanded(null); return; }
     setExpanded(planoId);
+    if (plano.tipo === "anexo") {
+      if (!pdfUrls[planoId] && plano.pdf_path) {
+        const { data } = await supabase.storage.from("documentos-pdf").createSignedUrl(plano.pdf_path, 3600);
+        if (data?.signedUrl) setPdfUrls(prev => ({ ...prev, [planoId]: data.signedUrl }));
+      }
+      return;
+    }
     if (!refeicoes[planoId]) {
       const { data: refs } = await supabase
         .from("refeicoes")
@@ -76,6 +84,18 @@ export function PlanoAlimentarSection({ paciente }: Props) {
         .order("ordem", { ascending: true });
       setRefeicoes(prev => ({ ...prev, [planoId]: refs || [] }));
     }
+  };
+
+  const openPdfNewTab = async (plano: any) => {
+    if (!plano.pdf_path) return;
+    const { data } = await supabase.storage.from("documentos-pdf").createSignedUrl(plano.pdf_path, 3600);
+    if (data?.signedUrl) window.open(data.signedUrl, "_blank");
+  };
+
+  const downloadPdf = async (plano: any) => {
+    if (!plano.pdf_path) return;
+    const { data } = await supabase.storage.from("documentos-pdf").createSignedUrl(plano.pdf_path, 3600, { download: plano.pdf_nome || "plano.pdf" });
+    if (data?.signedUrl) window.open(data.signedUrl, "_blank");
   };
 
   const duplicatePlano = async (plano: any) => {
