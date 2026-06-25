@@ -72,7 +72,7 @@ export default function ConfiguracaoClinica() {
     try {
       const { data } = await supabase
         .from("configuracoes_clinica")
-        .select("*")
+        .select("id,nome_clinica,endereco,telefone,crn,site,instagram,facebook,whatsapp,mensagem_boas_vindas,cor_primaria,cor_secundaria,logo_url,incluir_capa,marca_dagua,smtp_host,smtp_port,smtp_user,smtp_ativo")
         .eq("user_id", user!.id)
         .maybeSingle();
 
@@ -96,7 +96,7 @@ export default function ConfiguracaoClinica() {
           smtp_host: data.smtp_host || "",
           smtp_port: data.smtp_port || 587,
           smtp_user: data.smtp_user || "",
-          smtp_password: data.smtp_password || "",
+          smtp_password: "",
           smtp_ativo: data.smtp_ativo ?? false,
         });
       }
@@ -131,7 +131,7 @@ export default function ConfiguracaoClinica() {
         smtp_host: config.smtp_host || null,
         smtp_port: config.smtp_port,
         smtp_user: config.smtp_user || null,
-        smtp_password: config.smtp_password || null,
+        ...(config.smtp_password ? { smtp_password: config.smtp_password } : {}),
         smtp_ativo: config.smtp_ativo,
       };
 

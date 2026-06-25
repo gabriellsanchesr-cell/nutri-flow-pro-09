@@ -457,11 +457,13 @@ export default function PortalPaciente() {
       const hasTotais = totalDiario > 0 || p > 0 || c > 0 || g > 0;
       return (
         <div className="space-y-4 animate-fade-in">
-          <div>
-            <h2 className="text-lg font-bold text-foreground">{plano.nome}</h2>
-            {hasTotais && (
-              <p className="text-xs text-muted-foreground">{Math.round(totalDiario)} kcal/dia</p>
-            )}
+          <div className="flex justify-between items-center">
+            <div>
+              <h2 className="text-lg font-bold text-foreground">{plano.nome}</h2>
+              <p className="text-xs text-muted-foreground">
+                {hasTotais ? `${Math.round(totalDiario)} kcal/dia` : "Plano em PDF enviado pelo nutricionista"}
+              </p>
+            </div>
           </div>
           {hasTotais && (
             <Card className="rounded-2xl glass-card">
@@ -482,6 +484,27 @@ export default function PortalPaciente() {
                 <p className="text-sm text-muted-foreground whitespace-pre-wrap">{plano.observacoes}</p>
               </CardContent>
             </Card>
+          )}
+          <div className="h-[75vh] rounded-2xl overflow-hidden border border-border bg-card">
+            {planoPdfUrl ? (
+              <PdfViewer url={planoPdfUrl} continuous />
+            ) : (
+              <div className="flex items-center justify-center h-full text-sm text-muted-foreground">
+                Carregando PDF...
+              </div>
+            )}
+          </div>
+          {planoPdfUrl && (
+            <div className="flex justify-end">
+              <a
+                href={planoPdfUrl}
+                target="_blank"
+                rel="noreferrer"
+                className="text-xs text-primary underline"
+              >
+                Abrir em nova aba
+              </a>
+            </div>
           )}
         </div>
       );
