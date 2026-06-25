@@ -66,6 +66,7 @@ export default function PortalPaciente() {
   const { user, signOut } = useAuth();
   const [paciente, setPaciente] = useState<any>(null);
   const [plano, setPlano] = useState<any>(null);
+  const [planoPdfUrl, setPlanoPdfUrl] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
   const [activeTab, setActiveTab] = useState<PortalTab>("inicio");
   const [moreTab, setMoreTab] = useState<MoreTab | null>(null);
