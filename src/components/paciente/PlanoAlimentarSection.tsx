@@ -53,6 +53,8 @@ export function PlanoAlimentarSection({ paciente }: Props) {
 
   useEffect(() => { loadPlanos(); }, [paciente.id]);
 
+  const [anexoTotais, setAnexoTotais] = useState<Record<string, { kcal: number; p: number; c: number; g: number; f: number }>>({});
+
   const loadPlanos = async () => {
     setLoading(true);
     const { data } = await supabase
@@ -62,6 +64,32 @@ export function PlanoAlimentarSection({ paciente }: Props) {
       .eq("is_template", false)
       .order("created_at", { ascending: false });
     setPlanos(data || []);
+
+    // Carrega totais dos planos anexados (vindos da "refeição resumo")
+    const anexoIds = (data || []).filter((p: any) => p.tipo === "anexo").map((p: any) => p.id);
+    if (anexoIds.length) {
+      const { data: refs } = await supabase
+        .from("refeicoes")
+        .select("plano_id, alimentos_plano(energia_kcal, proteina_g, carboidrato_g, lipidio_g, fibra_g, opcao)")
+        .in("plano_id", anexoIds);
+      const map: Record<string, any> = {};
+      (refs || []).forEach((r: any) => {
+        const acc = map[r.plano_id] || { kcal: 0, p: 0, c: 0, g: 0, f: 0 };
+        (r.alimentos_plano || []).forEach((a: any) => {
+          if (a.opcao && a.opcao !== "A") return;
+          acc.kcal += a.energia_kcal || 0;
+          acc.p += a.proteina_g || 0;
+          acc.c += a.carboidrato_g || 0;
+          acc.g += a.lipidio_g || 0;
+          acc.f += a.fibra_g || 0;
+        });
+        map[r.plano_id] = acc;
+      });
+      setAnexoTotais(map);
+    } else {
+      setAnexoTotais({});
+    }
+
     setLoading(false);
   };
 
