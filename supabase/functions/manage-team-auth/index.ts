@@ -90,10 +90,11 @@ Deno.serve(async (req) => {
 
         const { data: membro } = await adminClient
           .from("equipe_membros")
-          .select("auth_user_id")
+          .select("auth_user_id, created_by")
           .eq("id", membro_id)
           .single();
         if (!membro) return json({ error: "Membro não encontrado" }, 404);
+        if (membro.created_by !== callerId) return json({ error: "Acesso negado" }, 403);
 
         const authUpdates: Record<string, unknown> = {};
         if (email) authUpdates.email = email;
@@ -120,8 +121,9 @@ Deno.serve(async (req) => {
 
       case "deactivate": {
         if (!membro_id) return json({ error: "membro_id é obrigatório" }, 400);
-        const { data: membro } = await adminClient.from("equipe_membros").select("auth_user_id").eq("id", membro_id).single();
+        const { data: membro } = await adminClient.from("equipe_membros").select("auth_user_id, created_by").eq("id", membro_id).single();
         if (!membro) return json({ error: "Membro não encontrado" }, 404);
+        if (membro.created_by !== callerId) return json({ error: "Acesso negado" }, 403);
 
         await adminClient.auth.admin.updateUserById(membro.auth_user_id, { ban_duration: "876600h" });
         await adminClient.from("equipe_membros").update({ ativo: false }).eq("id", membro_id);
@@ -130,8 +132,9 @@ Deno.serve(async (req) => {
 
       case "reactivate": {
         if (!membro_id) return json({ error: "membro_id é obrigatório" }, 400);
-        const { data: membro } = await adminClient.from("equipe_membros").select("auth_user_id").eq("id", membro_id).single();
+        const { data: membro } = await adminClient.from("equipe_membros").select("auth_user_id, created_by").eq("id", membro_id).single();
         if (!membro) return json({ error: "Membro não encontrado" }, 404);
+        if (membro.created_by !== callerId) return json({ error: "Acesso negado" }, 403);
 
         await adminClient.auth.admin.updateUserById(membro.auth_user_id, { ban_duration: "none" });
         await adminClient.from("equipe_membros").update({ ativo: true }).eq("id", membro_id);
@@ -140,8 +143,9 @@ Deno.serve(async (req) => {
 
       case "delete": {
         if (!membro_id) return json({ error: "membro_id é obrigatório" }, 400);
-        const { data: membro } = await adminClient.from("equipe_membros").select("auth_user_id").eq("id", membro_id).single();
+        const { data: membro } = await adminClient.from("equipe_membros").select("auth_user_id, created_by").eq("id", membro_id).single();
         if (!membro) return json({ error: "Membro não encontrado" }, 404);
+        if (membro.created_by !== callerId) return json({ error: "Acesso negado" }, 403);
 
         await adminClient.auth.admin.deleteUser(membro.auth_user_id);
         await adminClient.from("equipe_membros").delete().eq("id", membro_id);
@@ -150,8 +154,9 @@ Deno.serve(async (req) => {
 
       case "reset_password": {
         if (!membro_id || !password) return json({ error: "membro_id e password são obrigatórios" }, 400);
-        const { data: membro } = await adminClient.from("equipe_membros").select("auth_user_id").eq("id", membro_id).single();
+        const { data: membro } = await adminClient.from("equipe_membros").select("auth_user_id, created_by").eq("id", membro_id).single();
         if (!membro) return json({ error: "Membro não encontrado" }, 404);
+        if (membro.created_by !== callerId) return json({ error: "Acesso negado" }, 403);
 
         const { error } = await adminClient.auth.admin.updateUserById(membro.auth_user_id, { password });
         if (error) return json({ error: error.message }, 400);
@@ -159,6 +164,7 @@ Deno.serve(async (req) => {
         await adminClient.from("equipe_membros").update({ deve_trocar_senha: true }).eq("id", membro_id);
         return json({ success: true });
       }
+
 
       default:
         return json({ error: "Ação inválida" }, 400);

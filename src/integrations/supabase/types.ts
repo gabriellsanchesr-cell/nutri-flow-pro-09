@@ -2434,6 +2434,10 @@ export type Database = {
         Args: { _paciente_id: string }
         Returns: boolean
       }
+      equipe_has_permission: {
+        Args: { _modulo: string; _nutri_id: string; _permissao: string }
+        Returns: boolean
+      }
       get_anamnese_by_token: {
         Args: { p_token: string }
         Returns: {
