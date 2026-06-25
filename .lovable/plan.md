@@ -1,39 +1,44 @@
-Plano para tornar a importação de PDF mais confiável e evitar falhas como calorias/alimentos errados:
+Plano de implementação:
 
-1. Fortalecer a leitura e validação do retorno da IA
-- Aceitar também retorno em texto JSON caso a IA não use tool_call corretamente.
-- Sanitizar números antes de usar: converter strings como “507 kcal”, “P 40”, “40g”, vírgula decimal etc.
-- Validar estrutura mínima: refeição com tipo válido, opção com letra, alimento com nome, quantidade segura e medida.
-- Nunca deixar um erro parcial quebrar a importação inteira quando for possível marcar item para revisão.
+1. Reestruturar a leitura do PDF
+- Trocar a extração atual que junta o conteúdo em texto corrido por uma extração com coordenadas X/Y.
+- Recriar linhas, colunas e espaçamentos para preservar horários, títulos, opções A/B/C, listas de alimentos e blocos de substituições.
+- Evitar que tabelas ou colunas do PDF sejam lidas fora de ordem.
 
-2. Extrair totais do PDF por heurística local como fallback
-- Além de pedir os totais para a IA, analisar o texto bruto do PDF no backend para capturar padrões como “507 kcal · P 40 · C 61 · G 12”.
-- Se a IA não preencher kcal/proteína/carbo/gordura da opção, preencher com os totais detectados no texto, seguindo a ordem das refeições/opções.
-- Usar esses totais do PDF como valores oficiais da opção na tela.
+2. Criar uma etapa local de pré-estruturação antes da IA
+- Detectar refeições por padrões reais: “Café da manhã”, “Almoço”, “Jantar”, “Ceia”, “Pré-treino”, horários e títulos customizados.
+- Detectar opções: “Opção A”, “Opção B”, “Opção C”, variações como “Opção 1/2” e blocos repetidos.
+- Separar alimentos linha a linha, em vez de deixar uma refeição inteira virar um único campo de texto.
+- Identificar substituições por item e associá-las ao alimento correto.
 
-3. Corrigir persistência dos totais por opção
-- Hoje os campos `kcal_opcao`, `prot_opcao_g`, `carb_opcao_g`, `gord_opcao_g` existem só no estado do editor e se perdem ao salvar, porque o banco não tem colunas para eles.
-- Criar colunas em `refeicoes` para armazenar os totais da opção A/B/C como JSON, sem criar novas tabelas.
-- Ao salvar o plano, gravar os totais de cada opção da refeição.
-- Ao abrir plano salvo, restaurar esses totais para que o sistema não volte a recalcular errado pela TACO.
+3. Melhorar o contrato da IA
+- Enviar para a IA o texto já organizado em linhas/blocos, com marcações de refeição/opção/substituição.
+- Reforçar que a IA deve retornar somente estrutura JSON com refeições, opções, alimentos, quantidades, medidas, totais e substituições.
+- Bloquear respostas onde a IA coloque parágrafos inteiros em `nome_alimento`; esses casos serão quebrados ou marcados para revisão.
 
-4. Tornar o pareamento TACO mais seguro
-- Manter o nome original do PDF sempre visível.
-- Melhorar aliases e critérios de confiança para evitar falsos positivos como maçã/macarrão e carne magra/carne suína.
-- Se o pareamento não for altamente confiável, não “chutar”: deixar alimento sem TACO, macros zerados internamente e marcado para revisão.
+4. Pós-processar e validar a importação
+- Sanitizar nomes, quantidades e medidas sem perder o texto original do PDF.
+- Separar alimentos quando vierem juntos na mesma linha, por padrões como “+”, “,”, “ou”, bullets e quebras visuais.
+- Usar totais do PDF como fonte oficial quando existirem.
+- Quando não houver TACO confiável, manter o alimento no plano com macros zerados e `precisa_revisao`, em vez de trocar por alimento errado.
 
-5. Exibir revisão de importação de forma clara
-- Manter “—” nas colunas de macro quando não houver TACO confiável.
-- Mostrar que os totais da opção vieram do PDF quando disponíveis.
-- Ajustar mensagem do modal/banner para deixar claro que a estrutura foi importada e que itens marcados precisam revisão.
+5. Garantir que o resultado entre no editor como plano feito manualmente
+- Cada refeição importada vira uma refeição real do editor.
+- Cada opção vira aba/opção real.
+- Cada alimento vira item editável com quantidade, medida, macros e substituições.
+- Substituições serão salvas na tabela própria e aparecerão no editor e portal como substituições estruturadas, não como texto solto.
 
-6. Validar com o caso da Érica
-- Conferir que a Opção A do Almoço preserva “carne magra (patinho ou alcatra)” e “maçã”.
-- Conferir que o header usa 507 kcal · P 40 · C 61 · G 12 quando vier do PDF.
-- Conferir que trocar opção no editor atualiza os totais pela opção selecionada e que, após salvar e reabrir, os totais continuam corretos.
+6. Melhorar feedback da tela de importação
+- Exibir mensagem mais clara quando o PDF foi parcialmente interpretado.
+- Informar quantas refeições, opções, alimentos e substituições foram importados.
+- Destacar itens que precisam revisão para o nutricionista corrigir antes de ativar.
 
-Arquivos previstos:
+Arquivos principais:
 - `supabase/functions/import-plano-pdf/index.ts`
+- `src/components/paciente/ImportarPlanoPdfModal.tsx`
 - `src/components/paciente/PlanoAlimentarEditor.tsx`
-- `src/lib/pdf/planoAlimentarPdf.ts` se necessário para exportação consistente
-- Nova migration para guardar totais por opção em `refeicoes`
+
+Validação:
+- Testar importação com PDFs que têm opções A/B/C, horários, substituições e totais nutricionais.
+- Confirmar que nada entra como um bloco de texto único quando deveria ser refeição/alimento.
+- Confirmar que salvar e reabrir preserva opções, totais e substituições.
