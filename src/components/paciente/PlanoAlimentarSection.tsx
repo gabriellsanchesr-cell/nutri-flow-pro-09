@@ -101,6 +101,28 @@ export function PlanoAlimentarSection({ paciente }: Props) {
   const duplicatePlano = async (plano: any) => {
     if (!user) return;
     try {
+      // Plano do tipo anexo: copia o arquivo e cria registro
+      if (plano.tipo === "anexo") {
+        let newPath: string | null = null;
+        if (plano.pdf_path) {
+          const { data: file } = await supabase.storage.from("documentos-pdf").download(plano.pdf_path);
+          if (file) {
+            newPath = `planos/${paciente.id}/${Date.now()}_copia_${(plano.pdf_nome || "plano.pdf").replace(/[^\w.\-]+/g, "_")}`;
+            await supabase.storage.from("documentos-pdf").upload(newPath, file, { contentType: "application/pdf", upsert: false });
+          }
+        }
+        const { error } = await supabase.from("planos_alimentares").insert({
+          user_id: user.id, paciente_id: paciente.id,
+          nome: `${plano.nome} (cópia)`, observacoes: plano.observacoes,
+          status: "rascunho", is_template: false,
+          tipo: "anexo", pdf_path: newPath, pdf_nome: plano.pdf_nome,
+        } as any);
+        if (error) throw error;
+        toast({ title: "Plano duplicado!" });
+        loadPlanos();
+        return;
+      }
+
       const { data: newPlano, error } = await supabase.from("planos_alimentares").insert({
         user_id: user.id, paciente_id: paciente.id,
         nome: `${plano.nome} (cópia)`, observacoes: plano.observacoes,
