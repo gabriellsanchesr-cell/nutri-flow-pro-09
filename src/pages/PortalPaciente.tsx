@@ -446,22 +446,48 @@ export default function PortalPaciente() {
       );
     }
     if (plano.tipo === "anexo") {
+      // Macros vêm de uma "refeição resumo" criada na anexação do PDF
+      let p = 0, c = 0, g = 0, f = 0;
+      plano.refeicoes?.forEach((r: any) => {
+        getContabilizada(r).forEach((a: any) => {
+          p += a.proteina_g || 0; c += a.carboidrato_g || 0;
+          g += a.lipidio_g || 0; f += a.fibra_g || 0;
+        });
+      });
+      const hasTotais = totalDiario > 0 || p > 0 || c > 0 || g > 0;
       return (
         <div className="space-y-4 animate-fade-in">
-          <div>
-            <h2 className="text-lg font-bold text-foreground">{plano.nome}</h2>
-            <p className="text-xs text-muted-foreground">Plano em PDF enviado pelo nutricionista</p>
+          <div className="flex justify-between items-center">
+            <div>
+              <h2 className="text-lg font-bold text-foreground">{plano.nome}</h2>
+              <p className="text-xs text-muted-foreground">
+                {hasTotais ? `${Math.round(totalDiario)} kcal/dia` : "Plano em PDF enviado pelo nutricionista"}
+              </p>
+            </div>
           </div>
-          {plano.observacoes && (
+          {hasTotais && (
             <Card className="rounded-2xl glass-card">
               <CardContent className="p-4">
-                <p className="text-sm text-muted-foreground">{plano.observacoes}</p>
+                <div className="grid grid-cols-5 gap-2 text-center">
+                  <div><p className="text-lg font-bold text-primary">{Math.round(totalDiario)}</p><p className="text-[10px] text-muted-foreground">Kcal</p></div>
+                  <div><p className="text-lg font-bold text-blue-500">{Math.round(p)}g</p><p className="text-[10px] text-muted-foreground">Proteína</p></div>
+                  <div><p className="text-lg font-bold text-orange-500">{Math.round(c)}g</p><p className="text-[10px] text-muted-foreground">Carb</p></div>
+                  <div><p className="text-lg font-bold text-yellow-500">{Math.round(g)}g</p><p className="text-[10px] text-muted-foreground">Gord</p></div>
+                  <div><p className="text-lg font-bold text-green-500">{Math.round(f)}g</p><p className="text-[10px] text-muted-foreground">Fibra</p></div>
+                </div>
               </CardContent>
             </Card>
           )}
-          <div className="h-[70vh] rounded-2xl overflow-hidden border border-border bg-card">
+          {plano.observacoes && (
+            <Card className="rounded-2xl glass-card">
+              <CardContent className="p-4">
+                <p className="text-sm text-muted-foreground whitespace-pre-wrap">{plano.observacoes}</p>
+              </CardContent>
+            </Card>
+          )}
+          <div className="h-[75vh] rounded-2xl overflow-hidden border border-border bg-card">
             {planoPdfUrl ? (
-              <PdfViewer url={planoPdfUrl} />
+              <PdfViewer url={planoPdfUrl} continuous />
             ) : (
               <div className="flex items-center justify-center h-full text-sm text-muted-foreground">
                 Carregando PDF...
