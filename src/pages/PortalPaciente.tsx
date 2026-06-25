@@ -96,6 +96,14 @@ export default function PortalPaciente() {
           .limit(1)
           .maybeSingle();
         setPlano(planoData);
+        if (planoData?.tipo === "anexo" && planoData?.pdf_path) {
+          try {
+            const { data: signed } = await supabase.storage
+              .from("documentos-pdf")
+              .createSignedUrl(planoData.pdf_path, 3600);
+            if (signed?.signedUrl) setPlanoPdfUrl(signed.signedUrl);
+          } catch {}
+        }
         if (planoData?.id) {
           try {
             const saved = localStorage.getItem(`opcaoSel:${planoData.id}`);
