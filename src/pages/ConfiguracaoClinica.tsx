@@ -96,7 +96,7 @@ export default function ConfiguracaoClinica() {
           smtp_host: data.smtp_host || "",
           smtp_port: data.smtp_port || 587,
           smtp_user: data.smtp_user || "",
-          smtp_password: data.smtp_password || "",
+          smtp_password: "",
           smtp_ativo: data.smtp_ativo ?? false,
         });
       }
