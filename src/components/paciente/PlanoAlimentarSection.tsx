@@ -364,6 +364,18 @@ export function PlanoAlimentarSection({ paciente }: Props) {
           setEditingPlanoId("new");
         }}
       />
+
+      <AnexarPlanoPdfModal
+        open={anexarOpen}
+        onOpenChange={(open) => { setAnexarOpen(open); if (!open) setAnexarEditando(null); }}
+        pacienteId={paciente.id}
+        plano={anexarEditando}
+        onSaved={() => {
+          setAnexarOpen(false);
+          setAnexarEditando(null);
+          loadPlanos();
+        }}
+      />
     </div>
   );
 }
