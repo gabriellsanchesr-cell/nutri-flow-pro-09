@@ -304,6 +304,15 @@ export function PlanoAlimentarSection({ paciente }: Props) {
                   </div>
                 </div>
                 {plano.observacoes && <p className="text-xs text-muted-foreground mt-1">{plano.observacoes}</p>}
+                {isAnexo && anexoTotais[plano.id] && (anexoTotais[plano.id].kcal > 0 || anexoTotais[plano.id].p > 0) && (
+                  <div className="flex gap-3 flex-wrap mt-2 text-xs">
+                    <span className="font-medium text-primary">{Math.round(anexoTotais[plano.id].kcal)} kcal</span>
+                    <span className="text-blue-500">P {Math.round(anexoTotais[plano.id].p)}g</span>
+                    <span className="text-orange-500">C {Math.round(anexoTotais[plano.id].c)}g</span>
+                    <span className="text-yellow-500">G {Math.round(anexoTotais[plano.id].g)}g</span>
+                    <span className="text-green-500">F {Math.round(anexoTotais[plano.id].f)}g</span>
+                  </div>
+                )}
               </CardHeader>
               <CardContent className="pt-0">
                 <Button variant="ghost" size="sm" className="text-xs" onClick={() => toggleExpand(plano)}>
