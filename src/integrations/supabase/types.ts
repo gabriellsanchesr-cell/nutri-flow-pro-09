@@ -386,17 +386,29 @@ export type Database = {
           bio_peso_osseo: number | null
           circ_abdomen: number | null
           circ_antebraco: number | null
+          circ_antebraco_dir: number | null
+          circ_antebraco_esq: number | null
           circ_braco_contraido: number | null
+          circ_braco_contraido_dir: number | null
+          circ_braco_contraido_esq: number | null
           circ_braco_dir: number | null
           circ_braco_esq: number | null
           circ_cintura: number | null
           circ_coxa_dir: number | null
           circ_coxa_distal: number | null
+          circ_coxa_distal_dir: number | null
+          circ_coxa_distal_esq: number | null
           circ_coxa_esq: number | null
           circ_coxa_medial: number | null
+          circ_coxa_medial_dir: number | null
+          circ_coxa_medial_esq: number | null
           circ_coxa_proximal: number | null
+          circ_coxa_proximal_dir: number | null
+          circ_coxa_proximal_esq: number | null
           circ_ombro: number | null
           circ_panturrilha: number | null
+          circ_panturrilha_dir: number | null
+          circ_panturrilha_esq: number | null
           circ_pescoco: number | null
           circ_quadril: number | null
           circ_torax: number | null
@@ -452,17 +464,29 @@ export type Database = {
           bio_peso_osseo?: number | null
           circ_abdomen?: number | null
           circ_antebraco?: number | null
+          circ_antebraco_dir?: number | null
+          circ_antebraco_esq?: number | null
           circ_braco_contraido?: number | null
+          circ_braco_contraido_dir?: number | null
+          circ_braco_contraido_esq?: number | null
           circ_braco_dir?: number | null
           circ_braco_esq?: number | null
           circ_cintura?: number | null
           circ_coxa_dir?: number | null
           circ_coxa_distal?: number | null
+          circ_coxa_distal_dir?: number | null
+          circ_coxa_distal_esq?: number | null
           circ_coxa_esq?: number | null
           circ_coxa_medial?: number | null
+          circ_coxa_medial_dir?: number | null
+          circ_coxa_medial_esq?: number | null
           circ_coxa_proximal?: number | null
+          circ_coxa_proximal_dir?: number | null
+          circ_coxa_proximal_esq?: number | null
           circ_ombro?: number | null
           circ_panturrilha?: number | null
+          circ_panturrilha_dir?: number | null
+          circ_panturrilha_esq?: number | null
           circ_pescoco?: number | null
           circ_quadril?: number | null
           circ_torax?: number | null
@@ -518,17 +542,29 @@ export type Database = {
           bio_peso_osseo?: number | null
           circ_abdomen?: number | null
           circ_antebraco?: number | null
+          circ_antebraco_dir?: number | null
+          circ_antebraco_esq?: number | null
           circ_braco_contraido?: number | null
+          circ_braco_contraido_dir?: number | null
+          circ_braco_contraido_esq?: number | null
           circ_braco_dir?: number | null
           circ_braco_esq?: number | null
           circ_cintura?: number | null
           circ_coxa_dir?: number | null
           circ_coxa_distal?: number | null
+          circ_coxa_distal_dir?: number | null
+          circ_coxa_distal_esq?: number | null
           circ_coxa_esq?: number | null
           circ_coxa_medial?: number | null
+          circ_coxa_medial_dir?: number | null
+          circ_coxa_medial_esq?: number | null
           circ_coxa_proximal?: number | null
+          circ_coxa_proximal_dir?: number | null
+          circ_coxa_proximal_esq?: number | null
           circ_ombro?: number | null
           circ_panturrilha?: number | null
+          circ_panturrilha_dir?: number | null
+          circ_panturrilha_esq?: number | null
           circ_pescoco?: number | null
           circ_quadril?: number | null
           circ_torax?: number | null
