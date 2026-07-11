@@ -692,7 +692,7 @@ export default function PortalPaciente() {
             <ArrowLeft className="h-4 w-4 mr-1" /> Voltar
           </Button>
           <h2 className="text-lg font-bold text-foreground">
-            Avaliação — {format(new Date(av.data_avaliacao), "dd/MM/yyyy")}
+            Avaliação — {format(parseLocalDate(av.data_avaliacao), "dd/MM/yyyy")}
           </h2>
 
           <Card className="rounded-2xl glass-card">
@@ -744,7 +744,7 @@ export default function PortalPaciente() {
     }
 
     const chartData = [...avaliacoes].reverse().map(a => ({
-      data: format(new Date(a.data_avaliacao), "dd/MM", { locale: ptBR }),
+      data: format(parseLocalDate(a.data_avaliacao), "dd/MM", { locale: ptBR }),
       peso: a.peso,
     })).filter(d => d.peso != null);
 
@@ -816,7 +816,7 @@ export default function PortalPaciente() {
                       <Scale className="h-4 w-4 text-primary" />
                     </div>
                     <div>
-                      <p className="font-semibold text-sm text-foreground">{format(new Date(av.data_avaliacao), "dd/MM/yyyy")}</p>
+                      <p className="font-semibold text-sm text-foreground">{format(parseLocalDate(av.data_avaliacao), "dd/MM/yyyy")}</p>
                       <p className="text-xs text-muted-foreground">
                         {av.peso && `${av.peso}kg`} {av.imc && `• IMC ${av.imc}`} {av.percentual_gordura_dobras != null && `• ${av.percentual_gordura_dobras}% gord.`}
                       </p>
