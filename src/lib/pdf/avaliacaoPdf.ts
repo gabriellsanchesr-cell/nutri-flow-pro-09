@@ -6,6 +6,14 @@ import {
   checkNewPage, addInfoBlock, PdfConfig,
 } from "./pdfBrand";
 
+// Format YYYY-MM-DD as DD/MM/YYYY without timezone shifting
+const formatLocalDateBR = (s: string | null | undefined): string => {
+  if (!s) return "—";
+  const m = String(s).match(/^(\d{4})-(\d{2})-(\d{2})/);
+  if (m) return `${m[3]}/${m[2]}/${m[1]}`;
+  return new Date(s).toLocaleDateString("pt-BR");
+};
+
 export interface AvaliacaoExportOptions {
   incluirDobras: boolean;
   incluirCircunferencias: boolean;
