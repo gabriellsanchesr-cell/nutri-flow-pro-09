@@ -10,6 +10,13 @@ import { Checkbox } from "@/components/ui/checkbox";
 import { Loader2, Upload, Sparkles, ArrowLeft, Save, FileText } from "lucide-react";
 import { format } from "date-fns";
 
+const parseLocalDate = (s: string | null | undefined): Date => {
+  if (!s) return new Date(NaN);
+  const iso = String(s).match(/^(\d{4})-(\d{2})-(\d{2})/);
+  if (iso) return new Date(+iso[1], +iso[2] - 1, +iso[3]);
+  return new Date(s);
+};
+
 interface Props {
   open: boolean;
   onOpenChange: (o: boolean) => void;
