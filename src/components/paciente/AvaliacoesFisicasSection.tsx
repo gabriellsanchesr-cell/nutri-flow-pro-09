@@ -350,7 +350,7 @@ export function AvaliacoesFisicasSection({ paciente }: Props) {
   // ─── Chart data ───────────────────────────────────────────────────
   const chartData = useMemo(() =>
     [...avaliacoes].reverse().map(a => ({
-      date: format(new Date(a.data_avaliacao), "dd/MM/yy"),
+      date: format(parseLocalDate(a.data_avaliacao), "dd/MM/yy"),
       value: a[chartMetric] ?? null,
     })).filter(d => d.value !== null),
     [avaliacoes, chartMetric]
@@ -405,7 +405,7 @@ export function AvaliacoesFisicasSection({ paciente }: Props) {
                       </div>
                       <div>
                         <div className="flex items-center gap-2 flex-wrap">
-                          <p className="font-semibold text-sm">{format(new Date(av.data_avaliacao), "dd 'de' MMMM 'de' yyyy", { locale: ptBR })}</p>
+                          <p className="font-semibold text-sm">{format(parseLocalDate(av.data_avaliacao), "dd 'de' MMMM 'de' yyyy", { locale: ptBR })}</p>
                           {av.origem === "importado_ia" && (
                             <Badge variant="outline" className="text-[10px] gap-1 border-primary/40 text-primary">
                               <Sparkles className="h-2.5 w-2.5" /> IA
@@ -503,7 +503,7 @@ export function AvaliacoesFisicasSection({ paciente }: Props) {
           <div>
             <h2 className="text-lg font-bold text-foreground">Avaliação Antropométrica</h2>
             <p className="text-xs text-muted-foreground">
-              Data: {form.data_avaliacao ? format(new Date(form.data_avaliacao + "T12:00"), "dd/MM/yyyy") : "—"} | {paciente.nome_completo}, {age} anos
+              Data: {form.data_avaliacao ? format(parseLocalDate(form.data_avaliacao), "dd/MM/yyyy") : "—"} | {paciente.nome_completo}, {age} anos
             </p>
           </div>
         </div>
@@ -723,7 +723,7 @@ export function AvaliacoesFisicasSection({ paciente }: Props) {
                 <CardHeader className="pb-2">
                   <CardTitle className="text-sm font-semibold">Comparativo com Anterior</CardTitle>
                   <p className="text-xs text-muted-foreground">
-                    {format(new Date(previousAv.data_avaliacao), "dd/MM/yyyy")}
+                    {format(parseLocalDate(previousAv.data_avaliacao), "dd/MM/yyyy")}
                   </p>
                 </CardHeader>
                 <CardContent>
