@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
 import { Button } from "@/components/ui/button";
@@ -8,14 +8,19 @@ import { Textarea } from "@/components/ui/textarea";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { useToast } from "@/hooks/use-toast";
-import { useNavigate } from "react-router-dom";
+import { useNavigate, useSearchParams } from "react-router-dom";
 import { ArrowLeft } from "lucide-react";
 
 export default function PacienteForm() {
   const { user } = useAuth();
   const { toast } = useToast();
   const navigate = useNavigate();
+  const [searchParams] = useSearchParams();
+  const editId = searchParams.get("edit");
+  const isEdit = !!editId;
+
   const [loading, setLoading] = useState(false);
+  const [loadingData, setLoadingData] = useState(isEdit);
   const [form, setForm] = useState({
     nome_completo: "",
     data_nascimento: "",
@@ -36,6 +41,38 @@ export default function PacienteForm() {
     fase_real: "rotina" as string,
   });
 
+  useEffect(() => {
+    if (!isEdit || !editId) return;
+    (async () => {
+      const { data, error } = await supabase.from("pacientes").select("*").eq("id", editId).maybeSingle();
+      if (error || !data) {
+        toast({ title: "Erro ao carregar paciente", description: error?.message || "Paciente não encontrado", variant: "destructive" });
+        navigate("/pacientes");
+        return;
+      }
+      setForm({
+        nome_completo: data.nome_completo ?? "",
+        data_nascimento: data.data_nascimento ?? "",
+        sexo: data.sexo ?? "",
+        telefone: data.telefone ?? "",
+        email: data.email ?? "",
+        peso_inicial: data.peso_inicial != null ? String(data.peso_inicial) : "",
+        altura: data.altura != null ? String(data.altura) : "",
+        objetivo: (data.objetivo as string) ?? "outro",
+        objetivo_outro: data.objetivo_outro ?? "",
+        restricoes_alimentares: data.restricoes_alimentares ?? "",
+        alergias: data.alergias ?? "",
+        historico_patologias: data.historico_patologias ?? "",
+        medicamentos: data.medicamentos ?? "",
+        nivel_atividade: (data.nivel_atividade as string) ?? "sedentario",
+        rotina_sono: data.rotina_sono ?? "",
+        observacoes_comportamentais: data.observacoes_comportamentais ?? "",
+        fase_real: (data.fase_real as string) ?? "rotina",
+      });
+      setLoadingData(false);
+    })();
+  }, [isEdit, editId, navigate, toast]);
+
   const set = (key: string, value: string) => setForm((f) => ({ ...f, [key]: value }));
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -43,8 +80,7 @@ export default function PacienteForm() {
     if (!user) return;
     setLoading(true);
 
-    const { error } = await supabase.from("pacientes").insert({
-      user_id: user.id,
+    const payload = {
       nome_completo: form.nome_completo,
       data_nascimento: form.data_nascimento || null,
       sexo: form.sexo || null,
@@ -62,22 +98,36 @@ export default function PacienteForm() {
       rotina_sono: form.rotina_sono || null,
       observacoes_comportamentais: form.observacoes_comportamentais || null,
       fase_real: form.fase_real as any,
-    });
+    };
+
+    const { error } = isEdit
+      ? await supabase.from("pacientes").update(payload).eq("id", editId!)
+      : await supabase.from("pacientes").insert({ ...payload, user_id: user.id });
 
     if (error) {
       toast({ title: "Erro", description: error.message, variant: "destructive" });
     } else {
-      toast({ title: "Paciente cadastrado!" });
-      navigate("/pacientes");
+      toast({ title: isEdit ? "Paciente atualizado!" : "Paciente cadastrado!" });
+      navigate(isEdit ? `/pacientes/${editId}` : "/pacientes");
     }
     setLoading(false);
   };
 
+  if (loadingData) {
+    return <div className="max-w-3xl mx-auto p-8 text-muted-foreground">Carregando...</div>;
+  }
+
   return (
     <div className="max-w-3xl mx-auto space-y-6">
-      <Button variant="ghost" onClick={() => navigate("/pacientes")} className="gap-2">
+      <Button variant="ghost" onClick={() => navigate(isEdit ? `/pacientes/${editId}` : "/pacientes")} className="gap-2">
         <ArrowLeft className="h-4 w-4" /> Voltar
       </Button>
+
+      <div>
+        <h1 className="text-2xl font-bold text-foreground">
+          {isEdit ? "Editar Paciente" : "Cadastrar Paciente"}
+        </h1>
+      </div>
 
       <form onSubmit={handleSubmit} className="space-y-6">
         <Card>
@@ -203,7 +253,7 @@ export default function PacienteForm() {
         </Card>
 
         <Button type="submit" className="w-full" disabled={loading}>
-          {loading ? "Salvando..." : "Cadastrar Paciente"}
+          {loading ? "Salvando..." : isEdit ? "Salvar Alterações" : "Cadastrar Paciente"}
         </Button>
       </form>
     </div>
