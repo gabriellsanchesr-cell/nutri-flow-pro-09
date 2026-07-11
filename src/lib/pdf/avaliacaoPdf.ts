@@ -162,39 +162,91 @@ export function generateAvaliacaoPdf(
     }
   }
 
-  // Section 6 — Comparison
-  if (options.incluirComparativo && avaliacaoAnterior) {
-    y = checkNewPage(doc, y, 30);
-    y = sectionTitle(doc, y, "Comparativo com Avaliação Anterior");
+  // Section 6 — Historical evolution comparison
+  const historyAll = (historicoAvaliacoes || [])
+    .filter(a => a && a.data_avaliacao)
+    .slice()
+    .sort((a, b) => String(a.data_avaliacao).localeCompare(String(b.data_avaliacao)));
 
-    const compFields = [
+  if (options.incluirComparativo && historyAll.length >= 2) {
+    y = checkNewPage(doc, y, 30);
+    y = sectionTitle(doc, y, "Evolução — Comparativo Histórico");
+
+    const compFields: [string, string, string, boolean][] = [
       ["Peso", "peso", "kg", true],
-      ["Cintura", "circ_cintura", "cm", true],
-      ["Quadril", "circ_quadril", "cm", true],
+      ["IMC", "imc", "", true],
       ["% Gordura", "percentual_gordura_dobras", "%", true],
       ["Massa magra", "massa_magra_kg", "kg", false],
-    ] as [string, string, string, boolean][];
+      ["Cintura", "circ_cintura", "cm", true],
+      ["Quadril", "circ_quadril", "cm", true],
+      ["Abdômen", "circ_abdomen", "cm", true],
+      ["RCQ", "relacao_cintura_quadril", "", true],
+    ];
 
-    const dateA = formatLocalDateBR(avaliacaoAnterior.data_avaliacao);
-    const dateB = formatLocalDateBR(avaliacao.data_avaliacao);
+    // Fallback for % Gordura when only bio value exists
+    const getVal = (row: any, key: string) => {
+      const v = row?.[key];
+      if (v != null && v !== "") return Number(v);
+      if (key === "percentual_gordura_dobras" && row?.bio_percentual_gordura != null && row.bio_percentual_gordura !== "") {
+        return Number(row.bio_percentual_gordura);
+      }
+      return null;
+    };
 
-    const compBody = compFields
-      .filter(([, key]) => avaliacao[key] != null || avaliacaoAnterior[key] != null)
-      .map(([label, key, unit, lowerBetter]) => {
-        const prev = avaliacaoAnterior[key];
-        const curr = avaliacao[key];
-        const diff = (curr != null && prev != null) ? Math.round((curr - prev) * 100) / 100 : null;
-        let variation = "—";
-        if (diff != null) {
-          const arrow = diff < 0 ? "↓" : diff > 0 ? "↑" : "=";
-          const good = lowerBetter ? diff <= 0 : diff >= 0;
-          variation = `${arrow} ${Math.abs(diff)} ${unit} ${good ? "✓" : "✗"}`;
-        }
-        return [label, prev != null ? `${prev} ${unit}` : "—", curr != null ? `${curr} ${unit}` : "—", variation];
+    // Filter fields with at least one value across the history
+    const rows = compFields.filter(([, key]) => historyAll.some(a => getVal(a, key) != null));
+
+    if (rows.length > 0) {
+      // Split dates into blocks so the table always fits the page
+      const MAX_PER_BLOCK = 6;
+      const blocks: any[][] = [];
+      for (let i = 0; i < historyAll.length; i += MAX_PER_BLOCK) {
+        blocks.push(historyAll.slice(i, i + MAX_PER_BLOCK));
+      }
+
+      blocks.forEach((block, blockIdx) => {
+        const isLast = blockIdx === blocks.length - 1;
+        const dateHeaders = block.map(a => formatLocalDateBR(a.data_avaliacao));
+        const head = ["Medida", ...dateHeaders, ...(isLast ? ["Variação total"] : [])];
+
+        const body = rows.map(([label, key, unit, lowerBetter]) => {
+          const cells = block.map(a => {
+            const v = getVal(a, key);
+            return v != null ? `${v}${unit ? " " + unit : ""}` : "—";
+          });
+          if (!isLast) return [label, ...cells];
+
+          // Compute total variation using first and last non-null values across full history
+          const first = historyAll.map(a => getVal(a, key)).find(v => v != null) ?? null;
+          const lastVals = historyAll.map(a => getVal(a, key)).filter(v => v != null);
+          const last = lastVals.length ? lastVals[lastVals.length - 1] : null;
+          let variation = "—";
+          if (first != null && last != null) {
+            const diff = Math.round((last - first) * 100) / 100;
+            const arrow = diff < 0 ? "↓" : diff > 0 ? "↑" : "=";
+            const good = lowerBetter ? diff <= 0 : diff >= 0;
+            variation = `${arrow} ${Math.abs(diff)}${unit ? " " + unit : ""} ${good ? "✓" : "✗"}`;
+          }
+          return [label, ...cells, variation];
+        });
+
+        y = checkNewPage(doc, y, 30);
+        const fontSize = head.length > 5 ? 8 : 9;
+        (doc as any).autoTable({
+          startY: y,
+          head: [head],
+          body,
+          margin: { left: MARGINS.left, right: MARGINS.right },
+          headStyles: { fillColor: BRAND.tableHeader, textColor: BRAND.text, fontStyle: "bold", fontSize, cellPadding: 2 },
+          bodyStyles: { textColor: BRAND.textBody, fontSize, cellPadding: 2 },
+          alternateRowStyles: { fillColor: [250, 251, 255] },
+          styles: { lineColor: BRAND.tableLine, lineWidth: 0.2, overflow: "linebreak" },
+        });
+        y = (doc as any).lastAutoTable.finalY + 6;
       });
-
-    y = autoTable(doc, y, [["Medida", dateA, dateB, "Variação"]], compBody);
+    }
   }
+
 
   // Observations
   if (avaliacao.observacoes) {
