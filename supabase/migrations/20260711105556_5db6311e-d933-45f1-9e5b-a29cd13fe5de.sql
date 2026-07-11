@@ -1,0 +1,2 @@
+ALTER TABLE public.financeiro_receitas DROP CONSTRAINT financeiro_receitas_paciente_id_fkey;
+ALTER TABLE public.financeiro_receitas ADD CONSTRAINT financeiro_receitas_paciente_id_fkey FOREIGN KEY (paciente_id) REFERENCES public.pacientes(id) ON DELETE SET NULL;
