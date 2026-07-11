@@ -26,11 +26,12 @@ export interface AvaliacaoExportOptions {
 
 export function generateAvaliacaoPdf(
   avaliacao: any,
-  avaliacaoAnterior: any | null,
+  historicoAvaliacoes: any[] | null,
   paciente: { nome_completo: string; data_nascimento?: string; sexo?: string },
   config: PdfConfig,
   options: AvaliacaoExportOptions,
 ): jsPDF {
+
   const doc = createDoc();
 
   if (options.incluirCapa) {
