@@ -26,8 +26,9 @@ interface Props {
   planoData?: any;
   /** For avaliacao: current assessment */
   avaliacaoData?: any;
-  /** For avaliacao: previous assessment for comparison */
-  avaliacaoAnterior?: any;
+  /** For avaliacao: all patient assessments (asc by date), used for historical comparison */
+  historicoAvaliacoes?: any[];
+
   /** For relatorio: acompanhamentos array */
   acompanhamentos?: any[];
   /** For relatorio: consultas array */
