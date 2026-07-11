@@ -42,7 +42,7 @@ const MESES = [
   "Julho", "Agosto", "Setembro", "Outubro", "Novembro", "Dezembro",
 ];
 
-export function ExportPdfModal({ open, onOpenChange, type, paciente, planoData, avaliacaoData, avaliacaoAnterior, acompanhamentos, consultas, planoAtivo }: Props) {
+export function ExportPdfModal({ open, onOpenChange, type, paciente, planoData, avaliacaoData, historicoAvaliacoes, acompanhamentos, consultas, planoAtivo }: Props) {
   const { user } = useAuth();
   const { toast } = useToast();
   const [loading, setLoading] = useState(false);
