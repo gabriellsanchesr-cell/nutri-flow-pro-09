@@ -21,6 +21,14 @@ import { ExportPdfModal } from "@/components/pdf/ExportPdfModal";
 import { ImportarAvaliacaoModal } from "@/components/paciente/ImportarAvaliacaoModal";
 import { format } from "date-fns";
 import { ptBR } from "date-fns/locale";
+
+// Parse YYYY-MM-DD as local date to avoid timezone shifting by -1 day
+const parseLocalDate = (s: string | null | undefined): Date => {
+  if (!s) return new Date(NaN);
+  const iso = String(s).match(/^(\d{4})-(\d{2})-(\d{2})/);
+  if (iso) return new Date(+iso[1], +iso[2] - 1, +iso[3]);
+  return new Date(s);
+};
 import {
   LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer,
 } from "recharts";
