@@ -6,6 +6,14 @@ import {
   checkNewPage, addInfoBlock, PdfConfig,
 } from "./pdfBrand";
 
+// Format YYYY-MM-DD as DD/MM/YYYY without timezone shifting
+const formatLocalDateBR = (s: string | null | undefined): string => {
+  if (!s) return "—";
+  const m = String(s).match(/^(\d{4})-(\d{2})-(\d{2})/);
+  if (m) return `${m[3]}/${m[2]}/${m[1]}`;
+  return new Date(s).toLocaleDateString("pt-BR");
+};
+
 export interface AvaliacaoExportOptions {
   incluirDobras: boolean;
   incluirCircunferencias: boolean;
@@ -27,7 +35,7 @@ export function generateAvaliacaoPdf(
 
   if (options.incluirCapa) {
     addCoverPage(doc, "Avaliação Antropométrica", paciente.nome_completo, config, {
-      dataEmissao: new Date(avaliacao.data_avaliacao).toLocaleDateString("pt-BR"),
+      dataEmissao: formatLocalDateBR(avaliacao.data_avaliacao),
     });
   }
 
@@ -40,7 +48,7 @@ export function generateAvaliacaoPdf(
     { label: "Nome", value: paciente.nome_completo },
     ...(idade ? [{ label: "Idade", value: `${idade} anos` }] : []),
     ...(paciente.sexo ? [{ label: "Sexo", value: paciente.sexo === "M" ? "Masculino" : "Feminino" }] : []),
-    { label: "Data da avaliação", value: new Date(avaliacao.data_avaliacao).toLocaleDateString("pt-BR") },
+    { label: "Data da avaliação", value: formatLocalDateBR(avaliacao.data_avaliacao) },
     { label: "Nutricionista", value: `${config.nome_nutricionista || "Gabriel Sanches"}${config.crn ? ` | CRN ${config.crn}` : ""}` },
   ]);
 
@@ -166,8 +174,8 @@ export function generateAvaliacaoPdf(
       ["Massa magra", "massa_magra_kg", "kg", false],
     ] as [string, string, string, boolean][];
 
-    const dateA = new Date(avaliacaoAnterior.data_avaliacao).toLocaleDateString("pt-BR");
-    const dateB = new Date(avaliacao.data_avaliacao).toLocaleDateString("pt-BR");
+    const dateA = formatLocalDateBR(avaliacaoAnterior.data_avaliacao);
+    const dateB = formatLocalDateBR(avaliacao.data_avaliacao);
 
     const compBody = compFields
       .filter(([, key]) => avaliacao[key] != null || avaliacaoAnterior[key] != null)

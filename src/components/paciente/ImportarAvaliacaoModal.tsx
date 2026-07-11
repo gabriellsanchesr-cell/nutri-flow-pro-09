@@ -311,7 +311,7 @@ export function ImportarAvaliacaoModal({ open, onOpenChange, pacienteId, onImpor
                             className="h-7 text-xs"
                           />
                           <span className="text-[10px] text-muted-foreground">
-                            {av.data_avaliacao ? format(new Date(av.data_avaliacao + "T12:00"), "dd/MM/yyyy") : "—"}
+                            {av.data_avaliacao ? format(parseLocalDate(av.data_avaliacao), "dd/MM/yyyy") : "—"}
                           </span>
                         </div>
                       </th>
