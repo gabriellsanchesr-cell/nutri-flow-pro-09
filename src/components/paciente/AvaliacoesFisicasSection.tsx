@@ -764,7 +764,12 @@ export function AvaliacoesFisicasSection({ paciente }: Props) {
           type="avaliacao"
           paciente={paciente}
           avaliacaoData={form}
-          avaliacaoAnterior={previousAv}
+          historicoAvaliacoes={(() => {
+            const currentDate = form.data_avaliacao;
+            const others = avaliacoes.filter(a => a.id !== editId && (!currentDate || String(a.data_avaliacao) <= String(currentDate)));
+            return [...others, { ...form, id: editId }].sort((a, b) => String(a.data_avaliacao || "").localeCompare(String(b.data_avaliacao || "")));
+          })()}
+
         />
       )}
     </div>

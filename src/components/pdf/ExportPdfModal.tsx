@@ -26,8 +26,9 @@ interface Props {
   planoData?: any;
   /** For avaliacao: current assessment */
   avaliacaoData?: any;
-  /** For avaliacao: previous assessment for comparison */
-  avaliacaoAnterior?: any;
+  /** For avaliacao: all patient assessments (asc by date), used for historical comparison */
+  historicoAvaliacoes?: any[];
+
   /** For relatorio: acompanhamentos array */
   acompanhamentos?: any[];
   /** For relatorio: consultas array */
@@ -41,7 +42,7 @@ const MESES = [
   "Julho", "Agosto", "Setembro", "Outubro", "Novembro", "Dezembro",
 ];
 
-export function ExportPdfModal({ open, onOpenChange, type, paciente, planoData, avaliacaoData, avaliacaoAnterior, acompanhamentos, consultas, planoAtivo }: Props) {
+export function ExportPdfModal({ open, onOpenChange, type, paciente, planoData, avaliacaoData, historicoAvaliacoes, acompanhamentos, consultas, planoAtivo }: Props) {
   const { user } = useAuth();
   const { toast } = useToast();
   const [loading, setLoading] = useState(false);
@@ -101,7 +102,7 @@ export function ExportPdfModal({ open, onOpenChange, type, paciente, planoData, 
           break;
         }
         case "avaliacao": {
-          doc = generateAvaliacaoPdf(avaliacaoData, avOpts.incluirComparativo ? avaliacaoAnterior : null, paciente, config, avOpts);
+          doc = generateAvaliacaoPdf(avaliacaoData, avOpts.incluirComparativo ? (historicoAvaliacoes || null) : null, paciente, config, avOpts);
           fileName = `Avaliacao_${paciente.nome_completo.replace(/\s+/g, "_")}.pdf`;
           break;
         }
