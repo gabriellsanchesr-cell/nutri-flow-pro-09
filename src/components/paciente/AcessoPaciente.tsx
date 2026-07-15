@@ -12,12 +12,13 @@ const statusConfig: Record<string, { label: string; color: string; icon: any }> 
 interface Props {
   paciente: any;
   onCreateAccess: () => void;
+  onEditAccess: () => void;
   onDeactivate: () => void;
   onReactivate: () => void;
   actionLoading: boolean;
 }
 
-export function AcessoPaciente({ paciente, onCreateAccess, onDeactivate, onReactivate, actionLoading }: Props) {
+export function AcessoPaciente({ paciente, onCreateAccess, onEditAccess, onDeactivate, onReactivate, actionLoading }: Props) {
   const status = paciente.account_status || "sem_conta";
   const cfg = statusConfig[status] || statusConfig.sem_conta;
   const Icon = cfg.icon;
