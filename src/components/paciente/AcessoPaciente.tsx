@@ -1,7 +1,7 @@
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { KeyRound, UserX, UserCheck, ShieldCheck, ShieldOff } from "lucide-react";
+import { KeyRound, UserX, UserCheck, ShieldCheck, ShieldOff, Pencil } from "lucide-react";
 
 const statusConfig: Record<string, { label: string; color: string; icon: any }> = {
   ativo: { label: "Conta Ativa", color: "bg-success/10 text-success border-success/20", icon: ShieldCheck },
