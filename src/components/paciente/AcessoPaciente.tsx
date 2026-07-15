@@ -51,6 +51,11 @@ export function AcessoPaciente({ paciente, onCreateAccess, onEditAccess, onDeact
                 <KeyRound className="h-3.5 w-3.5 mr-1" /> Criar Acesso
               </Button>
             )}
+            {(status === "ativo" || status === "desativado") && (
+              <Button size="sm" variant="outline" onClick={onEditAccess}>
+                <Pencil className="h-3.5 w-3.5 mr-1" /> Alterar E-mail/Senha
+              </Button>
+            )}
             {status === "ativo" && (
               <Button size="sm" variant="outline" onClick={onDeactivate} disabled={actionLoading}>
                 <UserX className="h-3.5 w-3.5 mr-1" /> Desativar Acesso
