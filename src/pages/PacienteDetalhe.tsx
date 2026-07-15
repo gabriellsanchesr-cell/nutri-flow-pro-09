@@ -95,6 +95,7 @@ export default function PacienteDetalhe() {
         <AcessoPaciente
           paciente={paciente}
           onCreateAccess={() => setAccessModal({ open: true, mode: "create" })}
+          onEditAccess={() => setAccessModal({ open: true, mode: "edit" })}
           onDeactivate={() => handleAction("deactivate")}
           onReactivate={() => handleAction("reactivate")}
           actionLoading={actionLoading}

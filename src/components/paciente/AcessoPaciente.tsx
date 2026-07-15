@@ -1,7 +1,7 @@
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { KeyRound, UserX, UserCheck, ShieldCheck, ShieldOff } from "lucide-react";
+import { KeyRound, UserX, UserCheck, ShieldCheck, ShieldOff, Pencil } from "lucide-react";
 
 const statusConfig: Record<string, { label: string; color: string; icon: any }> = {
   ativo: { label: "Conta Ativa", color: "bg-success/10 text-success border-success/20", icon: ShieldCheck },
@@ -12,12 +12,13 @@ const statusConfig: Record<string, { label: string; color: string; icon: any }> 
 interface Props {
   paciente: any;
   onCreateAccess: () => void;
+  onEditAccess: () => void;
   onDeactivate: () => void;
   onReactivate: () => void;
   actionLoading: boolean;
 }
 
-export function AcessoPaciente({ paciente, onCreateAccess, onDeactivate, onReactivate, actionLoading }: Props) {
+export function AcessoPaciente({ paciente, onCreateAccess, onEditAccess, onDeactivate, onReactivate, actionLoading }: Props) {
   const status = paciente.account_status || "sem_conta";
   const cfg = statusConfig[status] || statusConfig.sem_conta;
   const Icon = cfg.icon;
@@ -48,6 +49,11 @@ export function AcessoPaciente({ paciente, onCreateAccess, onDeactivate, onReact
             {status === "sem_conta" && (
               <Button size="sm" onClick={onCreateAccess}>
                 <KeyRound className="h-3.5 w-3.5 mr-1" /> Criar Acesso
+              </Button>
+            )}
+            {(status === "ativo" || status === "desativado") && (
+              <Button size="sm" variant="outline" onClick={onEditAccess}>
+                <Pencil className="h-3.5 w-3.5 mr-1" /> Alterar E-mail/Senha
               </Button>
             )}
             {status === "ativo" && (
