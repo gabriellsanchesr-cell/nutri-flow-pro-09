@@ -95,6 +95,46 @@ const GROUPS: { label: string; fields: { key: string; label: string; unit?: stri
   },
 ];
 
+// Colunas realmente existentes na tabela avaliacoes_fisicas (evita erro de schema cache
+// quando a IA devolve nomes aproximados/inventados)
+const EXTRA_COLUMNS = [
+  "data_avaliacao",
+  "protocolo_dobras",
+  "observacoes",
+  "classificacao_imc",
+  "percentual_gordura_dobras",
+  "massa_magra_kg",
+  "bio_percentual_ideal",
+];
+
+const ALLOWED_COLUMNS = new Set<string>([
+  ...GROUPS.flatMap((g) => g.fields.map((f) => f.key)),
+  ...EXTRA_COLUMNS,
+]);
+
+// Nomes alternativos que a IA às vezes retorna → coluna correta
+const COLUMN_ALIASES: Record<string, string> = {
+  bio_massa_gordura: "bio_massa_gorda",
+  bio_percentual_gordura_corporal: "bio_percentual_gordura",
+  bio_agua: "bio_agua_corporal",
+  bio_tmb: "bio_metabolismo_basal",
+  bio_massa_ossea: "bio_peso_osseo",
+  massa_gorda: "massa_gorda_kg",
+  massa_magra: "massa_magra_kg",
+  percentual_gordura: "percentual_gordura_dobras",
+};
+
+/** Mantém apenas colunas válidas, aplicando apelidos conhecidos. */
+const sanitizeRow = (av: Record<string, any>): Record<string, any> => {
+  const out: Record<string, any> = {};
+  for (const [rawKey, value] of Object.entries(av)) {
+    const key = COLUMN_ALIASES[rawKey] ?? rawKey;
+    if (!ALLOWED_COLUMNS.has(key)) continue;
+    out[key] = value === "" ? null : value;
+  }
+  return out;
+};
+
 export function ImportarAvaliacaoModal({ open, onOpenChange, pacienteId, onImported }: Props) {
   const { user } = useAuth();
   const { toast } = useToast();
