@@ -261,7 +261,7 @@ export function ImportarAvaliacaoModal({ open, onOpenChange, pacienteId, onImpor
         .filter(({ idx }) => selected[idx])
         .map(({ av }) => {
           const row: Record<string, any> = {
-            ...av,
+            ...sanitizeRow(av),
             paciente_id: pacienteId,
             user_id: user.id,
             origem: "importado_ia",
@@ -270,10 +270,6 @@ export function ImportarAvaliacaoModal({ open, onOpenChange, pacienteId, onImpor
             row.pdf_origem_url = pdf_origem_url;
             row.pdf_origem_nome = pdf_origem_nome;
           }
-          // remove campos que não existem na tabela
-          delete row.id;
-          delete row.created_at;
-          delete row.updated_at;
           return row;
         });
 
