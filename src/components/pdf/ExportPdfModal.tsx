@@ -104,7 +104,7 @@ export function ExportPdfModal({ open, onOpenChange, type, paciente, planoData, 
           break;
         }
         case "avaliacao": {
-          doc = generateAvaliacaoPdf(avaliacaoData, avOpts.incluirComparativo ? (historicoAvaliacoes || null) : null, paciente, config, avOpts);
+          doc = generateAvaliacaoPdf(avaliacaoData, historicoAvaliacoes || null, paciente, config, avOpts);
           fileName = `Avaliacao_${paciente.nome_completo.replace(/\s+/g, "_")}.pdf`;
           break;
         }
