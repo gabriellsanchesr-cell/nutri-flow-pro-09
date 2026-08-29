@@ -765,9 +765,10 @@ export function AvaliacoesFisicasSection({ paciente }: Props) {
           paciente={paciente}
           avaliacaoData={form}
           historicoAvaliacoes={(() => {
-            const currentDate = form.data_avaliacao;
-            const others = avaliacoes.filter(a => a.id !== editId && (!currentDate || String(a.data_avaliacao) <= String(currentDate)));
-            return [...others, { ...form, id: editId }].sort((a, b) => String(a.data_avaliacao || "").localeCompare(String(b.data_avaliacao || "")));
+            const others = avaliacoes.filter(a => a.id !== editId);
+            return [...others, { ...form, id: editId }]
+              .filter(a => a && a.data_avaliacao)
+              .sort((a, b) => String(a.data_avaliacao || "").localeCompare(String(b.data_avaliacao || "")));
           })()}
 
         />
