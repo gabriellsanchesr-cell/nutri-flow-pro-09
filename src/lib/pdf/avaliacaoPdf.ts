@@ -134,7 +134,7 @@ function getVal(row: any, key: string): number | null {
 const fmt = (v: number | null, unit: string): string =>
   v == null ? "—" : `${Math.round(v * 100) / 100}${unit ? " " + unit : ""}`;
 
-function deltaText(curr: number | null, prev: number | null, unit: string, lowerIsBetter: boolean) {
+function deltaText(curr: number | null, prev: number | null, unit: string, lowerIsBetter: boolean): { text: string; tone: "good" | "bad" | "neutral" } {
   if (curr == null || prev == null) return { text: "—", tone: "neutral" as const };
   const diff = Math.round((curr - prev) * 100) / 100;
   const pct = prev !== 0 ? Math.round((diff / prev) * 1000) / 10 : null;
