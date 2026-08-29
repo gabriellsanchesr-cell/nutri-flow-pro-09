@@ -65,8 +65,10 @@ export function ExportPdfModal({ open, onOpenChange, type, paciente, planoData, 
     incluirCircunferencias: true,
     incluirBioimpedancia: true,
     incluirComparativo: true,
-    incluirGraficos: false,
+    incluirGraficos: true,
     incluirFotos: false,
+    incluirDiametros: true,
+    incluirLegendas: true,
     incluirCapa: true,
   });
 
