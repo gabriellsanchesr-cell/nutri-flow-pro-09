@@ -237,7 +237,10 @@ export function ExportPdfModal({ open, onOpenChange, type, paciente, planoData, 
               {toggleSwitch("Incluir dobras cutâneas", avOpts.incluirDobras, v => setAvOpts(p => ({ ...p, incluirDobras: v })))}
               {toggleSwitch("Incluir circunferências", avOpts.incluirCircunferencias, v => setAvOpts(p => ({ ...p, incluirCircunferencias: v })))}
               {toggleSwitch("Incluir bioimpedância", avOpts.incluirBioimpedancia, v => setAvOpts(p => ({ ...p, incluirBioimpedancia: v })))}
-              {toggleSwitch("Comparativo com avaliação anterior", avOpts.incluirComparativo, v => setAvOpts(p => ({ ...p, incluirComparativo: v })))}
+              {toggleSwitch("Incluir diâmetros e medidas complementares", avOpts.incluirDiametros !== false, v => setAvOpts(p => ({ ...p, incluirDiametros: v })))}
+              {toggleSwitch("Histórico completo de avaliações", avOpts.incluirComparativo, v => setAvOpts(p => ({ ...p, incluirComparativo: v })))}
+              {toggleSwitch("Gráficos de evolução", avOpts.incluirGraficos, v => setAvOpts(p => ({ ...p, incluirGraficos: v })))}
+              {toggleSwitch("Legendas de referência", avOpts.incluirLegendas !== false, v => setAvOpts(p => ({ ...p, incluirLegendas: v })))}
               {toggleSwitch("Incluir capa", avOpts.incluirCapa, v => setAvOpts(p => ({ ...p, incluirCapa: v })))}
             </>
           )}
