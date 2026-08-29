@@ -287,3 +287,200 @@ export async function loadPdfConfig(userId: string): Promise<PdfConfig> {
     marca_dagua: false,
   };
 }
+
+// ─── Extra visual helpers (stat cards, charts, legends) ─────────────
+export const VARIATION = {
+  good: [22, 163, 74] as [number, number, number],
+  bad: [220, 38, 38] as [number, number, number],
+  neutral: [107, 112, 128] as [number, number, number],
+};
+
+export interface StatCard {
+  label: string;
+  value: string;
+  sub?: string;
+  delta?: string;
+  deltaTone?: "good" | "bad" | "neutral";
+}
+
+/** Renders a row of compact stat cards across the content width. */
+export function statCards(doc: jsPDF, y: number, cards: StatCard[], perRow = 5): number {
+  if (!cards.length) return y;
+  const rows: StatCard[][] = [];
+  for (let i = 0; i < cards.length; i += perRow) rows.push(cards.slice(i, i + perRow));
+
+  const gap = 3;
+  const height = 26;
+
+  for (const row of rows) {
+    const width = (CONTENT_WIDTH - gap * (row.length - 1)) / row.length;
+    row.forEach((card, i) => {
+      const x = MARGINS.left + i * (width + gap);
+      doc.setFillColor(...BRAND.tableHeader);
+      doc.setDrawColor(...BRAND.tableLine);
+      doc.setLineWidth(0.2);
+      doc.roundedRect(x, y, width, height, 2, 2, "FD");
+      // accent bar
+      doc.setFillColor(...BRAND.primary);
+      doc.roundedRect(x, y, 1.4, height, 0.7, 0.7, "F");
+
+      doc.setFont("helvetica", "bold");
+      doc.setFontSize(7);
+      doc.setTextColor(...BRAND.textLabel);
+      doc.text(doc.splitTextToSize(card.label.toUpperCase(), width - 6)[0], x + 4, y + 6);
+
+      doc.setFont("helvetica", "bold");
+      doc.setFontSize(12);
+      doc.setTextColor(...BRAND.text);
+      doc.text(card.value, x + 4, y + 13.5);
+
+      doc.setFont("helvetica", "normal");
+      doc.setFontSize(6.5);
+      if (card.sub) {
+        doc.setTextColor(...BRAND.textLabel);
+        doc.text(doc.splitTextToSize(card.sub, width - 6)[0], x + 4, y + 18);
+      }
+      if (card.delta) {
+        const tone = card.deltaTone || "neutral";
+        doc.setTextColor(...VARIATION[tone]);
+        doc.setFont("helvetica", "bold");
+        doc.text(doc.splitTextToSize(card.delta, width - 6)[0], x + 4, y + 22);
+      }
+    });
+    y += height + gap;
+  }
+  return y + 6;
+}
+
+export interface ChartSeries {
+  labels: string[];
+  values: (number | null)[];
+  title: string;
+  unit?: string;
+}
+
+/** Vector line chart with axes auto-scaled to the real min/max of the series. */
+export function lineChart(
+  doc: jsPDF,
+  x: number,
+  y: number,
+  width: number,
+  height: number,
+  series: ChartSeries,
+): number {
+  const pts = series.values
+    .map((v, i) => ({ v, i }))
+    .filter(p => p.v != null && Number.isFinite(Number(p.v))) as { v: number; i: number }[];
+
+  // frame + title
+  doc.setFont("helvetica", "bold");
+  doc.setFontSize(8.5);
+  doc.setTextColor(...BRAND.text);
+  doc.text(series.title, x, y + 4);
+
+  const plotTop = y + 10;
+  const plotBottom = y + height - 7;
+  const plotLeft = x + 13;
+  const plotRight = x + width - 2;
+
+  doc.setDrawColor(...BRAND.tableLine);
+  doc.setLineWidth(0.2);
+  doc.roundedRect(x, y, width, height, 2, 2, "S");
+
+  if (pts.length === 0) {
+    doc.setFont("helvetica", "normal");
+    doc.setFontSize(8);
+    doc.setTextColor(...BRAND.textLabel);
+    doc.text("Sem dados", x + width / 2, (plotTop + plotBottom) / 2, { align: "center" });
+    return y + height;
+  }
+
+  const vals = pts.map(p => p.v);
+  let min = Math.min(...vals);
+  let max = Math.max(...vals);
+  if (max - min < 1e-6) { min -= 1; max += 1; }
+  const pad = (max - min) * 0.15;
+  min -= pad; max += pad;
+
+  const sx = (i: number) =>
+    series.values.length <= 1
+      ? (plotLeft + plotRight) / 2
+      : plotLeft + (i / (series.values.length - 1)) * (plotRight - plotLeft);
+  const sy = (v: number) => plotBottom - ((v - min) / (max - min)) * (plotBottom - plotTop);
+
+  // gridlines + y labels
+  doc.setFontSize(6);
+  for (let g = 0; g <= 3; g++) {
+    const v = min + ((max - min) * g) / 3;
+    const gy = sy(v);
+    doc.setDrawColor(...BRAND.tableLine);
+    doc.setLineWidth(0.1);
+    doc.line(plotLeft, gy, plotRight, gy);
+    doc.setTextColor(...BRAND.textLabel);
+    doc.text(v.toFixed(1), plotLeft - 1.5, gy + 1.2, { align: "right" });
+  }
+
+  // line
+  doc.setDrawColor(...BRAND.primary);
+  doc.setLineWidth(0.6);
+  for (let k = 1; k < pts.length; k++) {
+    doc.line(sx(pts[k - 1].i), sy(pts[k - 1].v), sx(pts[k].i), sy(pts[k].v));
+  }
+  // points + value labels
+  doc.setFillColor(...BRAND.primary);
+  doc.setFontSize(5.6);
+  pts.forEach((p, idx) => {
+    doc.circle(sx(p.i), sy(p.v), 0.9, "F");
+    if (pts.length <= 8 || idx === 0 || idx === pts.length - 1) {
+      doc.setTextColor(...BRAND.text);
+      doc.text(String(p.v), sx(p.i), sy(p.v) - 2, { align: "center" });
+    }
+  });
+
+  // x labels (first, middle, last to avoid overlap)
+  doc.setFontSize(5.6);
+  doc.setTextColor(...BRAND.textLabel);
+  const idxs = new Set<number>([pts[0].i, pts[pts.length - 1].i]);
+  if (pts.length > 2) idxs.add(pts[Math.floor(pts.length / 2)].i);
+  idxs.forEach(i => {
+    const label = series.labels[i] || "";
+    const px = sx(i);
+    const align = i === 0 ? "left" : i === series.labels.length - 1 ? "right" : "center";
+    doc.text(label, px, plotBottom + 4.5, { align: align as any });
+  });
+
+  return y + height;
+}
+
+export function legendBlock(doc: jsPDF, y: number, title: string, lines: string[]): number {
+  const h = lines.length * 4 + 10;
+  doc.setFillColor(...BRAND.tableHeader);
+  doc.setDrawColor(...BRAND.tableLine);
+  doc.setLineWidth(0.2);
+  doc.roundedRect(MARGINS.left, y, CONTENT_WIDTH, h, 2, 2, "FD");
+  doc.setFont("helvetica", "bold");
+  doc.setFontSize(8);
+  doc.setTextColor(...BRAND.text);
+  doc.text(title, MARGINS.left + 4, y + 5.5);
+  doc.setFont("helvetica", "normal");
+  doc.setFontSize(7);
+  doc.setTextColor(...BRAND.textLabel);
+  lines.forEach((l, i) => doc.text(l, MARGINS.left + 4, y + 10.5 + i * 4));
+  return y + h + 5;
+}
+
+export function signatureBlock(doc: jsPDF, y: number, config?: PdfConfig): number {
+  const cx = MARGINS.left + CONTENT_WIDTH / 2;
+  doc.setDrawColor(...BRAND.textLabel);
+  doc.setLineWidth(0.3);
+  doc.line(cx - 35, y, cx + 35, y);
+  doc.setFont("helvetica", "bold");
+  doc.setFontSize(9);
+  doc.setTextColor(...BRAND.text);
+  doc.text(config?.nome_nutricionista || "Gabriel Sanches", cx, y + 5, { align: "center" });
+  doc.setFont("helvetica", "normal");
+  doc.setFontSize(7.5);
+  doc.setTextColor(...BRAND.textLabel);
+  doc.text(`Nutricionista${config?.crn ? ` | CRN ${config.crn}` : ""}`, cx, y + 9.5, { align: "center" });
+  return y + 14;
+}

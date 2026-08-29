@@ -65,8 +65,10 @@ export function ExportPdfModal({ open, onOpenChange, type, paciente, planoData, 
     incluirCircunferencias: true,
     incluirBioimpedancia: true,
     incluirComparativo: true,
-    incluirGraficos: false,
+    incluirGraficos: true,
     incluirFotos: false,
+    incluirDiametros: true,
+    incluirLegendas: true,
     incluirCapa: true,
   });
 
@@ -102,7 +104,7 @@ export function ExportPdfModal({ open, onOpenChange, type, paciente, planoData, 
           break;
         }
         case "avaliacao": {
-          doc = generateAvaliacaoPdf(avaliacaoData, avOpts.incluirComparativo ? (historicoAvaliacoes || null) : null, paciente, config, avOpts);
+          doc = generateAvaliacaoPdf(avaliacaoData, historicoAvaliacoes || null, paciente, config, avOpts);
           fileName = `Avaliacao_${paciente.nome_completo.replace(/\s+/g, "_")}.pdf`;
           break;
         }
@@ -235,7 +237,10 @@ export function ExportPdfModal({ open, onOpenChange, type, paciente, planoData, 
               {toggleSwitch("Incluir dobras cutâneas", avOpts.incluirDobras, v => setAvOpts(p => ({ ...p, incluirDobras: v })))}
               {toggleSwitch("Incluir circunferências", avOpts.incluirCircunferencias, v => setAvOpts(p => ({ ...p, incluirCircunferencias: v })))}
               {toggleSwitch("Incluir bioimpedância", avOpts.incluirBioimpedancia, v => setAvOpts(p => ({ ...p, incluirBioimpedancia: v })))}
-              {toggleSwitch("Comparativo com avaliação anterior", avOpts.incluirComparativo, v => setAvOpts(p => ({ ...p, incluirComparativo: v })))}
+              {toggleSwitch("Incluir diâmetros e medidas complementares", avOpts.incluirDiametros !== false, v => setAvOpts(p => ({ ...p, incluirDiametros: v })))}
+              {toggleSwitch("Histórico completo de avaliações", avOpts.incluirComparativo, v => setAvOpts(p => ({ ...p, incluirComparativo: v })))}
+              {toggleSwitch("Gráficos de evolução", avOpts.incluirGraficos, v => setAvOpts(p => ({ ...p, incluirGraficos: v })))}
+              {toggleSwitch("Legendas de referência", avOpts.incluirLegendas !== false, v => setAvOpts(p => ({ ...p, incluirLegendas: v })))}
               {toggleSwitch("Incluir capa", avOpts.incluirCapa, v => setAvOpts(p => ({ ...p, incluirCapa: v })))}
             </>
           )}
