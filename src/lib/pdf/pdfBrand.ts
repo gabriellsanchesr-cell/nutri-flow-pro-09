@@ -310,7 +310,7 @@ export function statCards(doc: jsPDF, y: number, cards: StatCard[], perRow = 5):
   for (let i = 0; i < cards.length; i += perRow) rows.push(cards.slice(i, i + perRow));
 
   const gap = 3;
-  const height = 24;
+  const height = 26;
 
   for (const row of rows) {
     const width = (CONTENT_WIDTH - gap * (row.length - 1)) / row.length;
@@ -349,7 +349,7 @@ export function statCards(doc: jsPDF, y: number, cards: StatCard[], perRow = 5):
     });
     y += height + gap;
   }
-  return y + 3;
+  return y + 6;
 }
 
 export interface ChartSeries {
@@ -378,7 +378,7 @@ export function lineChart(
   doc.setTextColor(...BRAND.text);
   doc.text(series.title, x, y + 4);
 
-  const plotTop = y + 7;
+  const plotTop = y + 10;
   const plotBottom = y + height - 7;
   const plotLeft = x + 13;
   const plotRight = x + width - 2;

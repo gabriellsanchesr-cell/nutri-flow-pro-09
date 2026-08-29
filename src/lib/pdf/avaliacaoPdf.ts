@@ -250,7 +250,7 @@ function historyBlock(
     const head = [
       "Medida",
       ...block.map(a => formatLocalDateBR(a.data_avaliacao)),
-      ...(isLast ? ["Δ anterior", "Δ total"] : []),
+      ...(isLast ? ["Var. anterior", "Var. total"] : []),
     ];
 
     const body = rows.map(([label, key, unit, lower]) => {
@@ -463,7 +463,7 @@ export function generateAvaliacaoPdf(
     doc.setFontSize(8.5);
     doc.setTextColor(...BRAND.textLabel);
     doc.text(
-      `${history.length} avaliações — de ${formatLocalDateBR(history[0].data_avaliacao)} a ${formatLocalDateBR(history[history.length - 1].data_avaliacao)}. "Δ anterior" compara as duas últimas medições; "Δ total" compara a primeira com a última.`,
+      `${history.length} avaliações — de ${formatLocalDateBR(history[0].data_avaliacao)} a ${formatLocalDateBR(history[history.length - 1].data_avaliacao)}. "Var. anterior" compara as duas últimas medições; "Var. total" compara a primeira com a última.`,
       MARGINS.left, y, { maxWidth: CONTENT_WIDTH },
     );
     y += 9;
@@ -527,7 +527,7 @@ export function generateAvaliacaoPdf(
       "% Gordura homens: <6 muito baixo | 6–13 excelente | 14–17 bom | 18–24 acima da média | >=25 elevado",
       "% Gordura mulheres: <14 muito baixo | 14–20 excelente | 21–24 bom | 25–31 acima da média | >=32 elevado",
       "RCQ: homens risco moderado >0,85 e elevado >0,90 | mulheres risco moderado >0,80 e elevado >0,85",
-      "Δ em verde indica evolução favorável ao objetivo; em vermelho, desfavorável.",
+      "Variações em verde indicam evolução favorável ao objetivo; em vermelho, desfavorável.",
     ]);
   }
 
