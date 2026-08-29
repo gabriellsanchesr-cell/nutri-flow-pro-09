@@ -358,7 +358,7 @@ export function generateAvaliacaoPdf(
     return { label, value: fmt(v, unit), sub, delta: previous ? `vs. ant.: ${d.text}` : undefined, deltaTone: d.tone };
   };
 
-  y = checkNewPage(doc, y, 34);
+  y = checkNewPage(doc, y + 6, 40);
   y = sectionTitle(doc, y, "Resumo da Avaliação");
   y = statCards(doc, y, [
     card("Peso", peso, "kg", "corporal total", "peso", true),
