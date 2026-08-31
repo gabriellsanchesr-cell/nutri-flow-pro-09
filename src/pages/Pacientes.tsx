@@ -45,6 +45,10 @@ export default function Pacientes() {
     open: false, paciente: null,
   });
   const [actionLoading, setActionLoading] = useState(false);
+  const [selected, setSelected] = useState<string[]>([]);
+  const [bulkBusy, setBulkBusy] = useState(false);
+  const [bulkDeleteOpen, setBulkDeleteOpen] = useState(false);
+  const [bulkFase, setBulkFase] = useState("");
 
   useEffect(() => {
     if (user) loadPacientes();
@@ -64,6 +68,73 @@ export default function Pacientes() {
     const matchStatus = filtroStatus === "todos" || status === filtroStatus;
     return matchBusca && matchStatus;
   });
+
+  const selectedPacientes = pacientes.filter((p) => selected.includes(p.id));
+  const allFilteredSelected = filtered.length > 0 && filtered.every((p) => selected.includes(p.id));
+
+  const toggleOne = (id: string) =>
+    setSelected((prev) => (prev.includes(id) ? prev.filter((x) => x !== id) : [...prev, id]));
+
+  const toggleAllFiltered = () =>
+    setSelected(allFilteredSelected ? [] : filtered.map((p) => p.id));
+
+  const invokeAuth = async (action: string, paciente_id: string) => {
+    const { data, error } = await supabase.functions.invoke("manage-patient-auth", {
+      body: { action, paciente_id },
+    });
+    if (error || data?.error) throw new Error(data?.error || error?.message);
+  };
+
+  const runBulk = async (label: string, fn: (p: any) => Promise<void>, items: any[] = selectedPacientes) => {
+    if (items.length === 0) return;
+    setBulkBusy(true);
+    let ok = 0;
+    const errors: string[] = [];
+    for (const p of items) {
+      try {
+        await fn(p);
+        ok++;
+      } catch (err: any) {
+        errors.push(`${p.nome_completo}: ${err.message}`);
+      }
+    }
+    setBulkBusy(false);
+    setSelected([]);
+    await loadPacientes();
+    toast({
+      title: errors.length ? "Concluído com falhas" : "Sucesso",
+      description: `${label}: ${ok} de ${items.length}.${errors.length ? ` Falhas: ${errors.slice(0, 3).join(" | ")}` : ""}`,
+      variant: errors.length ? "destructive" : undefined,
+    });
+  };
+
+  const bulkDeactivate = () =>
+    runBulk("Acessos desativados", (p) => invokeAuth("deactivate", p.id),
+      selectedPacientes.filter((p) => p.account_status === "ativo"));
+
+  const bulkReactivate = () =>
+    runBulk("Acessos reativados", (p) => invokeAuth("reactivate", p.id),
+      selectedPacientes.filter((p) => p.account_status === "desativado"));
+
+  const bulkDelete = async () => {
+    setBulkDeleteOpen(false);
+    await runBulk("Pacientes excluídos", (p) => invokeAuth("delete", p.id));
+  };
+
+  const bulkSetFase = async (fase: string) => {
+    setBulkFase("");
+    await runBulk("Fase atualizada", async (p) => {
+      const { error } = await supabase.from("pacientes").update({ fase_real: fase as any }).eq("id", p.id);
+      if (error) throw error;
+    });
+  };
+
+  const bulkSetAtivo = (ativo: boolean) =>
+    runBulk(ativo ? "Cadastros reativados" : "Cadastros arquivados", async (p) => {
+      const { error } = await supabase.from("pacientes").update({ ativo }).eq("id", p.id);
+      if (error) throw error;
+    });
+
 
   const handleAction = async (action: "deactivate" | "reactivate", paciente: any) => {
     setActionLoading(true);
