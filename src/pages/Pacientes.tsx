@@ -193,20 +193,25 @@ export default function Pacientes() {
           <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
           <Input placeholder="Buscar paciente..." value={busca} onChange={(e) => setBusca(e.target.value)} className="pl-10 rounded-xl" />
         </div>
-        <div className="flex gap-1.5">
-          {["todos", "ativo", "desativado", "sem_conta"].map((s) => (
+        <div className="flex gap-1.5 flex-wrap">
+          {["todos", "ativo", "desativado", "sem_conta", "arquivados"].map((s) => (
             <Button
               key={s}
               variant={filtroStatus === s ? "default" : "outline"}
               size="sm"
-              onClick={() => setFiltroStatus(s)}
+              onClick={() => { setFiltroStatus(s); setSelected([]); }}
               className="rounded-full px-4 text-xs"
             >
-              {s === "todos" ? "Todos" : statusConfig[s]?.label || s}
+              {s === "todos" ? "Todos" : s === "arquivados" ? "Arquivados" : statusConfig[s]?.label || s}
+              {s === "arquivados" && arquivadosCount > 0 && (
+                <span className="ml-1.5 opacity-70">{arquivadosCount}</span>
+              )}
             </Button>
           ))}
         </div>
       </div>
+
+
 
 
       {selected.length > 0 && (
