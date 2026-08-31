@@ -204,11 +204,53 @@ export default function Pacientes() {
         </div>
       </div>
 
+
+      {selected.length > 0 && (
+        <div className="flex flex-wrap items-center gap-2 rounded-xl border bg-primary/5 px-4 py-3">
+          <span className="text-sm font-medium text-foreground">
+            {selected.length} selecionado{selected.length !== 1 ? "s" : ""}
+          </span>
+          {bulkBusy && <Loader2 className="h-4 w-4 animate-spin text-primary" />}
+          <div className="flex flex-wrap items-center gap-2 ml-auto">
+            <Select value={bulkFase} onValueChange={bulkSetFase} disabled={bulkBusy}>
+              <SelectTrigger className="w-[170px] h-9 rounded-xl text-xs"><SelectValue placeholder="Alterar fase R.E.A.L." /></SelectTrigger>
+              <SelectContent>
+                <SelectItem value="rotina">Rotina</SelectItem>
+                <SelectItem value="estrategia">Estratégia</SelectItem>
+                <SelectItem value="autonomia">Autonomia</SelectItem>
+                <SelectItem value="liberdade">Liberdade</SelectItem>
+              </SelectContent>
+            </Select>
+            <Button variant="outline" size="sm" className="rounded-xl" disabled={bulkBusy} onClick={bulkDeactivate}>
+              <UserX className="h-4 w-4 mr-1.5" /> Desativar acesso
+            </Button>
+            <Button variant="outline" size="sm" className="rounded-xl" disabled={bulkBusy} onClick={bulkReactivate}>
+              <UserCheck className="h-4 w-4 mr-1.5" /> Reativar acesso
+            </Button>
+            <Button variant="outline" size="sm" className="rounded-xl" disabled={bulkBusy} onClick={() => bulkSetAtivo(false)}>
+              <Archive className="h-4 w-4 mr-1.5" /> Arquivar
+            </Button>
+            <Button variant="outline" size="sm" className="rounded-xl" disabled={bulkBusy} onClick={() => bulkSetAtivo(true)}>
+              <ArchiveRestore className="h-4 w-4 mr-1.5" /> Reativar cadastro
+            </Button>
+            <Button variant="destructive" size="sm" className="rounded-xl" disabled={bulkBusy} onClick={() => setBulkDeleteOpen(true)}>
+              <Trash2 className="h-4 w-4 mr-1.5" /> Excluir
+            </Button>
+            <Button variant="ghost" size="sm" className="rounded-xl" disabled={bulkBusy} onClick={() => setSelected([])}>
+              <X className="h-4 w-4" />
+            </Button>
+          </div>
+        </div>
+      )}
+
       <div className="border rounded-xl overflow-hidden shadow-sm bg-card">
         <div className="overflow-x-auto">
           <Table>
             <TableHeader>
               <TableRow className="bg-muted/30 hover:bg-muted/30">
+                <TableHead className="w-[40px]">
+                  <Checkbox checked={allFilteredSelected} onCheckedChange={toggleAllFiltered} aria-label="Selecionar todos" />
+                </TableHead>
                 <TableHead>Nome</TableHead>
                 <TableHead className="hidden md:table-cell">E-mail</TableHead>
                 <TableHead>Status</TableHead>
@@ -222,7 +264,11 @@ export default function Pacientes() {
                 const cfg = statusConfig[status] || statusConfig.sem_conta;
                 return (
                   <TableRow key={p.id} className="cursor-pointer hover:bg-muted/30 transition-colors" onClick={() => navigate(`/pacientes/${p.id}`)}>
+                    <TableCell onClick={(e) => e.stopPropagation()}>
+                      <Checkbox checked={selected.includes(p.id)} onCheckedChange={() => toggleOne(p.id)} aria-label={`Selecionar ${p.nome_completo}`} />
+                    </TableCell>
                     <TableCell>
+
                       <div className="flex items-center gap-3 min-w-0">
                         <div className="h-8 w-8 rounded-full bg-primary/10 flex items-center justify-center text-primary text-xs font-bold shrink-0">
                           {getInitials(p.nome_completo)}
