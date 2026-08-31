@@ -196,10 +196,46 @@ export function PacientesTab() {
         </Button>
       </div>
 
+      {selected.length > 0 && (
+        <div className="flex flex-wrap items-center gap-2 rounded-xl border bg-primary/5 p-3">
+          <span className="text-sm font-medium text-foreground">
+            {selected.length} selecionado{selected.length > 1 ? "s" : ""}
+          </span>
+          {bulkBusy && <Loader2 className="h-4 w-4 animate-spin text-primary" />}
+          <div className="mx-1 h-5 w-px bg-border" />
+          <Select value={bulkFase} onValueChange={bulkSetFase} disabled={bulkBusy}>
+            <SelectTrigger className="h-9 w-44"><SelectValue placeholder="Alterar fase R.E.A.L." /></SelectTrigger>
+            <SelectContent>
+              <SelectItem value="rotina">Rotina</SelectItem>
+              <SelectItem value="estrategia">Estratégia</SelectItem>
+              <SelectItem value="autonomia">Autonomia</SelectItem>
+              <SelectItem value="liberdade">Liberdade</SelectItem>
+            </SelectContent>
+          </Select>
+          <Button variant="outline" size="sm" disabled={bulkBusy} onClick={bulkDeactivate}>Desativar acesso</Button>
+          <Button variant="outline" size="sm" disabled={bulkBusy} onClick={bulkReactivate}>Reativar acesso</Button>
+          <Button variant="outline" size="sm" disabled={bulkBusy} onClick={() => bulkSetAtivo(false)}>Arquivar</Button>
+          <Button variant="outline" size="sm" disabled={bulkBusy} onClick={() => bulkSetAtivo(true)}>Reativar cadastro</Button>
+          <Button variant="destructive" size="sm" disabled={bulkBusy} onClick={() => setBulkDeleteOpen(true)} className="gap-1">
+            <Trash2 className="h-4 w-4" /> Excluir
+          </Button>
+          <Button variant="ghost" size="sm" disabled={bulkBusy} onClick={() => setSelected([])} className="gap-1">
+            <X className="h-4 w-4" /> Limpar
+          </Button>
+        </div>
+      )}
+
       <div className="rounded-lg border bg-card">
         <Table>
           <TableHeader>
             <TableRow>
+              <TableHead className="w-10">
+                <Checkbox
+                  checked={allFilteredSelected}
+                  onCheckedChange={toggleAllFiltered}
+                  aria-label="Selecionar todos"
+                />
+              </TableHead>
               <TableHead>Paciente</TableHead>
               <TableHead>Fase</TableHead>
               <TableHead>Status</TableHead>
@@ -209,10 +245,11 @@ export function PacientesTab() {
           </TableHeader>
           <TableBody>
             {loading ? (
-              <TableRow><TableCell colSpan={5} className="text-center py-8 text-muted-foreground">Carregando...</TableCell></TableRow>
+              <TableRow><TableCell colSpan={6} className="text-center py-8 text-muted-foreground">Carregando...</TableCell></TableRow>
             ) : filtered.length === 0 ? (
-              <TableRow><TableCell colSpan={5} className="text-center py-8 text-muted-foreground">Nenhum paciente encontrado</TableCell></TableRow>
+              <TableRow><TableCell colSpan={6} className="text-center py-8 text-muted-foreground">Nenhum paciente encontrado</TableCell></TableRow>
             ) : filtered.map((p) => {
+
               const status = p.account_status || "sem_conta";
               return (
                 <TableRow key={p.id}>
