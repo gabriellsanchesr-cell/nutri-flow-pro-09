@@ -42,6 +42,11 @@ export function PacientesTab() {
   const [accessModal, setAccessModal] = useState<{ pac: any; mode: "create" | "edit" } | null>(null);
   const [portalPermsTarget, setPortalPermsTarget] = useState<any>(null);
   const [deleteTarget, setDeleteTarget] = useState<any>(null);
+  const [selected, setSelected] = useState<string[]>([]);
+  const [bulkBusy, setBulkBusy] = useState(false);
+  const [bulkDeleteOpen, setBulkDeleteOpen] = useState(false);
+  const [bulkFase, setBulkFase] = useState("");
+
 
   const load = async () => {
     const { data } = await supabase.from("pacientes").select("*").order("nome_completo");
