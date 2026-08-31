@@ -5,14 +5,20 @@ import { useToast } from "@/hooks/use-toast";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Input } from "@/components/ui/input";
+import { Checkbox } from "@/components/ui/checkbox";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
-import { Eye, KeyRound, Power, Shield, Trash2, Plus } from "lucide-react";
+import {
+  AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent,
+  AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
+import { Eye, KeyRound, Power, Shield, Trash2, Plus, Loader2, X } from "lucide-react";
 import { PacienteAccessModal } from "@/components/PacienteAccessModal";
 import { PortalPermissoesModal } from "./PortalPermissoesModal";
 import { DeleteConfirmModal } from "@/components/DeleteConfirmModal";
 import { useNavigate } from "react-router-dom";
 import { format } from "date-fns";
+
 
 const statusBadge: Record<string, string> = {
   ativo: "bg-emerald-50 text-emerald-700 border-emerald-200",
