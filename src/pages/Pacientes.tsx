@@ -64,10 +64,14 @@ export default function Pacientes() {
 
   const filtered = pacientes.filter((p) => {
     const matchBusca = p.nome_completo.toLowerCase().includes(busca.toLowerCase());
+    const arquivado = p.ativo === false;
+    if (filtroStatus === "arquivados") return matchBusca && arquivado;
+    if (arquivado) return false;
     const status = p.account_status || "sem_conta";
     const matchStatus = filtroStatus === "todos" || status === filtroStatus;
     return matchBusca && matchStatus;
   });
+
 
   const selectedPacientes = pacientes.filter((p) => selected.includes(p.id));
   const allFilteredSelected = filtered.length > 0 && filtered.every((p) => selected.includes(p.id));
