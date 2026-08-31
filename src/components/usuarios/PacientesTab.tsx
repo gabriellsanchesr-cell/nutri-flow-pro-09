@@ -252,8 +252,16 @@ export function PacientesTab() {
 
               const status = p.account_status || "sem_conta";
               return (
-                <TableRow key={p.id}>
+                <TableRow key={p.id} data-state={selected.includes(p.id) ? "selected" : undefined}>
                   <TableCell>
+                    <Checkbox
+                      checked={selected.includes(p.id)}
+                      onCheckedChange={() => toggleOne(p.id)}
+                      aria-label={`Selecionar ${p.nome_completo}`}
+                    />
+                  </TableCell>
+                  <TableCell>
+
                     <div className="flex items-center gap-3">
                       <div className="h-9 w-9 rounded-full bg-primary/10 flex items-center justify-center text-sm font-semibold text-primary">
                         {p.nome_completo?.split(" ").map((n: string) => n[0]).slice(0, 2).join("").toUpperCase()}
