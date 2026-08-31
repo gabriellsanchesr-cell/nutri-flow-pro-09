@@ -4,14 +4,21 @@ import { useAuth } from "@/hooks/useAuth";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
+import { Checkbox } from "@/components/ui/checkbox";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
-import { Plus, Search, MoreHorizontal, UserCheck, UserX, Pencil, Trash2, KeyRound } from "lucide-react";
+import {
+  AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent,
+  AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
+import { Plus, Search, MoreHorizontal, UserCheck, UserX, Pencil, Trash2, KeyRound, Loader2, X, Archive, ArchiveRestore } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import { useToast } from "@/hooks/use-toast";
 import { PacienteAccessModal } from "@/components/PacienteAccessModal";
 import { DeleteConfirmModal } from "@/components/DeleteConfirmModal";
 import { format } from "date-fns";
+
 
 const statusConfig: Record<string, { label: string; variant: "default" | "secondary" | "destructive" | "outline" }> = {
   ativo: { label: "Ativo", variant: "default" },
@@ -38,6 +45,10 @@ export default function Pacientes() {
     open: false, paciente: null,
   });
   const [actionLoading, setActionLoading] = useState(false);
+  const [selected, setSelected] = useState<string[]>([]);
+  const [bulkBusy, setBulkBusy] = useState(false);
+  const [bulkDeleteOpen, setBulkDeleteOpen] = useState(false);
+  const [bulkFase, setBulkFase] = useState("");
 
   useEffect(() => {
     if (user) loadPacientes();
@@ -57,6 +68,73 @@ export default function Pacientes() {
     const matchStatus = filtroStatus === "todos" || status === filtroStatus;
     return matchBusca && matchStatus;
   });
+
+  const selectedPacientes = pacientes.filter((p) => selected.includes(p.id));
+  const allFilteredSelected = filtered.length > 0 && filtered.every((p) => selected.includes(p.id));
+
+  const toggleOne = (id: string) =>
+    setSelected((prev) => (prev.includes(id) ? prev.filter((x) => x !== id) : [...prev, id]));
+
+  const toggleAllFiltered = () =>
+    setSelected(allFilteredSelected ? [] : filtered.map((p) => p.id));
+
+  const invokeAuth = async (action: string, paciente_id: string) => {
+    const { data, error } = await supabase.functions.invoke("manage-patient-auth", {
+      body: { action, paciente_id },
+    });
+    if (error || data?.error) throw new Error(data?.error || error?.message);
+  };
+
+  const runBulk = async (label: string, fn: (p: any) => Promise<void>, items: any[] = selectedPacientes) => {
+    if (items.length === 0) return;
+    setBulkBusy(true);
+    let ok = 0;
+    const errors: string[] = [];
+    for (const p of items) {
+      try {
+        await fn(p);
+        ok++;
+      } catch (err: any) {
+        errors.push(`${p.nome_completo}: ${err.message}`);
+      }
+    }
+    setBulkBusy(false);
+    setSelected([]);
+    await loadPacientes();
+    toast({
+      title: errors.length ? "Concluído com falhas" : "Sucesso",
+      description: `${label}: ${ok} de ${items.length}.${errors.length ? ` Falhas: ${errors.slice(0, 3).join(" | ")}` : ""}`,
+      variant: errors.length ? "destructive" : undefined,
+    });
+  };
+
+  const bulkDeactivate = () =>
+    runBulk("Acessos desativados", (p) => invokeAuth("deactivate", p.id),
+      selectedPacientes.filter((p) => p.account_status === "ativo"));
+
+  const bulkReactivate = () =>
+    runBulk("Acessos reativados", (p) => invokeAuth("reactivate", p.id),
+      selectedPacientes.filter((p) => p.account_status === "desativado"));
+
+  const bulkDelete = async () => {
+    setBulkDeleteOpen(false);
+    await runBulk("Pacientes excluídos", (p) => invokeAuth("delete", p.id));
+  };
+
+  const bulkSetFase = async (fase: string) => {
+    setBulkFase("");
+    await runBulk("Fase atualizada", async (p) => {
+      const { error } = await supabase.from("pacientes").update({ fase_real: fase as any }).eq("id", p.id);
+      if (error) throw error;
+    });
+  };
+
+  const bulkSetAtivo = (ativo: boolean) =>
+    runBulk(ativo ? "Cadastros reativados" : "Cadastros arquivados", async (p) => {
+      const { error } = await supabase.from("pacientes").update({ ativo }).eq("id", p.id);
+      if (error) throw error;
+    });
+
 
   const handleAction = async (action: "deactivate" | "reactivate", paciente: any) => {
     setActionLoading(true);
@@ -126,11 +204,53 @@ export default function Pacientes() {
         </div>
       </div>
 
+
+      {selected.length > 0 && (
+        <div className="flex flex-wrap items-center gap-2 rounded-xl border bg-primary/5 px-4 py-3">
+          <span className="text-sm font-medium text-foreground">
+            {selected.length} selecionado{selected.length !== 1 ? "s" : ""}
+          </span>
+          {bulkBusy && <Loader2 className="h-4 w-4 animate-spin text-primary" />}
+          <div className="flex flex-wrap items-center gap-2 ml-auto">
+            <Select value={bulkFase} onValueChange={bulkSetFase} disabled={bulkBusy}>
+              <SelectTrigger className="w-[170px] h-9 rounded-xl text-xs"><SelectValue placeholder="Alterar fase R.E.A.L." /></SelectTrigger>
+              <SelectContent>
+                <SelectItem value="rotina">Rotina</SelectItem>
+                <SelectItem value="estrategia">Estratégia</SelectItem>
+                <SelectItem value="autonomia">Autonomia</SelectItem>
+                <SelectItem value="liberdade">Liberdade</SelectItem>
+              </SelectContent>
+            </Select>
+            <Button variant="outline" size="sm" className="rounded-xl" disabled={bulkBusy} onClick={bulkDeactivate}>
+              <UserX className="h-4 w-4 mr-1.5" /> Desativar acesso
+            </Button>
+            <Button variant="outline" size="sm" className="rounded-xl" disabled={bulkBusy} onClick={bulkReactivate}>
+              <UserCheck className="h-4 w-4 mr-1.5" /> Reativar acesso
+            </Button>
+            <Button variant="outline" size="sm" className="rounded-xl" disabled={bulkBusy} onClick={() => bulkSetAtivo(false)}>
+              <Archive className="h-4 w-4 mr-1.5" /> Arquivar
+            </Button>
+            <Button variant="outline" size="sm" className="rounded-xl" disabled={bulkBusy} onClick={() => bulkSetAtivo(true)}>
+              <ArchiveRestore className="h-4 w-4 mr-1.5" /> Reativar cadastro
+            </Button>
+            <Button variant="destructive" size="sm" className="rounded-xl" disabled={bulkBusy} onClick={() => setBulkDeleteOpen(true)}>
+              <Trash2 className="h-4 w-4 mr-1.5" /> Excluir
+            </Button>
+            <Button variant="ghost" size="sm" className="rounded-xl" disabled={bulkBusy} onClick={() => setSelected([])}>
+              <X className="h-4 w-4" />
+            </Button>
+          </div>
+        </div>
+      )}
+
       <div className="border rounded-xl overflow-hidden shadow-sm bg-card">
         <div className="overflow-x-auto">
           <Table>
             <TableHeader>
               <TableRow className="bg-muted/30 hover:bg-muted/30">
+                <TableHead className="w-[40px]">
+                  <Checkbox checked={allFilteredSelected} onCheckedChange={toggleAllFiltered} aria-label="Selecionar todos" />
+                </TableHead>
                 <TableHead>Nome</TableHead>
                 <TableHead className="hidden md:table-cell">E-mail</TableHead>
                 <TableHead>Status</TableHead>
@@ -144,7 +264,11 @@ export default function Pacientes() {
                 const cfg = statusConfig[status] || statusConfig.sem_conta;
                 return (
                   <TableRow key={p.id} className="cursor-pointer hover:bg-muted/30 transition-colors" onClick={() => navigate(`/pacientes/${p.id}`)}>
+                    <TableCell onClick={(e) => e.stopPropagation()}>
+                      <Checkbox checked={selected.includes(p.id)} onCheckedChange={() => toggleOne(p.id)} aria-label={`Selecionar ${p.nome_completo}`} />
+                    </TableCell>
                     <TableCell>
+
                       <div className="flex items-center gap-3 min-w-0">
                         <div className="h-8 w-8 rounded-full bg-primary/10 flex items-center justify-center text-primary text-xs font-bold shrink-0">
                           {getInitials(p.nome_completo)}
@@ -198,7 +322,7 @@ export default function Pacientes() {
             })}
             {filtered.length === 0 && (
               <TableRow>
-                <TableCell colSpan={5} className="text-center py-12 text-muted-foreground">
+                <TableCell colSpan={6} className="text-center py-12 text-muted-foreground">
                   <Search className="h-8 w-8 mx-auto mb-2 opacity-30" />
                   <p className="text-sm">Nenhum paciente encontrado</p>
                 </TableCell>
@@ -230,6 +354,24 @@ export default function Pacientes() {
           loading={actionLoading}
         />
       )}
+
+      <AlertDialog open={bulkDeleteOpen} onOpenChange={setBulkDeleteOpen}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Excluir {selected.length} paciente(s)?</AlertDialogTitle>
+            <AlertDialogDescription>
+              Esta ação é permanente e remove os cadastros e acessos selecionados.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Cancelar</AlertDialogCancel>
+            <AlertDialogAction onClick={bulkDelete} className="bg-destructive text-destructive-foreground hover:bg-destructive/90">
+              Excluir definitivamente
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
+
     </div>
   );
 }
