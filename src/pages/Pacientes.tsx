@@ -73,7 +73,9 @@ export default function Pacientes() {
   });
 
 
+  const arquivadosCount = pacientes.filter((p) => p.ativo === false).length;
   const selectedPacientes = pacientes.filter((p) => selected.includes(p.id));
+
   const allFilteredSelected = filtered.length > 0 && filtered.every((p) => selected.includes(p.id));
 
   const toggleOne = (id: string) =>
